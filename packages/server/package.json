@@ -6,5 +6,8 @@
 	"description": "Standalone bookmarklet + local server for testing the Nanobrowser-style AI DOM widget on any website.",
 	"scripts": {
 		"start": "node server.js"
+	},
+	"dependencies": {
+		"ai-proxy-core": "*"
 	}
 }

@@ -4,11 +4,13 @@
 	"version": "0.1.0",
 	"workspaces": [
 		"packages/*",
-		"examples/*"
+		"examples/*",
+		"apps/*"
 	],
 	"scripts": {
-		"build": "npm run build --workspace=packages/sdk",
+		"build": "npm run build --workspace=packages/ai-proxy-core && npm run build --workspace=packages/sdk",
 		"server": "npm start --workspace=packages/server",
-		"example": "npm run dev --workspace=examples/nextjs-loginwithchatgpt"
+		"example": "npm run dev --workspace=examples/nextjs-loginwithchatgpt",
+		"landing": "npm run dev --workspace=apps/landing"
 	}
 }
