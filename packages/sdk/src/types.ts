@@ -31,6 +31,29 @@ export interface WidgetConfig {
 	maxElements?: number;
 	/** Timeout for the AI proxy request, in ms. Default 16000. */
 	requestTimeoutMs?: number;
+	/**
+	 * Base URL of the guidance backend used for support-tool handoffs
+	 * (`GET {guidanceBaseUrl}/api/guidance/handoffs/:token`). Defaults to
+	 * same-origin (""). Set to e.g. "http://localhost:8787" when the backend
+	 * lives on another origin.
+	 */
+	guidanceBaseUrl?: string;
+	/**
+	 * SPA hook: called instead of a full-page navigation when a handoff plan
+	 * targets a different route. Resolve once your router has rendered the
+	 * destination; the SDK then looks for the target element there.
+	 */
+	onNavigate?: (route: string) => Promise<void> | void;
+}
+
+export interface HandoffPlan {
+	tenantId: string;
+	intent: string;
+	route: string;
+	targetSelector: string;
+	action: "scrollAndHighlight" | "click";
+	risk: "low" | "medium" | "high";
+	expiresAt: string;
 }
 
 export interface SnapshotElement {

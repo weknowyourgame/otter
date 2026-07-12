@@ -1,4 +1,5 @@
 import type {
+	HandoffPlan,
 	ProposeResult,
 	Snapshot,
 	SnapshotElement,
@@ -75,13 +76,17 @@ const CANDIDATE_SELECTOR =
 
 let activeInstance: WidgetInstance | null = null;
 
+// Handoff tokens already executed this page load — guards against double
+// execution when init() runs twice (e.g. React StrictMode re-mounts).
+const handledHandoffTokens = new Set<string>();
+
 export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 	if (activeInstance) {
 		console.warn("[ai-widget-sdk] init() called while already active — reusing existing instance.");
 		return activeInstance;
 	}
 
-	const config: Required<WidgetConfig> = {
+	const config: Required<Omit<WidgetConfig, "onNavigate">> = {
 		proxyUrl: userConfig.proxyUrl ?? "/api/ai-proxy",
 		authHeader: userConfig.authHeader ?? "",
 		authToken: userConfig.authToken ?? "",
@@ -97,7 +102,9 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		riskyWords: [...DEFAULT_RISKY_WORDS, ...(userConfig.riskyWords ?? [])],
 		maxElements: userConfig.maxElements ?? 200,
 		requestTimeoutMs: userConfig.requestTimeoutMs ?? 16000,
+		guidanceBaseUrl: (userConfig.guidanceBaseUrl ?? "").replace(/\/$/, ""),
 	};
+	const onNavigate = userConfig.onNavigate;
 
 	const HOST_ID = "ai-widget-sdk-host";
 
@@ -736,7 +743,11 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		return el;
 	}
 
-	function requestApproval(action: WidgetAction, replyText: string): void {
+	function requestApproval(
+		action: WidgetAction,
+		replyText: string,
+		onDecision?: (allowed: boolean) => void,
+	): void {
 		addMessage("assistant", replyText);
 
 		const card = document.createElement("div");
@@ -761,6 +772,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 					? "Done — opened it."
 					: "Done — scrolled to it and highlighted it on the page.";
 			addMessage("assistant", doneText);
+			onDecision?.(true);
 		});
 
 		const cancelBtn = document.createElement("button");
@@ -770,6 +782,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		cancelBtn.addEventListener("click", () => {
 			card.remove();
 			addMessage("assistant", "Okay, cancelled.");
+			onDecision?.(false);
 		});
 
 		row.appendChild(allowBtn);
@@ -827,7 +840,204 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 	closeEl.addEventListener("click", onCloseClick);
 	formEl.addEventListener("submit", onFormSubmit);
 
+	// -----------------------------------------------------------------
+	// Support-tool handoff mode (?guide_handoff=TOKEN in the URL)
+	//
+	// A support backend (e.g. the Jira Automation connector) resolved the
+	// user's question into a plan and minted a short-lived token. Here we
+	// exchange the token for the plan and guide the user to the target.
+	// The plan is DATA, not commands: scroll/highlight runs automatically,
+	// but any click still goes through the approval card, and high-risk
+	// plans are highlight-only no matter what the backend said.
+	// -----------------------------------------------------------------
+
+	let destroyed = false;
+
+	function openPanel(): void {
+		panelEl.hidden = false;
+	}
+
+	function reportHandoff(token: string, status: string, reason?: string): void {
+		void fetch(
+			`${config.guidanceBaseUrl}/api/guidance/handoffs/${encodeURIComponent(token)}/complete`,
+			{
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ status, url: location.href, reason }),
+			},
+		).catch(() => {
+			/* audit is best-effort */
+		});
+	}
+
+	// Ensure an element found outside observe() (e.g. by the plan's raw
+	// selector) is registered in the id maps so highlight()/executeAction()
+	// — and their safety re-checks — work on it.
+	function registerHandoffTarget(el: HTMLElement): string {
+		observe();
+		let id = elementIdByNode.get(el);
+		if (id && elementMap.has(id)) return id;
+		id = getElementId(el);
+		elementMap.set(id, el);
+		const text = getElementText(el);
+		const aiAction = el.getAttribute("data-ai-action");
+		const risk: "low" | "high" =
+			computeRisk(text, buildSelector(el), aiAction) === "high" || isFormSubmit(el)
+				? "high"
+				: "low";
+		elementMeta.set(id, { risk, clickable: isClickableTag(el, aiAction) });
+		return id;
+	}
+
+	function findHandoffTarget(plan: HandoffPlan): HTMLElement | null {
+		const hostRoot = document.getElementById(HOST_ID);
+		const notOurs = (el: Element | null): HTMLElement | null =>
+			el instanceof HTMLElement && !(hostRoot && hostRoot.contains(el)) ? el : null;
+
+		try {
+			const direct = notOurs(document.querySelector(plan.targetSelector));
+			if (direct) return direct;
+		} catch {
+			/* invalid selector from backend — fall through to fallbacks */
+		}
+
+		const intentAttr = plan.intent.replace(/_/g, "-");
+		const byAction = notOurs(document.querySelector(`[data-ai-action="${intentAttr}"]`));
+		if (byAction) return byAction;
+		const bySection = notOurs(document.querySelector(`[data-ai-section="${intentAttr}"]`));
+		if (bySection) return bySection;
+
+		// Fuzzy fallback: score visible elements against the intent words.
+		const tokens = tokenize(plan.intent.replace(/_/g, " "));
+		if (!tokens.length) return null;
+		const snapshot = observe();
+		let best: SnapshotElement | null = null;
+		let bestScore = 0;
+		for (const el of snapshot.elements) {
+			const score = scoreElement(tokens, el);
+			if (score > bestScore) {
+				bestScore = score;
+				best = el;
+			}
+		}
+		return best ? (elementMap.get(best.id) ?? null) : null;
+	}
+
+	async function waitForHandoffTarget(plan: HandoffPlan): Promise<HTMLElement | null> {
+		// SPA route transitions and hydration render asynchronously — poll
+		// for a few seconds before declaring the control missing.
+		for (let attempt = 0; attempt < 20; attempt += 1) {
+			if (destroyed) return null;
+			const el = findHandoffTarget(plan);
+			if (el) return el;
+			await new Promise((resolve) => setTimeout(resolve, 250));
+		}
+		return null;
+	}
+
+	async function runHandoff(): Promise<void> {
+		const token = new URLSearchParams(location.search).get("guide_handoff");
+		if (!token || handledHandoffTokens.has(token)) return;
+		handledHandoffTokens.add(token);
+
+		let plan: HandoffPlan;
+		try {
+			const res = await fetch(
+				`${config.guidanceBaseUrl}/api/guidance/handoffs/${encodeURIComponent(token)}`,
+			);
+			const body = (await res.json()) as { ok?: boolean; plan?: HandoffPlan };
+			if (!res.ok || !body.ok || !body.plan) throw new Error("invalid");
+			plan = body.plan;
+		} catch {
+			if (destroyed) return;
+			openPanel();
+			addMessage(
+				"assistant",
+				"This guided link is invalid or has expired. Ask support for a fresh one.",
+			);
+			return;
+		}
+		if (destroyed) return;
+
+		if (Date.parse(plan.expiresAt) <= Date.now()) {
+			openPanel();
+			addMessage(
+				"assistant",
+				"This guided link is invalid or has expired. Ask support for a fresh one.",
+			);
+			return;
+		}
+
+		reportHandoff(token, "opened");
+
+		// Navigate to the plan's route if we're not already there.
+		if (plan.route && location.pathname !== plan.route) {
+			if (onNavigate) {
+				try {
+					await onNavigate(plan.route);
+				} catch {
+					reportHandoff(token, "failed", "onNavigate_threw");
+					return;
+				}
+			} else {
+				// Full page load; the token rides along and this whole flow
+				// re-runs on the destination page.
+				handledHandoffTokens.delete(token);
+				location.href = `${plan.route}?guide_handoff=${encodeURIComponent(token)}`;
+				return;
+			}
+		}
+		if (destroyed) return;
+
+		const target = await waitForHandoffTarget(plan);
+		if (destroyed) return;
+		if (!target) {
+			openPanel();
+			addMessage(
+				"assistant",
+				"I opened the right page, but could not find the exact control.",
+			);
+			reportHandoff(token, "failed", "target_not_found");
+			return;
+		}
+
+		const elementId = registerHandoffTarget(target);
+		const targetLabel = getElementText(target) || plan.intent.replace(/_/g, " ");
+		openPanel();
+
+		const wantsClick = plan.action === "click";
+		const elementRisk = elementMeta.get(elementId)?.risk ?? "low";
+		const highRisk = plan.risk === "high" || elementRisk === "high";
+
+		if (wantsClick && !highRisk) {
+			// Even a backend-planned click needs explicit user approval, and
+			// executeAction() re-validates safety once more when it fires.
+			scrollTo(elementId);
+			window.setTimeout(() => highlight(elementId), 450);
+			requestApproval(
+				{ type: "click", elementId },
+				`I found "${targetLabel}". Want me to open it?`,
+				(allowed) => reportHandoff(token, allowed ? "approved_click" : "highlighted"),
+			);
+			return;
+		}
+
+		scrollTo(elementId);
+		window.setTimeout(() => highlight(elementId), 450);
+		if (wantsClick && highRisk) {
+			addMessage(
+				"assistant",
+				`I found "${targetLabel}". This looks sensitive, so I'll only show you where it is — not click it.`,
+			);
+			reportHandoff(token, "blocked", "high_risk_click_downgraded");
+		} else {
+			addMessage("assistant", `I found "${targetLabel}".`);
+			reportHandoff(token, "highlighted");
+		}
+	}
+
 	observe(); // warm the initial snapshot
+	void runHandoff();
 
 	const instance: WidgetInstance = {
 		observe,
@@ -838,6 +1048,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		highlight,
 		clearHighlight,
 		destroy() {
+			destroyed = true;
 			clearHighlight();
 			bubbleEl.removeEventListener("click", onBubbleClick);
 			closeEl.removeEventListener("click", onCloseClick);
