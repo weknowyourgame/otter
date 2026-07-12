@@ -55,6 +55,123 @@ required.
 See `packages/sdk/README.md` for the full config reference, backend
 contract, and safety model.
 
+## Jira Service Management Free Demo Setup
+
+Support-tool handoff demo: a customer asks "Where do I enable 2FA?" in a
+Jira Service Management (JSM) request → Jira Automation calls this repo's
+backend → the backend replies with a guided link → Jira posts it as a public
+comment → the customer clicks it → the SDK inside the demo SaaS app opens
+`/settings/security` and highlights the exact 2FA control.
+
+Jira is only the support surface. The backend is the brain. The SDK controls
+the browser. Jira never touches the SaaS app directly. Uses JSM **Free** +
+built-in Automation — no paid features, no Marketplace app, no OAuth.
+
+### How it works
+
+```
+Jira request created
+  └─ Automation rule: Send web request (Wait for response ON)
+       └─ POST /api/connectors/jira/automation   (x-guidance-demo-secret header)
+            ├─ intent registry match (deterministic, first)
+            ├─ optional LLM fallback (can only pick from the registry)
+            └─ mints a 15-min handoff token, returns JSON
+       └─ Automation: Add comment = {{webhookResponse.body.replyMarkdown}}
+Customer clicks the link (…/settings/security?guide_handoff=TOKEN)
+  └─ SDK reads guide_handoff → GET /api/guidance/handoffs/:token
+       └─ navigates to plan.route, finds plan.targetSelector,
+          scrolls + highlights. Clicks need explicit approval;
+          high-risk plans are highlight-only no matter what.
+```
+
+### Backend env (`packages/server/.env`)
+
+```bash
+JIRA_AUTOMATION_SECRET=  # long random string, same value goes in the Jira rule header
+DEMO_APP_URL=http://localhost:3000   # where handoff links point (the Next.js example)
+OPENROUTER_API_KEY=      # optional — enables the LLM fallback for unlisted phrasings
+```
+
+Jira Cloud cannot reach `localhost` — for a real Jira round-trip, expose the
+backend with a free tunnel (`ngrok http 8787` or `cloudflared tunnel --url
+http://localhost:8787`) and use that URL in the rule. Never commit tunnel
+URLs or secrets.
+
+### Jira setup (exact steps)
+
+1. Create a **Jira Service Management Free** project (Service project).
+2. Open **Project settings → Automation**.
+3. **Create rule**.
+4. Trigger: **Work item created** (a.k.a. Request/Issue created).
+5. Action: **Send web request**.
+6. Method: **POST**.
+7. URL: `https://YOUR_BACKEND/api/connectors/jira/automation`
+8. Headers:
+   - `Content-Type: application/json`
+   - `x-guidance-demo-secret: YOUR_SECRET`
+9. Web request body — **Custom data**:
+
+   ```json
+   {
+     "tenantId": "demo",
+     "source": "jira_service_management",
+     "issueKey": "{{issue.key}}",
+     "issueId": "{{issue.id}}",
+     "summary": "{{issue.summary.jsonEncode}}",
+     "description": "{{issue.description.jsonEncode}}",
+     "reporterEmail": "{{reporter.emailAddress}}",
+     "reporterName": "{{reporter.displayName}}",
+     "customerRequestUrl": "{{issue.url}}"
+   }
+   ```
+
+10. Enable **"Wait for response"** — without it `{{webhookResponse.body}}`
+    is empty and the comment will be blank.
+11. Add next action: **Comment on issue** (a.k.a. Add comment).
+12. Comment visibility: **share with customer** (public), not internal.
+13. Comment body: `{{webhookResponse.body.replyMarkdown}}`
+14. Turn the rule on.
+15. Test: raise a request from the portal — "Where do I enable 2FA?" —
+    and the reply comment appears with the guided link.
+
+### Try it without Jira
+
+```bash
+npm run server    # terminal 1
+npm run example    # terminal 2
+# terminal 3 — pretend to be Jira Automation:
+curl -s -X POST http://localhost:8787/api/connectors/jira/automation \
+  -H "content-type: application/json" \
+  -H "x-guidance-demo-secret: $(grep JIRA_AUTOMATION_SECRET packages/server/.env | cut -d= -f2)" \
+  -d '{"issueKey":"SUP-1","summary":"Where do I enable 2FA?"}'
+# open the handoffUrl from the response in a browser
+```
+
+### Debugging
+
+- **Comment is empty** → "Wait for response" is not checked, or the backend
+  didn't return `Content-Type: application/json`.
+- Log the raw response inside the rule with a comment/log action containing
+  `{{webhookResponse.body}}`, and check **Automation → Audit log** for the
+  web-request status code.
+- `401` in the audit log → header name/value mismatch with
+  `JIRA_AUTOMATION_SECRET`. `503` → the secret isn't set server-side.
+- Link opens the app but nothing highlights → token expired (15 min) or the
+  demo app isn't running on `DEMO_APP_URL`; the widget will say which.
+
+### Security model (demo scope)
+
+- Webhook requires the shared-secret header; requests are rate-limited and
+  the Jira payload is length-capped and never echoed back into the comment
+  (the reply is registry text + our own URL, nothing user-controlled).
+- Handoff tokens: 24 random bytes, single purpose, 15-minute expiry; the URL
+  carries only the token — no customer data. Every fetch/completion is
+  audited server-side with `createdAt/expiresAt/issueKey/tenantId/intent`.
+- The plan is data, not commands: the SDK re-validates everything client-side
+  — planned clicks still require the user's explicit approval, and
+  high-risk targets (billing, delete, password, payment, submit, …) are
+  highlight-only even if the backend said click.
+
 ## Where each piece runs
 
 - `packages/sdk` — pure client code, no server dependency of its own.
