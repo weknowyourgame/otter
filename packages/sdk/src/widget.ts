@@ -550,6 +550,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 				border: 1px solid rgba(255, 255, 255, 0.12);
 			}
 			.aiw-bubble:hover { background: #1b1e26; }
+			[hidden] { display: none !important; }
 
 			.aiw-panel {
 				position: fixed;
