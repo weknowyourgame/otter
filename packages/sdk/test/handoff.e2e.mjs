@@ -11,7 +11,7 @@ import assert from "node:assert/strict";
 import http from "node:http";
 import { chromium } from "playwright";
 import { startServer } from "../../server/lib/app.js";
-import { createHandoff, getAuditLog } from "../../server/lib/handoffs.js";
+import { createHandoff, createPendingDelivery, getAuditLog } from "../../server/lib/handoffs.js";
 
 const SECRET = "e2e-secret";
 
@@ -30,7 +30,8 @@ const page2fa = `<!doctype html><html><body>
   </section>
   <script src="${backendBase}/ai-widget-sdk.js"
     data-ai-proxy-url="${backendBase}/api/ai-proxy"
-    data-ai-guidance-base-url="${backendBase}"></script>
+    data-ai-guidance-base-url="${backendBase}"
+    data-ai-user-email="demo@user.test"></script>
 </body></html>`;
 
 const pageBilling = `<!doctype html><html><body>
@@ -40,7 +41,16 @@ const pageBilling = `<!doctype html><html><body>
   </section>
   <script src="${backendBase}/ai-widget-sdk.js"
     data-ai-proxy-url="${backendBase}/api/ai-proxy"
-    data-ai-guidance-base-url="${backendBase}"></script>
+    data-ai-guidance-base-url="${backendBase}"
+    data-ai-user-email="demo@user.test"></script>
+</body></html>`;
+
+const pageHome = `<!doctype html><html><body>
+  <h1>Home</h1>
+  <script src="${backendBase}/ai-widget-sdk.js"
+    data-ai-proxy-url="${backendBase}/api/ai-proxy"
+    data-ai-guidance-base-url="${backendBase}"
+    data-ai-user-email="demo@user.test"></script>
 </body></html>`;
 
 const demoApp = http.createServer((req, res) => {
@@ -48,6 +58,7 @@ const demoApp = http.createServer((req, res) => {
 	res.setHeader("content-type", "text/html; charset=utf-8");
 	if (path === "/settings/security") return res.end(page2fa);
 	if (path === "/settings/billing") return res.end(pageBilling);
+	if (path === "/") return res.end(pageHome);
 	res.statusCode = 404;
 	res.end("nope");
 });
@@ -76,6 +87,16 @@ const assistantMessages = (page) =>
 		const host = document.getElementById("ai-widget-sdk-host");
 		return [...host.shadowRoot.querySelectorAll(".aiw-msg-assistant")].map((e) => e.textContent);
 	});
+const approvalVisible = (page) =>
+	page.evaluate(() => {
+		const host = document.getElementById("ai-widget-sdk-host");
+		return host?.shadowRoot.querySelector(".aiw-approval") != null;
+	});
+const clickInWidget = (page, selector) =>
+	page.evaluate((target) => {
+		const host = document.getElementById("ai-widget-sdk-host");
+		(host?.shadowRoot.querySelector(target)).click();
+	}, selector);
 
 // ---------------------------------------------------------------
 // Scenario A: full path — webhook -> token -> highlight
@@ -112,6 +133,124 @@ const assistantMessages = (page) =>
 	check("scrollAndHighlight plan did NOT click", async () =>
 		assert.equal(await page.evaluate(() => window.__clicked), undefined),
 	);
+	await page.close();
+}
+
+// ---------------------------------------------------------------
+// Scenario D: Jira email-correlated pending delivery -> approval -> navigate
+// ---------------------------------------------------------------
+{
+	const page = await browser.newPage();
+	await page.goto(`${demoBase}/`, { waitUntil: "networkidle" });
+	const webhookRes = await fetch(`${backendBase}/api/connectors/jira/automation`, {
+		method: "POST",
+		headers: { "content-type": "application/json", "x-guidance-demo-secret": SECRET },
+		body: JSON.stringify({
+			issueKey: "E2E-2",
+			summary: "Where do I enable 2FA?",
+			reporterEmail: "demo@user.test",
+		}),
+	});
+	const webhook = await webhookRes.json();
+	check("webhook still returns the public-comment link fallback", () =>
+		assert.ok(webhook.replyMarkdown.includes(webhook.handoffUrl)),
+	);
+	await page.waitForFunction(
+		() => document.getElementById("ai-widget-sdk-host")?.shadowRoot.querySelector(".aiw-approval") != null,
+		{ timeout: 10000 },
+	);
+	assert.equal(new URL(page.url()).pathname, "/");
+	assert.equal(new URL(page.url()).search, "");
+	assert.equal(await approvalVisible(page), true);
+	console.log("PASS matching email gets an approval card without a URL change");
+	const pendingMessages = await assistantMessages(page);
+	check("pending approval names the support target", () =>
+		assert.ok(pendingMessages.some((m) => m.includes("Support found Two-factor authentication"))),
+	);
+	await clickInWidget(page, ".aiw-allow");
+	await page.waitForURL(`${demoBase}/settings/security?guide_handoff=*`, { timeout: 10000 });
+	await page.waitForFunction(
+		() => document.getElementById("ai-widget-sdk-host")?.shadowRoot.querySelector(".aiw-highlight-box") != null,
+		{ timeout: 10000 },
+	);
+	assert.equal(await highlightVisible(page), true);
+	assert.equal(await page.evaluate(() => window.__clicked), undefined);
+	console.log("PASS pending Allow reused the handoff executor and highlighted 2FA");
+	await page.close();
+}
+
+// ---------------------------------------------------------------
+// Scenario E: dismiss / identity isolation / high-risk safety via polling
+// ---------------------------------------------------------------
+{
+	const page = await browser.newPage();
+	await page.goto(`${demoBase}/settings/security`, { waitUntil: "networkidle" });
+	const { token: dismissedToken } = createHandoff({
+		intent: "enable_2fa",
+		route: "/settings/security",
+		targetSelector: "[data-ai-action='enable-2fa']",
+		action: "scrollAndHighlight",
+		risk: "medium",
+	});
+	createPendingDelivery("demo@user.test", {
+		token: dismissedToken,
+		intent: "enable_2fa",
+		replyPreview: "Support found Two-factor authentication.",
+	});
+	await page.waitForFunction(
+		() => document.getElementById("ai-widget-sdk-host")?.shadowRoot.querySelector(".aiw-approval") != null,
+		{ timeout: 10000 },
+	);
+	await clickInWidget(page, ".aiw-cancel");
+	await page.waitForTimeout(200);
+	check("Dismiss reports a user_dismissed block", () =>
+		assert.ok(
+			getAuditLog().some(
+				(e) => e.event === "handoff_completed" && e.token === dismissedToken && e.reason === "user_dismissed",
+			),
+		),
+	);
+
+	const other = createHandoff({
+		intent: "enable_2fa",
+		route: "/settings/security",
+		targetSelector: "[data-ai-action='enable-2fa']",
+		action: "scrollAndHighlight",
+		risk: "medium",
+	});
+	createPendingDelivery("other@user.test", {
+		token: other.token,
+		intent: "enable_2fa",
+		replyPreview: "This must not surface.",
+	});
+	await page.waitForTimeout(5500);
+	assert.equal(await approvalVisible(page), false);
+	console.log("PASS handoff for another email never surfaces");
+
+	const highRisk = createHandoff({
+		intent: "billing_settings",
+		route: "/settings/billing",
+		targetSelector: "[data-ai-action='change-card']",
+		action: "click",
+		risk: "high",
+	});
+	createPendingDelivery("demo@user.test", {
+		token: highRisk.token,
+		intent: "billing_settings",
+		replyPreview: "Support found Billing settings.",
+	});
+	await page.waitForFunction(
+		() => document.getElementById("ai-widget-sdk-host")?.shadowRoot.querySelector(".aiw-approval") != null,
+		{ timeout: 10000 },
+	);
+	await clickInWidget(page, ".aiw-allow");
+	await page.waitForURL(`${demoBase}/settings/billing?guide_handoff=*`, { timeout: 10000 });
+	await page.waitForFunction(
+		() => document.getElementById("ai-widget-sdk-host")?.shadowRoot.querySelector(".aiw-highlight-box") != null,
+		{ timeout: 10000 },
+	);
+	assert.equal(await page.evaluate(() => window.__clicked), undefined);
+	console.log("PASS high-risk pending plan remains highlight-only");
 	await page.close();
 }
 

@@ -74,6 +74,10 @@ const STOPWORDS = new Set([
 const CANDIDATE_SELECTOR =
 	"button, a, input, textarea, select, section, h1, h2, h3, h4, h5, h6, [data-ai-action], [data-ai-section]";
 
+function normalizeEmail(email: string | undefined): string {
+	return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
 let activeInstance: WidgetInstance | null = null;
 
 // Handoff tokens already executed this page load — guards against double
@@ -103,6 +107,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		maxElements: userConfig.maxElements ?? 200,
 		requestTimeoutMs: userConfig.requestTimeoutMs ?? 16000,
 		guidanceBaseUrl: (userConfig.guidanceBaseUrl ?? "").replace(/\/$/, ""),
+		userEmail: normalizeEmail(userConfig.userEmail),
 	};
 	const onNavigate = userConfig.onNavigate;
 
@@ -744,9 +749,10 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 	}
 
 	function requestApproval(
-		action: WidgetAction,
+		action: WidgetAction | null,
 		replyText: string,
 		onDecision?: (allowed: boolean) => void,
+		options: { dismissText?: string; executeOnAllow?: boolean } = {},
 	): void {
 		addMessage("assistant", replyText);
 
@@ -766,19 +772,21 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		allowBtn.textContent = "Allow";
 		allowBtn.addEventListener("click", () => {
 			card.remove();
-			executeAction(action);
-			const doneText =
-				action.type === "click"
-					? "Done — opened it."
-					: "Done — scrolled to it and highlighted it on the page.";
-			addMessage("assistant", doneText);
+			if (action && options.executeOnAllow !== false) {
+				executeAction(action);
+				const doneText =
+					action.type === "click"
+						? "Done — opened it."
+						: "Done — scrolled to it and highlighted it on the page.";
+				addMessage("assistant", doneText);
+			}
 			onDecision?.(true);
 		});
 
 		const cancelBtn = document.createElement("button");
 		cancelBtn.type = "button";
 		cancelBtn.className = "aiw-cancel";
-		cancelBtn.textContent = "Cancel";
+		cancelBtn.textContent = options.dismissText ?? "Cancel";
 		cancelBtn.addEventListener("click", () => {
 			card.remove();
 			addMessage("assistant", "Okay, cancelled.");
@@ -935,8 +943,7 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		return null;
 	}
 
-	async function runHandoff(): Promise<void> {
-		const token = new URLSearchParams(location.search).get("guide_handoff");
+	async function runHandoffForToken(token: string): Promise<void> {
 		if (!token || handledHandoffTokens.has(token)) return;
 		handledHandoffTokens.add(token);
 
@@ -1036,8 +1043,109 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		}
 	}
 
+	async function runHandoff(): Promise<void> {
+		const token = new URLSearchParams(location.search).get("guide_handoff");
+		if (token) await runHandoffForToken(token);
+	}
+
+	// -----------------------------------------------------------------
+	// Pending delivery polling (Jira is an input-only cross-origin iframe)
+	// -----------------------------------------------------------------
+
+	type PendingHandoff = { token: string; intent: string; replyPreview: string };
+	const pendingOfferedTokens = new Set<string>();
+	let pendingEmail = config.userEmail;
+	let pendingPollTimer: number | null = null;
+	let pendingPolling = false;
+	let pendingPollingUntil = 0;
+	let pendingPollingStarted = false;
+
+	function stopPendingPolling(): void {
+		if (pendingPollTimer !== null) {
+			window.clearTimeout(pendingPollTimer);
+			pendingPollTimer = null;
+		}
+	}
+
+	function offerPendingHandoff(handoff: PendingHandoff): void {
+		if (!handoff.token || pendingOfferedTokens.has(handoff.token) || handledHandoffTokens.has(handoff.token)) {
+			return;
+		}
+		pendingOfferedTokens.add(handoff.token);
+		openPanel();
+		const preview = handoff.replyPreview || `Support found ${handoff.intent.replace(/_/g, " ")}.`;
+		requestApproval(
+			null,
+			`${preview} Want me to show you?`,
+			(allowed) => {
+				if (allowed) {
+					void runHandoffForToken(handoff.token);
+				} else {
+					reportHandoff(handoff.token, "blocked", "user_dismissed");
+				}
+			},
+			{ dismissText: "Dismiss", executeOnAllow: false },
+		);
+	}
+
+	async function pollPendingHandoff(): Promise<void> {
+		if (
+			destroyed ||
+			!pendingEmail ||
+			document.hidden ||
+			Date.now() >= pendingPollingUntil ||
+			pendingPolling
+		) {
+			return;
+		}
+		pendingPolling = true;
+		try {
+			const endpoint = `${config.guidanceBaseUrl}/api/guidance/pending?email=${encodeURIComponent(pendingEmail)}`;
+			const res = await fetch(endpoint);
+			const body = (await res.json()) as { ok?: boolean; handoff?: PendingHandoff | null };
+			if (res.ok && body.ok && body.handoff) offerPendingHandoff(body.handoff);
+		} catch {
+			// A transient backend failure must not disable the next poll.
+		} finally {
+			pendingPolling = false;
+			if (!destroyed && pendingEmail && !document.hidden && Date.now() < pendingPollingUntil) {
+				pendingPollTimer = window.setTimeout(() => void pollPendingHandoff(), 5000);
+			}
+		}
+	}
+
+	function startPendingPolling(): void {
+		stopPendingPolling();
+		if (!pendingEmail || destroyed || document.hidden) return;
+		pendingPollingStarted = true;
+		pendingPollingUntil = Date.now() + 30 * 60 * 1000;
+		void pollPendingHandoff();
+	}
+
+	function onVisibilityChange(): void {
+		if (document.hidden) {
+			stopPendingPolling();
+			return;
+		}
+		if (pendingEmail && !destroyed) {
+			if (!pendingPollingStarted) {
+				startPendingPolling();
+			} else if (Date.now() < pendingPollingUntil) {
+				void pollPendingHandoff();
+			}
+		}
+	}
+
+	function identify(email: string | undefined): void {
+		pendingEmail = normalizeEmail(email);
+		pendingPollingStarted = false;
+		startPendingPolling();
+	}
+
 	observe(); // warm the initial snapshot
 	void runHandoff();
+	document.addEventListener("visibilitychange", onVisibilityChange);
+	startPendingPolling();
 
 	const instance: WidgetInstance = {
 		observe,
@@ -1047,9 +1155,12 @@ export function init(userConfig: WidgetConfig = {}): WidgetInstance {
 		scrollTo,
 		highlight,
 		clearHighlight,
+		identify,
 		destroy() {
 			destroyed = true;
+			stopPendingPolling();
 			clearHighlight();
+			document.removeEventListener("visibilitychange", onVisibilityChange);
 			bubbleEl.removeEventListener("click", onBubbleClick);
 			closeEl.removeEventListener("click", onCloseClick);
 			formEl.removeEventListener("submit", onFormSubmit);

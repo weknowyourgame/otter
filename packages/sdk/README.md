@@ -47,6 +47,7 @@ import { init } from "ai-widget-sdk";
 const widget = init({
   proxyUrl: "https://your-backend.example.com/api/ai-proxy",
   title: "Acme Assistant",
+  userEmail: "signed-in@example.com", // enables demo pending-handoff polling
 });
 
 // later, e.g. on route change / unmount:
@@ -73,9 +74,27 @@ yourself.
 | `riskyWords` | — | Extra words merged into the built-in risky-word list (see [Safety](#safety)) |
 | `maxElements` | `200` | Cap on elements per `observe()` snapshot |
 | `requestTimeoutMs` | `16000` | AI proxy request timeout before falling back locally |
+| `guidanceBaseUrl` | same origin | Guidance backend for token handoffs and pending delivery polling |
+| `userEmail` | — | Demo identity for a visible-tab, 5-second pending-handoff poll (stops after 30 min) |
 
 All the same options are settable as `data-ai-*` attributes on a script tag
 (camelCase → kebab-case, e.g. `accentColor` → `data-ai-accent-color`).
+For example, `userEmail` maps to `data-ai-user-email`.
+
+## Seamless support handoff
+
+When a support system resolves a request, the backend can keep the normal
+link/comment fallback and additionally expose a one-time pending handoff for
+the signed-in customer. Configure `guidanceBaseUrl` and `userEmail`; while the
+tab is visible, the SDK polls every five seconds (for at most 30 minutes). A
+received handoff opens the panel with **Allow** / **Dismiss**. Allow fetches
+the existing token plan and runs the existing safe handoff executor; Dismiss
+records `user_dismissed`. Use `instance.identify(email)` if identity changes
+without remounting the widget.
+
+`userEmail` is intentionally demo-grade and must not be trusted in production:
+the SaaS backend should provide a short-lived, backend-verifiable identity
+token instead of allowing a browser to claim an email address.
 
 ## How matching works
 

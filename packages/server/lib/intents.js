@@ -7,6 +7,7 @@
 export const INTENT_REGISTRY = [
 	{
 		intent: "enable_2fa",
+		targetLabel: "Two-factor authentication",
 		aliases: [
 			"enable 2fa",
 			"turn on 2fa",
@@ -26,6 +27,7 @@ export const INTENT_REGISTRY = [
 	},
 	{
 		intent: "invite_teammate",
+		targetLabel: "Invite teammate",
 		aliases: [
 			"invite teammate",
 			"add user",
@@ -42,6 +44,7 @@ export const INTENT_REGISTRY = [
 	},
 	{
 		intent: "billing_settings",
+		targetLabel: "Billing settings",
 		aliases: ["billing", "invoice", "payment method", "change card", "subscription"],
 		route: "/settings/billing",
 		targetSelector: "[data-ai-section='billing']",

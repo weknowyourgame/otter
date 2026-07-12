@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { init } from "ai-widget-sdk";
+import { DEMO_USER_EMAIL } from "./demo-user";
 
 /**
  * Programmatic integration — the pattern a Next.js/React app should use
@@ -19,6 +20,7 @@ export function AIWidgetMount() {
 			// Support-tool handoffs (?guide_handoff=TOKEN) are exchanged for
 			// guidance plans at this backend.
 			guidanceBaseUrl: "http://localhost:8787",
+			userEmail: DEMO_USER_EMAIL,
 			title: "Ask about this site",
 			greeting:
 				"Ask me things like \"take me to getting started\" or \"how does auth work\" — I'll ask before touching anything.",

@@ -37,6 +37,7 @@ export const VERSION = "0.1.0";
 	const config: WidgetConfig = {};
 	if (script.dataset.aiProxyUrl) config.proxyUrl = script.dataset.aiProxyUrl;
 	if (script.dataset.aiGuidanceBaseUrl) config.guidanceBaseUrl = script.dataset.aiGuidanceBaseUrl;
+	if (script.dataset.aiUserEmail) config.userEmail = script.dataset.aiUserEmail;
 	if (script.dataset.aiAuthHeader) config.authHeader = script.dataset.aiAuthHeader;
 	if (script.dataset.aiAuthToken) config.authToken = script.dataset.aiAuthToken;
 	if (script.dataset.aiPosition === "bottom-left" || script.dataset.aiPosition === "bottom-right") {

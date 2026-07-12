@@ -39,6 +39,12 @@ export interface WidgetConfig {
 	 */
 	guidanceBaseUrl?: string;
 	/**
+	 * Logged-in customer email used only to poll the demo guidance delivery
+	 * endpoint. The backend normalizes it; production integrations should use
+	 * a backend-vouched, short-lived identity token instead.
+	 */
+	userEmail?: string;
+	/**
 	 * SPA hook: called instead of a full-page navigation when a handoff plan
 	 * targets a different route. Resolve once your router has rendered the
 	 * destination; the SDK then looks for the target element there.
@@ -105,6 +111,8 @@ export interface WidgetInstance {
 	scrollTo(elementId: string): void;
 	highlight(elementId: string): void;
 	clearHighlight(): void;
+	/** Update the identity used for pending support handoff polling. */
+	identify(email: string | undefined): void;
 	/** Removes the widget from the page and tears down all listeners. */
 	destroy(): void;
 }

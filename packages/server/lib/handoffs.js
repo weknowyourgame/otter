@@ -9,6 +9,10 @@ import crypto from "node:crypto";
 export const DEFAULT_TTL_MS = 15 * 60 * 1000; // 15 minutes
 
 const handoffs = new Map(); // token -> record
+// normalized email -> pending delivery. This intentionally contains only
+// browser-safe delivery metadata; reporter details and Jira issue content
+// never enter this store.
+const pendingDeliveries = new Map();
 const auditLog = []; // demo-scale audit trail, newest last
 
 function audit(event, details) {
@@ -17,9 +21,22 @@ function audit(event, details) {
 	console.log(`[guidance-audit] ${JSON.stringify(entry)}`);
 }
 
+export function normalizeEmail(email) {
+	return typeof email === "string" ? email.trim().toLowerCase() : "";
+}
+
+function emailFingerprint(email) {
+	return crypto.createHash("sha256").update(email).digest("hex").slice(0, 12);
+}
+
 function pruneExpired(now = Date.now()) {
 	for (const [token, record] of handoffs) {
 		if (record.expiresAtMs <= now) handoffs.delete(token);
+	}
+	for (const [email, delivery] of pendingDeliveries) {
+		if (delivery.expiresAtMs <= now || !handoffs.has(delivery.token)) {
+			pendingDeliveries.delete(email);
+		}
 	}
 }
 
@@ -77,6 +94,57 @@ export function getHandoffPlan(token, { now = Date.now() } = {}) {
 	};
 }
 
+/**
+ * Park a one-time browser delivery for a handoff. The email is normalized
+ * before use as a key and is never placed in audit logs; a short hash is
+ * sufficient for correlating demo diagnostics without exposing PII.
+ */
+export function createPendingDelivery(email, { token, intent, replyPreview } = {}, { now = Date.now() } = {}) {
+	pruneExpired(now);
+	const normalizedEmail = normalizeEmail(email);
+	const handoff = handoffs.get(token);
+	if (!normalizedEmail || !handoff || handoff.expiresAtMs <= now) return false;
+
+	const delivery = {
+		token,
+		intent: typeof intent === "string" ? intent.slice(0, 100) : handoff.intent,
+		replyPreview: typeof replyPreview === "string" ? replyPreview.slice(0, 300) : "Support found guidance.",
+		expiresAtMs: handoff.expiresAtMs,
+	};
+	pendingDeliveries.set(normalizedEmail, delivery); // newest delivery wins
+	audit("pending_handoff_created", {
+		emailHash: emailFingerprint(normalizedEmail),
+		token,
+		intent: delivery.intent,
+		expiresAt: new Date(delivery.expiresAtMs).toISOString(),
+	});
+	return true;
+}
+
+/**
+ * Consume and return the pending delivery for an email. Consumption affects
+ * only this queue: the original token remains usable through its normal TTL,
+ * preserving the Jira comment/link fallback.
+ */
+export function consumePendingDelivery(email, { now = Date.now() } = {}) {
+	pruneExpired(now);
+	const normalizedEmail = normalizeEmail(email);
+	if (!normalizedEmail) return null;
+	const delivery = pendingDeliveries.get(normalizedEmail);
+	if (!delivery) return null;
+	pendingDeliveries.delete(normalizedEmail);
+	audit("pending_handoff_delivered", {
+		emailHash: emailFingerprint(normalizedEmail),
+		token: delivery.token,
+		intent: delivery.intent,
+	});
+	return {
+		token: delivery.token,
+		intent: delivery.intent,
+		replyPreview: delivery.replyPreview,
+	};
+}
+
 const COMPLETION_STATUSES = new Set(["opened", "highlighted", "approved_click", "blocked", "failed"]);
 
 /**
@@ -105,5 +173,6 @@ export function getAuditLog() {
 /** Test hook: wipe all state. */
 export function _resetForTests() {
 	handoffs.clear();
+	pendingDeliveries.clear();
 	auditLog.length = 0;
 }

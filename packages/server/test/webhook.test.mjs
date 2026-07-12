@@ -130,3 +130,40 @@ test("unknown handoff token -> 404", async () => {
 	const res = await fetch(`${base}/api/guidance/handoffs/AAAAAAAAAAAAAAAAAAAAAAAA`);
 	assert.equal(res.status, 404);
 });
+
+test("pending endpoint normalizes email, consumes exactly once, and sends CORS", async () => {
+	const webhookRes = await post(
+		"/api/connectors/jira/automation",
+		{ issueKey: "SUP-12", summary: "Where do I enable 2FA?", reporterEmail: " Demo@User.Test " },
+		{ "x-guidance-demo-secret": SECRET },
+	);
+	const webhook = await webhookRes.json();
+	const first = await fetch(`${base}/api/guidance/pending?email=demo%40user.test`);
+	assert.equal(first.status, 200);
+	assert.equal(first.headers.get("access-control-allow-origin"), "*");
+	assert.deepEqual(await first.json(), {
+		ok: true,
+		handoff: {
+			token: new URL(webhook.handoffUrl).searchParams.get("guide_handoff"),
+			intent: "enable_2fa",
+			replyPreview: "Support found Two-factor authentication.",
+		},
+	});
+	const second = await fetch(`${base}/api/guidance/pending?email=DEMO%40USER.TEST`);
+	assert.deepEqual(await second.json(), { ok: true, handoff: null });
+
+	const empty = await fetch(`${base}/api/guidance/pending?email=`);
+	assert.deepEqual(await empty.json(), { ok: true, handoff: null });
+	const options = await fetch(`${base}/api/guidance/pending`, { method: "OPTIONS" });
+	assert.equal(options.status, 204);
+	assert.equal(options.headers.get("access-control-allow-methods"), "GET, POST, OPTIONS");
+});
+
+test("pending endpoint is rate limited per IP", async () => {
+	for (let i = 0; i <= 60; i += 1) {
+		const res = await fetch(`${base}/api/guidance/pending?email=nobody%40example.test`);
+		if (res.status === 429) return;
+		assert.equal(res.status, 200);
+	}
+	assert.fail("pending endpoint never rate limited");
+});

@@ -17,7 +17,13 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { handleAIProposal } from "ai-proxy-core";
 import { INTENT_REGISTRY, resolveIntent, resolveIntentWithLLM } from "./intents.js";
-import { completeHandoff, createHandoff, getHandoffPlan } from "./handoffs.js";
+import {
+	completeHandoff,
+	consumePendingDelivery,
+	createHandoff,
+	createPendingDelivery,
+	getHandoffPlan,
+} from "./handoffs.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -69,6 +75,20 @@ function rateLimited(ip, now = Date.now()) {
 	return bucket.count > RATE_LIMIT_PER_MINUTE;
 }
 
+// The email-keyed pending endpoint is public in this demo, so keep its
+// in-memory abuse limit independent of the automation webhook's limit.
+const PENDING_RATE_LIMIT_PER_MINUTE = 60;
+const pendingRateBuckets = new Map();
+function pendingRateLimited(ip, now = Date.now()) {
+	const bucket = pendingRateBuckets.get(ip);
+	if (!bucket || now - bucket.windowStart >= 60_000) {
+		pendingRateBuckets.set(ip, { windowStart: now, count: 1 });
+		return false;
+	}
+	bucket.count += 1;
+	return bucket.count > PENDING_RATE_LIMIT_PER_MINUTE;
+}
+
 // ---------------------------------------------------------------------
 // Jira Automation webhook
 // ---------------------------------------------------------------------
@@ -104,6 +124,7 @@ async function handleJiraAutomation(req, res, env) {
 	const issueKey = typeof payload.issueKey === "string" ? payload.issueKey.slice(0, 50) : null;
 	const tenantId = typeof payload.tenantId === "string" ? payload.tenantId.slice(0, 50) : "demo";
 	const source = typeof payload.source === "string" ? payload.source.slice(0, 50) : null;
+	const reporterEmail = typeof payload.reporterEmail === "string" ? payload.reporterEmail.slice(0, 320) : "";
 	const message = `${summary}\n${description}`.trim();
 
 	if (!message) {
@@ -126,6 +147,13 @@ async function handleJiraAutomation(req, res, env) {
 	}
 
 	const { token, record } = createHandoff(entry, { tenantId, issueKey, source });
+	// This is deliberately best-effort: the Jira comment fallback is always
+	// returned even when no reporter email is present in an Automation payload.
+	createPendingDelivery(reporterEmail, {
+		token,
+		intent: entry.intent,
+		replyPreview: `Support found ${entry.targetLabel || entry.intent.replace(/_/g, " ")}.`,
+	});
 	const demoAppUrl = (env.DEMO_APP_URL || "http://localhost:3000").replace(/\/$/, "");
 	const handoffUrl = `${demoAppUrl}${entry.route}?guide_handoff=${token}`;
 
@@ -155,6 +183,19 @@ function handleHandoffFetch(res, token) {
 		return sendJson(res, 404, { ok: false, error: "unknown_or_expired" });
 	}
 	return sendJson(res, 200, { ok: true, plan });
+}
+
+function handlePendingHandoff(req, res, url) {
+	if (req.method !== "GET") {
+		return sendJson(res, 405, { ok: false, error: "method_not_allowed" });
+	}
+	if (pendingRateLimited(req.socket.remoteAddress || "unknown")) {
+		return sendJson(res, 429, { ok: false, error: "rate_limited" });
+	}
+	return sendJson(res, 200, {
+		ok: true,
+		handoff: consumePendingDelivery(url.searchParams.get("email")),
+	});
 }
 
 async function handleHandoffComplete(req, res, token) {
@@ -258,6 +299,15 @@ export function createApp({ env = process.env } = {}) {
 
 		if (pathname === "/api/connectors/jira/automation") {
 			return handleJiraAutomation(req, res, env);
+		}
+
+		if (pathname === "/api/guidance/pending") {
+			setCors(res);
+			if (req.method === "OPTIONS") {
+				res.statusCode = 204;
+				return res.end();
+			}
+			return handlePendingHandoff(req, res, url);
 		}
 
 		const handoffMatch = pathname.match(HANDOFF_ROUTE_RE);

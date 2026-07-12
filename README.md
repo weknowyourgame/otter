@@ -59,9 +59,11 @@ contract, and safety model.
 
 Support-tool handoff demo: a customer asks "Where do I enable 2FA?" in a
 Jira Service Management (JSM) request → Jira Automation calls this repo's
-backend → the backend replies with a guided link → Jira posts it as a public
-comment → the customer clicks it → the SDK inside the demo SaaS app opens
-`/settings/security` and highlights the exact 2FA control.
+backend → the backend replies with a guided link **and** parks a one-time
+pending delivery for the reporter email → the SDK on the already-open SaaS
+page polls for it and asks permission to show the control. The public Jira
+comment and its guided link remain the fallback for anyone who has left the
+page.
 
 Jira is only the support surface. The backend is the brain. The SDK controls
 the browser. Jira never touches the SaaS app directly. Uses JSM **Free** +
@@ -82,6 +84,11 @@ Customer clicks the link (…/settings/security?guide_handoff=TOKEN)
        └─ navigates to plan.route, finds plan.targetSelector,
           scrolls + highlights. Clicks need explicit approval;
           high-risk plans are highlight-only no matter what.
+
+Meanwhile, for an open tab that initialized the SDK with `userEmail`:
+  └─ SDK polls GET /api/guidance/pending?email=… every 5 seconds while visible
+       └─ receives token + intent + reply preview once, opens an Allow/Dismiss card
+            └─ Allow fetches the same handoff plan and uses the same executor
 ```
 
 ### Backend env (`packages/server/.env`)
@@ -143,8 +150,9 @@ npm run example    # terminal 2
 curl -s -X POST http://localhost:8787/api/connectors/jira/automation \
   -H "content-type: application/json" \
   -H "x-guidance-demo-secret: $(grep JIRA_AUTOMATION_SECRET packages/server/.env | cut -d= -f2)" \
-  -d '{"issueKey":"SUP-1","summary":"Where do I enable 2FA?"}'
-# open the handoffUrl from the response in a browser
+  -d '{"issueKey":"SUP-1","summary":"Where do I enable 2FA?","reporterEmail":"demo@user.test"}'
+# with the demo app already open as demo@user.test, an Allow/Dismiss card
+# appears in at most one poll interval. The handoffUrl remains usable too.
 ```
 
 ### Debugging
@@ -171,6 +179,23 @@ curl -s -X POST http://localhost:8787/api/connectors/jira/automation \
   — planned clicks still require the user's explicit approval, and
   high-risk targets (billing, delete, password, payment, submit, …) are
   highlight-only even if the backend said click.
+- Pending delivery normalizes emails (trim + lowercase), has one newest-wins
+  slot per address, expires with the token, and is consumed after one poll.
+  It exposes only `{ token, intent, replyPreview }`; reporter identity and
+  Jira issue contents never reach the browser. Email values are never logged;
+  audit records use a short hash.
+
+### Production hardening (required before real use)
+
+**Email-claimed identity is spoofable in this demo.** A person who polls the
+pending endpoint with somebody else's email could receive that person's
+guidance pop-up. This is accepted only to keep the JSM Free demo simple.
+
+In production, the SaaS backend must vouch for the logged-in identity: issue a
+short-lived signed session token to the SDK, have this backend verify it, and
+derive the delivery identity from the verified claims rather than a query
+parameter. Apply normal authentication, tenant authorization, durable storage,
+and shared rate limiting before exposing this endpoint publicly.
 
 ## Where each piece runs
 

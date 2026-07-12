@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {
 	createHandoff,
+	createPendingDelivery,
+	consumePendingDelivery,
 	getHandoffPlan,
 	completeHandoff,
 	DEFAULT_TTL_MS,
@@ -71,4 +73,44 @@ test("completion accepts known statuses and rejects garbage", () => {
 	assert.equal(completeHandoff(token, { status: "highlighted", url: "http://x" }).ok, true);
 	assert.equal(completeHandoff(token, { status: "hacked" }).ok, false);
 	assert.equal(completeHandoff("nope", { status: "highlighted" }).ok, false);
+});
+
+test("pending delivery is normalized, returned once, and contains only browser-safe fields", () => {
+	const { token } = createHandoff(ENTRY);
+	assert.equal(
+		createPendingDelivery("  Demo@User.Test ", {
+			token,
+			intent: "enable_2fa",
+			replyPreview: "Support found Two-factor authentication.",
+		}),
+		true,
+	);
+	assert.deepEqual(consumePendingDelivery("demo@user.test"), {
+		token,
+		intent: "enable_2fa",
+		replyPreview: "Support found Two-factor authentication.",
+	});
+	assert.equal(consumePendingDelivery("DEMO@USER.TEST"), null);
+	// Delivery consumption must not invalidate the public-comment fallback.
+	assert.ok(getHandoffPlan(token));
+});
+
+test("pending delivery expires with its token", () => {
+	const now = Date.now();
+	const { token } = createHandoff(ENTRY, {}, { now, ttlMs: 1000 });
+	createPendingDelivery("demo@user.test", { token, intent: ENTRY.intent, replyPreview: "Support found 2FA." }, { now });
+	assert.equal(consumePendingDelivery("demo@user.test", { now: now + 1000 }), null);
+	assert.equal(getHandoffPlan(token, { now: now + 1000 }), null);
+});
+
+test("newest pending delivery wins for the same normalized email", () => {
+	const first = createHandoff(ENTRY);
+	const second = createHandoff({ ...ENTRY, intent: "invite_teammate" });
+	createPendingDelivery("demo@user.test", { token: first.token, intent: "enable_2fa", replyPreview: "First" });
+	createPendingDelivery(" DEMO@USER.TEST ", { token: second.token, intent: "invite_teammate", replyPreview: "Second" });
+	assert.deepEqual(consumePendingDelivery("demo@user.test"), {
+		token: second.token,
+		intent: "invite_teammate",
+		replyPreview: "Second",
+	});
 });
