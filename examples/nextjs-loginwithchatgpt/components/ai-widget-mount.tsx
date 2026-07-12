@@ -16,6 +16,9 @@ export function AIWidgetMount() {
 	useEffect(() => {
 		const widget = init({
 			proxyUrl: "http://localhost:8787/api/ai-proxy",
+			// Support-tool handoffs (?guide_handoff=TOKEN) are exchanged for
+			// guidance plans at this backend.
+			guidanceBaseUrl: "http://localhost:8787",
 			title: "Ask about this site",
 			greeting:
 				"Ask me things like \"take me to getting started\" or \"how does auth work\" — I'll ask before touching anything.",
