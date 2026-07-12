@@ -4,3 +4,6 @@ dist/
 .env
 .DS_Store
 *.tsbuildinfo
+# the user-level global gitignore excludes lib/, but this repo uses
+# packages/*/lib as real source — re-include it here
+!lib/
