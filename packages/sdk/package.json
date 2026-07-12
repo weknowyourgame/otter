@@ -1,0 +1,30 @@
+{
+	"name": "ai-widget-sdk",
+	"version": "0.1.0",
+	"private": true,
+	"description": "Embeddable, approval-gated AI DOM assistant widget — observe the page, propose an action, ask permission, then scroll+highlight. Ships as a single <script> tag or an npm import.",
+	"type": "module",
+	"main": "dist/ai-widget-sdk.esm.js",
+	"module": "dist/ai-widget-sdk.esm.js",
+	"types": "dist/types/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/types/index.d.ts",
+			"import": "./dist/ai-widget-sdk.esm.js",
+			"default": "./dist/ai-widget-sdk.esm.js"
+		},
+		"./global": "./dist/ai-widget-sdk.global.js"
+	},
+	"files": [
+		"dist",
+		"README.md"
+	],
+	"scripts": {
+		"build": "node scripts/build.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist/types",
+		"dev": "node scripts/build.mjs --watch"
+	},
+	"devDependencies": {
+		"esbuild": "^0.21.0",
+		"typescript": "^5.6.3"
+	}
+}

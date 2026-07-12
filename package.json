@@ -1,0 +1,14 @@
+{
+	"name": "ai-widget-monorepo",
+	"private": true,
+	"version": "0.1.0",
+	"workspaces": [
+		"packages/*",
+		"examples/*"
+	],
+	"scripts": {
+		"build": "npm run build --workspace=packages/sdk",
+		"server": "npm start --workspace=packages/server",
+		"example": "npm run dev --workspace=examples/nextjs-loginwithchatgpt"
+	}
+}

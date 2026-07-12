@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Example SaaS — programmatic integration</title>
+	</head>
+	<body>
+		<h1>Acme SaaS (SPA-style)</h1>
+
+		<section data-ai-section="pricing">
+			<h2>Pricing</h2>
+			<p>$29/month, cancel anytime.</p>
+		</section>
+
+		<button id="mount">Mount widget</button>
+		<button id="unmount">Unmount widget</button>
+
+		<!--
+			data-auto-init="false" stops the script from auto-injecting itself,
+			so you control exactly when it mounts — e.g. after login, or inside
+			a React useEffect via `import { init } from "ai-widget-sdk"`.
+		-->
+		<script src="../dist/ai-widget-sdk.global.js" data-auto-init="false"></script>
+		<script>
+			let instance = null;
+			document.getElementById("mount").addEventListener("click", () => {
+				instance = AIWidgetSDK.init({
+					proxyUrl: "http://localhost:8787/api/ai-proxy",
+					title: "Acme Assistant",
+					greeting: "Hey! Ask me where anything is on this page.",
+				});
+			});
+			document.getElementById("unmount").addEventListener("click", () => {
+				instance?.destroy();
+				instance = null;
+			});
+		</script>
+	</body>
+</html>

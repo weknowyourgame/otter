@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Example SaaS — script tag integration</title>
+	</head>
+	<body>
+		<h1>Acme SaaS</h1>
+
+		<section data-ai-section="pricing">
+			<h2>Pricing</h2>
+			<p>$29/month, cancel anytime.</p>
+		</section>
+
+		<section>
+			<h2>Sign up</h2>
+			<button data-ai-action="start-signup">Get Started</button>
+		</section>
+
+		<section>
+			<h2>FAQ</h2>
+			<p>Frequently asked questions go here.</p>
+		</section>
+
+		<!--
+			Zero-code integration: just point data-ai-proxy-url at your backend
+			(see ../../ai-widget-standalone/server.js for a reference implementation,
+			or api/ai-proxy.ts in the stealth-markets repo for a Vercel version).
+		-->
+		<script
+			src="../dist/ai-widget-sdk.global.js"
+			data-ai-proxy-url="http://localhost:8787/api/ai-proxy"
+			data-ai-title="Acme Assistant"
+			data-ai-accent-color="#60a5fa"
+		></script>
+	</body>
+</html>
