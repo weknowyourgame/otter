@@ -29,10 +29,10 @@ export const INTENT_REGISTRY = [
 		aliases: [
 			"invite teammate",
 			"add user",
-			"add team member",
+			"team member",
+			"teammate",
 			"invite user",
 			"team settings",
-			"add a teammate",
 		],
 		route: "/settings/team",
 		targetSelector: "[data-ai-action='invite-teammate']",

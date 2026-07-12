@@ -11,6 +11,7 @@
 		"build": "npm run build --workspace=packages/ai-proxy-core && npm run build --workspace=packages/sdk",
 		"server": "npm start --workspace=packages/server",
 		"example": "npm run dev --workspace=examples/nextjs-loginwithchatgpt",
-		"landing": "npm run dev --workspace=apps/landing"
+		"landing": "npm run dev --workspace=apps/landing",
+		"test": "npm test --workspace=packages/server && node packages/sdk/test/handoff.e2e.mjs"
 	}
 }
