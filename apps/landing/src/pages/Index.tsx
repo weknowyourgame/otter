@@ -1,466 +1,147 @@
 import {
 	ArrowRight,
-	LifeBuoy,
-	MessageCircle,
-	Route,
+	Check,
+	ChevronRight,
+	CircleCheck,
+	Clock3,
+	Code2,
+	LockKeyhole,
+	Menu,
+	MousePointer2,
 	ShieldCheck,
+	Sparkles,
+	X,
 } from "lucide-react";
-import { useEffect, useRef, useState, type FormEvent } from "react";
-import AboutSection from "../components/AboutSection";
-import FeaturedVideoSection from "../components/FeaturedVideoSection";
-import PhilosophySection from "../components/PhilosophySection";
-import ServicesSection from "../components/ServicesSection";
+import { useState } from "react";
 
-const HERO_VIDEO_URL =
-	"/assets/main_hero.mp4";
+const customers = ["Northstar", "Landmark", "Strata", "Morrow", "Kindred", "Circuit"];
 
-const FADE_MS = 500;
-const FADE_OUT_LEAD_S = 0.55;
-const RESTART_DELAY_MS = 100;
+const capabilities = [
+	["Intent resolution", "Turn a Jira request into a precise, explainable destination."],
+	["Jira Automation delivery", "Send the right handoff directly from your existing workflow."],
+	["Email-correlated handoffs", "Match the guidance card to the customer who asked for help."],
+	["Approval gates", "Every click waits for a visible customer decision."],
+	["Highlight-only protection", "Keep high-risk controls informative, never automatic."],
+	["Completion audits", "Record the route, consent, and outcome of each handoff."],
+	["Link fallback", "Offer an exact deep link if the in-browser handoff expires."],
+	["SDK integration", "Add a small, framework-friendly layer to your product."],
+];
 
-type SubmitState = "idle" | "submitting" | "waitlisted" | "approved" | "error";
-type AccessState = "idle" | "submitting" | "approved" | "error";
+const testimonials = [
+	{
+		initials: "NP",
+		name: "Nadia Patel",
+		role: "Head of Support, Northstar",
+		quote: "Our best support answers used to die in Jira. Now they arrive in the product, exactly when a customer needs them.",
+	},
+	{
+		initials: "JL",
+		name: "Jon Lee",
+		role: "Product Operations, Circuit",
+		quote: "The approval card changed the conversation with security. The guide can be helpful without quietly taking control.",
+	},
+	{
+		initials: "MF",
+		name: "Maya Flores",
+		role: "CX Lead, Morrow",
+		quote: "Customers stop bouncing between a help article and the app. They can see the setting, understand it, and finish the job.",
+	},
+];
+
+function Mark() {
+	return <span className="brand-mark" aria-hidden="true"><i /><i /><i /></span>;
+}
+
+function BrowserMockup({ compact = false }: { compact?: boolean }) {
+	const [allowed, setAllowed] = useState(false);
+	return (
+		<div className={`browser-mockup ${compact ? "browser-mockup--compact" : ""}`}>
+			<div className="browser-bar">
+				<div className="browser-dots"><i /><i /><i /></div>
+				<div className="browser-url"><LockKeyhole size={11} /> app.northstar.io/settings/security</div>
+			</div>
+			<div className="browser-body">
+				<aside className="browser-sidebar">
+					<Mark />
+					<span className="side-line active" />
+					<span className="side-line" /><span className="side-line" /><span className="side-line" />
+				</aside>
+				<div className="settings-screen">
+					<div className="settings-kicker">Account settings</div>
+					<div className="settings-title">Security</div>
+					<div className="settings-tabs"><span>Profile</span><span className="selected">Security</span><span>Access</span></div>
+					<div className={`setting-row ${allowed ? "setting-row--complete" : ""}`}>
+						<div><strong>Two-factor authentication</strong><small>Add an extra layer of protection</small></div>
+						<button className="toggle" aria-label="Two-factor authentication"><i /></button>
+					</div>
+					<div className="setting-row dim"><div><strong>Trusted devices</strong><small>Manage active sessions</small></div><ChevronRight size={16} /></div>
+				</div>
+				<div className={`handoff-card ${allowed ? "handoff-card--allowed" : ""}`}>
+					<div className="handoff-top"><span><Sparkles size={14} /> Guided support</span><span className="pending-dot" /></div>
+					<p>{allowed ? "Two-factor authentication is ready to configure." : "Support found Two-factor authentication. Want me to show you?"}</p>
+					{allowed ? <div className="handoff-success"><CircleCheck size={15} /> Guidance started</div> : <div className="handoff-actions"><button className="dismiss" onClick={() => setAllowed(false)}>Dismiss</button><button className="allow" onClick={() => setAllowed(true)}>Allow <ArrowRight size={14} /></button></div>}
+				</div>
+			</div>
+		</div>
+	);
+}
+
+function JiraMockup() {
+	return <div className="jira-mockup"><div className="jira-top"><span className="jira-logo">J</span><strong>Support queue</strong><span className="jira-live"><i /> Connected</span></div><div className="jira-content"><div className="jira-issue"><span className="issue-id">SUP-241</span><b>Customer can’t find two-factor authentication</b><p>"Where do I enable 2FA for my account?"</p><div className="jira-person"><span>AR</span> Avery Rogers · customer</div></div><div className="jira-automation"><div><Sparkles size={14} /><b>Handoff prepared</b></div><p>Matched Security → Two-factor authentication</p><span>Delivery pending · expires in 15 min</span></div></div></div>}
+
+function AuditMockup() {
+	return <div className="audit-mockup"><div className="audit-head"><div><span className="eyebrow">Handoff activity</span><b>Today, 24 Jun</b></div><span className="live-pill"><i /> Live</span></div>{[["02:41 PM", "Handoff delivered", "jordan@northstar.com"], ["02:41 PM", "Customer approved", "Security → 2FA"], ["02:42 PM", "Target highlighted", "No action performed"], ["02:43 PM", "Completed", "Guidance dismissed"]].map(([time, title, detail], index) => <div className="audit-line" key={title}><span className="audit-node">{index < 3 ? <Check size={11} /> : <Clock3 size={11} />}</span><span className="audit-time">{time}</span><div><b>{title}</b><small>{detail}</small></div></div>)}</div>;
+}
 
 const Index = () => {
-	const videoRef = useRef<HTMLVideoElement | null>(null);
-	const rafRef = useRef<number | null>(null);
-	const restartTimerRef = useRef<number | null>(null);
-	const hasStartedRef = useRef(false);
-	const isFadingOutRef = useRef(false);
-	const [email, setEmail] = useState("");
-	const [accessEmail, setAccessEmail] = useState("");
-	const [accessCode, setAccessCode] = useState("");
-	const [submitState, setSubmitState] = useState<SubmitState>("idle");
-	const [accessState, setAccessState] = useState<AccessState>("idle");
-	const [isAccessModalOpen, setIsAccessModalOpen] = useState(false);
-	const [formMessage, setFormMessage] = useState("");
-	const [accessMessage, setAccessMessage] = useState("");
+	const [menuOpen, setMenuOpen] = useState(false);
+	return <main>
+		<header className="site-header">
+			<a className="brand" href="#top" aria-label="GuideLayer home"><Mark /><span>GuideLayer</span></a>
+			<nav className={menuOpen ? "nav-links nav-links--open" : "nav-links"} aria-label="Main navigation">
+				<a href="#product" onClick={() => setMenuOpen(false)}>Product</a><a href="#safety" onClick={() => setMenuOpen(false)}>Safety</a><a href="#customers" onClick={() => setMenuOpen(false)}>Customers</a><a href="#changelog" onClick={() => setMenuOpen(false)}>Changelog</a><a href="#pricing" onClick={() => setMenuOpen(false)}>Pricing</a><a href="#contact" onClick={() => setMenuOpen(false)}>Contact</a>
+			</nav>
+			<a className="header-cta" href="#contact">Book a demo <ArrowRight size={15} /></a>
+			<button className="menu-toggle" aria-label="Toggle navigation" onClick={() => setMenuOpen(!menuOpen)}>{menuOpen ? <X /> : <Menu />}</button>
+		</header>
 
-	useEffect(() => {
-		const video = videoRef.current;
-		if (!video) return;
+		<section className="hero-shell section-rule" id="top">
+			<div className="hero-noise" aria-hidden="true" />
+			<div className="hero-copy">
+				<a className="announcement" href="#changelog"><span>NEW</span><b>Seamless support handoffs</b><ArrowRight size={13} /></a>
+				<h1>Turn support answers into <em>guided actions.</em></h1>
+				<p>Jira captures the request. Your backend resolves intent. Customers approve a safe guided action in the browser tab they’re already using.</p>
+				<div className="hero-buttons"><a className="button button--light" href="#contact">Get started <ArrowRight size={16} /></a><a className="button button--ghost" href="#product">See how it works <ChevronRight size={16} /></a></div>
+			</div>
+			<div className="hero-stage"><div className="hero-orbit hero-orbit--one" /><div className="hero-orbit hero-orbit--two" /><div className="hero-jira"><JiraMockup /></div><BrowserMockup /></div>
+			<div className="trust-strip"><p>Turn Jira support answers into safe in-browser guidance.</p><div className="marquee"><div>{customers.concat(customers).map((customer, index) => <span key={`${customer}-${index}`}>{customer}</span>)}</div></div></div>
+		</section>
 
-		const animateOpacity = (from: number, to: number, onDone?: () => void) => {
-			if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-			const start = performance.now();
-			const step = (now: number) => {
-				const t = Math.min((now - start) / FADE_MS, 1);
-				video.style.opacity = String(from + (to - from) * t);
-				if (t < 1) {
-					rafRef.current = requestAnimationFrame(step);
-				} else {
-					rafRef.current = null;
-					onDone?.();
-				}
-			};
-			rafRef.current = requestAnimationFrame(step);
-		};
+		<section className="intro-section"><p className="eyebrow">Support guidance, rethought</p><h2>Give customers a way forward,<br /><em>not another dead end.</em></h2><p className="intro-copy">GuideLayer turns the answer your team already has into a moment of useful, consent-first help in your product.</p></section>
 
-		const handleCanPlay = () => {
-			if (hasStartedRef.current) return;
-			hasStartedRef.current = true;
-			void video.play().catch(() => {
-				/* Autoplay can be blocked; the poster-less black frame is acceptable. */
-			});
-			animateOpacity(0, 1);
-		};
+		<section id="product" className="feature-pair section-rule"><article className="feature-card feature-card--delivery"><div className="card-copy"><span className="eyebrow">01 — DELIVERY</span><h3>Support that reaches customers in the right moment.</h3><p>Create a short-lived handoff from Jira Automation. It appears only for the customer who asked, directly inside their product session.</p><a href="#contact" className="text-link">Explore delivery <ArrowRight size={15} /></a></div><JiraMockup /></article><article className="feature-card feature-card--safe"><div className="card-copy"><span className="eyebrow">02 — SAFETY</span><h3>Safe by default,<br />every time.</h3><p>Every guide shows the destination, explains the next step, and waits for explicit approval. Sensitive controls stay highlight-only.</p><div className="safety-list"><span><Check size={14} /> Consent before action</span><span><Check size={14} /> Audit-ready events</span><span><Check size={14} /> Fallback deep links</span></div></div><div className="safe-visual"><div className="safety-ring" /><div className="approval-note"><ShieldCheck size={17} /><b>Approval required</b><small>Customer is in control</small></div><div className="target-dot"><MousePointer2 size={16} /></div></div></article></section>
 
-		const handleTimeUpdate = () => {
-			if (isFadingOutRef.current || !Number.isFinite(video.duration)) return;
-			const remaining = video.duration - video.currentTime;
-			if (remaining <= FADE_OUT_LEAD_S) {
-				isFadingOutRef.current = true;
-				const current = Number.parseFloat(video.style.opacity || "1");
-				animateOpacity(current, 0);
-			}
-		};
+		<section id="customers" className="proof-section section-rule"><div className="section-heading"><div><p className="eyebrow">TRUSTED TEAMS</p><h2>Support that customers<br /><em>actually feel.</em></h2></div><p>Built for teams who want their support answers to carry through, without compromising the boundary between assistance and control.</p></div><div className="quote-rail">{testimonials.concat(testimonials).map((item, index) => <article className="quote-card" key={`${item.name}-${index}`}><div className="quote-card__top"><span className="avatar">{item.initials}</span><div><b>{item.name}</b><small>{item.role}</small></div></div><p>“{item.quote}”</p><span className="quote-mark">✳</span></article>)}</div></section>
 
-		const handleEnded = () => {
-			video.style.opacity = "0";
-			restartTimerRef.current = window.setTimeout(() => {
-				video.currentTime = 0;
-				void video.play().catch(() => {});
-				isFadingOutRef.current = false;
-				animateOpacity(0, 1);
-			}, RESTART_DELAY_MS);
-		};
+		<section className="product-sequence">
+			<article className="sequence-row"><div className="sequence-copy"><span className="eyebrow">OBSERVABILITY</span><h2>Track every handoff<br /><em>in real time.</em></h2><p>Know when guidance was delivered, approved, opened, completed, or expired — without turning your support system into a browser controller.</p><a href="#contact" className="text-link">See the audit trail <ArrowRight size={15} /></a></div><AuditMockup /></article>
+			<article className="sequence-row sequence-row--reverse"><div className="sequence-copy"><span className="eyebrow">IN CONTEXT</span><h2>Guide customers without sending them to a new tab.</h2><p>The SDK opens the correct route in their existing app and makes the target easy to recognize — no videos, screenshots, or copy-pasted instructions.</p></div><BrowserMockup compact /></article>
+			<article className="sequence-row"><div className="sequence-copy"><span className="eyebrow">CONSENT LAYER</span><h2>Keep clicks<br /><em>approval-gated.</em></h2><p>Customers choose whether to start guidance. For higher-risk destinations, GuideLayer highlights the control and leaves every click to them.</p></div><div className="consent-visual"><div className="consent-page"><div className="tiny-nav"><i /><i /><i /></div><span className="page-eyebrow">Workspace</span><b>Delete workspace</b><p>Deleting a workspace removes access for everyone.</p><button disabled>Delete workspace</button></div><div className="warning-card"><span><ShieldCheck size={15} /> High-risk control</span><p>GuideLayer can point here, but won’t click this button.</p><div><button>Got it</button><button>View policy</button></div></div></div></article>
+			<article className="sequence-row sequence-row--reverse"><div className="sequence-copy"><span className="eyebrow">CLEAR BOUNDARIES</span><h2>Use Jira as the support surface, <em>not the browser controller.</em></h2><p>Automations can create and deliver a handoff. The customer’s browser makes the final decision, with transparent, expiring context.</p></div><div className="flow-visual"><div className="flow-card flow-card--jira"><span className="jira-logo">J</span><div><b>Jira automation</b><small>Issue resolved to handoff</small></div></div><div className="flow-line"><i /><span>Signed handoff</span></div><div className="flow-card flow-card--browser"><Mark /><div><b>Customer browser</b><small>Approval gate appears</small></div></div></div></article>
+		</section>
 
-		video.addEventListener("canplay", handleCanPlay);
-		video.addEventListener("timeupdate", handleTimeUpdate);
-		video.addEventListener("ended", handleEnded);
+		<section id="safety" className="capabilities section-rule"><div className="capabilities__header"><p className="eyebrow">THE GUIDELAYER SYSTEM</p><h2>Careful help,<br /><em>built in.</em></h2><p>Every capability is designed to make support less repetitive while keeping customers aware, informed, and in control.</p></div><div className="capability-grid">{capabilities.map(([title, body], index) => <article key={title}><span>0{index + 1}</span><div className="capability-icon">{index % 3 === 0 ? <Sparkles /> : index % 3 === 1 ? <ShieldCheck /> : <Code2 />}</div><h3>{title}</h3><p>{body}</p><ArrowRight className="capability-arrow" size={16} /></article>)}</div></section>
 
-		return () => {
-			video.removeEventListener("canplay", handleCanPlay);
-			video.removeEventListener("timeupdate", handleTimeUpdate);
-			video.removeEventListener("ended", handleEnded);
-			if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
-			if (restartTimerRef.current !== null)
-				window.clearTimeout(restartTimerRef.current);
-		};
-	}, []);
+		<section className="metrics-section"><p className="eyebrow">THE RIGHT KIND OF FAST</p><div className="metrics-grid"><article><b>&lt;5<span> sec</span></b><p>pending handoff delivery</p><div className="metric-line"><i /><i /><i /><i /></div></article><article><b>100<span>%</span></b><p>approval-gated actions</p><div className="metric-check"><Check /><Check /><Check /></div></article><article><b>15<span> min</span></b><p>handoff token expiry</p><div className="metric-clock"><Clock3 /></div></article></div></section>
 
-	const handleWaitlistSubmit = async (
-		event: FormEvent<HTMLFormElement>,
-	) => {
-		event.preventDefault();
-		setSubmitState("submitting");
-		setFormMessage("");
+		<section className="reviews-section"><div className="section-heading"><div><p className="eyebrow">CUSTOMER NOTES</p><h2>More useful support.<br /><em>Fewer loops.</em></h2></div><a href="#contact" className="button button--dark">Meet the teams <ArrowRight size={15} /></a></div><div className="review-grid">{testimonials.map((item) => <article key={item.name}><div className="quote-card__top"><span className="avatar">{item.initials}</span><div><b>{item.name}</b><small>{item.role}</small></div></div><p>“{item.quote}”</p><div className="review-stars">★★★★★</div></article>)}</div></section>
 
-		try {
-			const response = await fetch("/api/waitlist", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					email,
-					source: "landing",
-				}),
-			});
-			const result = (await response.json()) as {
-				ok?: boolean;
-				status?: string;
-				error?: string;
-			};
+		<section id="changelog" className="changelog-section section-rule"><div className="section-heading"><div><p className="eyebrow">WHAT’S NEW</p><h2>We ship,<br /><em>carefully.</em></h2></div><a href="#contact" className="text-link">View all updates <ArrowRight size={15} /></a></div><div className="changelog-list">{[["06.24.26", "Seamless support handoffs", "Delivery"], ["06.10.26", "Approval-gated browser guidance", "Safety"], ["05.28.26", "Jira Automation fallback links", "Integrations"]].map(([date, title, tag], index) => <a href="#contact" key={title} className="change-row"><span className={`change-art change-art--${index}`}><i /><i /><i /></span><time>{date}</time><b>{title}</b><span className="change-tag">{tag}</span><ArrowRight size={17} /></a>)}</div></section>
 
-			if (!response.ok || !result.ok) {
-				const message =
-					result.error === "invalid_or_used_access_code"
-						? "That access code is invalid or already used."
-						: result.error === "invalid_email"
-							? "Enter a valid email address."
-							: "Something went wrong. Try again shortly.";
-				setSubmitState("error");
-				setFormMessage(message);
-				return;
-			}
+		<section id="pricing" className="final-cta"><div className="final-grid" aria-hidden="true" /><div><p className="eyebrow">READY WHEN YOU ARE</p><h2>Make every support<br />answer <em>useful.</em></h2><p>Give your customers a clear, safe path from “where is it?” to “I’ve got it.”</p><a className="button button--light" href="#contact">Get started <ArrowRight size={16} /></a></div></section>
 
-			setSubmitState("waitlisted");
-			setFormMessage("You are on the waitlist.");
-		} catch {
-			setSubmitState("error");
-			setFormMessage("Waitlist is not connected yet.");
-		}
-	};
-
-	const handleAccessSubmit = async (event: FormEvent<HTMLFormElement>) => {
-		event.preventDefault();
-		setAccessState("submitting");
-		setAccessMessage("");
-
-		try {
-			const response = await fetch("/api/waitlist", {
-				method: "POST",
-				headers: { "content-type": "application/json" },
-				body: JSON.stringify({
-					email: accessEmail,
-					accessCode,
-					source: "early-access",
-				}),
-			});
-			const result = (await response.json()) as {
-				ok?: boolean;
-				status?: string;
-				error?: string;
-			};
-
-			if (!response.ok || !result.ok || result.status !== "beta_approved") {
-				const message =
-					result.error === "invalid_or_used_access_code"
-						? "That access code is invalid or already used."
-						: result.error === "invalid_email"
-							? "Enter a valid email address."
-							: "Access could not be confirmed.";
-				setAccessState("error");
-				setAccessMessage(message);
-				return;
-			}
-
-			setAccessState("approved");
-			setAccessMessage("Access confirmed. You are on the beta list.");
-		} catch {
-			setAccessState("error");
-			setAccessMessage("Early access is not connected yet.");
-		}
-	};
-
-	return (
-		<main className="bg-[#080B12]">
-			<section className="min-h-screen overflow-hidden relative flex flex-col">
-				<video
-					ref={videoRef}
-					className="absolute inset-0 w-full h-full object-cover object-center scale-[1.02]"
-					src={HERO_VIDEO_URL}
-					muted
-					autoPlay
-					playsInline
-					preload="auto"
-					style={{ opacity: 0 }}
-					aria-hidden="true"
-					tabIndex={-1}
-				/>
-				<div
-					className="absolute inset-0 bg-[linear-gradient(180deg,rgba(8,11,18,0.78)_0%,rgba(8,11,18,0.55)_42%,rgba(8,11,18,0.86)_100%)]"
-					aria-hidden="true"
-				/>
-
-				<header className="relative z-20 px-6 py-6">
-					<nav className="max-w-7xl mx-auto flex items-center justify-between">
-						<div className="flex items-center">
-							<a
-								href="#"
-								className="flex items-center"
-								aria-label="GuideLayer home"
-							>
-								<span className="text-white text-lg font-semibold tracking-tight">
-									GuideLayer
-								</span>
-							</a>
-						</div>
-						<button
-							type="button"
-							onClick={() => {
-								setAccessEmail(email);
-								setAccessMessage("");
-								setAccessState("idle");
-								setIsAccessModalOpen(true);
-							}}
-							className="liquid-glass rounded-full px-6 py-2 text-white text-sm font-medium hover:bg-white/5 transition-colors"
-						>
-							Get early access
-						</button>
-					</nav>
-				</header>
-
-				<div className="relative z-10 flex-1 flex items-center justify-center px-6 py-10">
-					<div className="grid w-full max-w-6xl grid-cols-1 gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center">
-						<div className="flex max-w-2xl flex-col items-start text-left">
-							<div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.08] px-4 py-2 text-xs font-medium uppercase tracking-[0.18em] text-cyan-100">
-								<LifeBuoy size={14} aria-hidden="true" />
-								Support-to-product guidance
-							</div>
-							<h1
-								className="mb-5 text-4xl text-white tracking-tight md:text-6xl lg:text-7xl"
-								style={{ fontFamily: "'Instrument Serif', serif" }}
-							>
-								Turn every support question into the exact product action.
-							</h1>
-							<p className="mb-7 max-w-xl text-base leading-relaxed text-white/75 md:text-lg">
-								Connect Intercom, Zendesk, Freshdesk, and more. When a user asks
-								"where is 2FA?", send them into your app and guide them to the
-								right setting with your SDK.
-							</p>
-
-							<form
-								className="w-full max-w-xl flex flex-col items-stretch gap-2"
-								onSubmit={handleWaitlistSubmit}
-							>
-								<div
-									data-ai-action="start-signup"
-									className="w-full rounded-full border border-white/20 bg-[#080B12]/50 backdrop-blur-[2px] pl-5 pr-2 py-2 flex items-center gap-3"
-								>
-									<input
-										type="email"
-										autoComplete="email"
-										placeholder="Work email"
-										aria-label="Email address"
-										value={email}
-										onChange={(event) => setEmail(event.target.value)}
-										className="flex-1 min-w-0 bg-transparent text-white placeholder:text-white/45 text-sm outline-none"
-									/>
-									<button
-										type="submit"
-										aria-label="Subscribe"
-										disabled={submitState === "submitting"}
-										className="bg-cyan-200 rounded-full p-3 text-[#080B12] shrink-0 hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-									>
-										<ArrowRight size={20} aria-hidden="true" />
-									</button>
-								</div>
-							</form>
-
-							{formMessage && (
-								<p
-									className={`mt-3 text-xs ${
-										submitState === "error" ? "text-red-200" : "text-white/70"
-									}`}
-									role="status"
-								>
-									{formMessage}
-								</p>
-							)}
-
-							<div className="mt-6 flex flex-wrap gap-3 text-xs text-white/60">
-								<span>Intercom first</span>
-								<span>Zendesk next</span>
-								<span>Approval-gated actions</span>
-							</div>
-						</div>
-
-						<div className="rounded-[28px] border border-white/10 bg-[#0D1320]/85 p-4 shadow-2xl shadow-black/30 backdrop-blur-md md:p-5">
-							<div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-								<div>
-									<p className="text-xs uppercase tracking-[0.18em] text-white/40">
-										Live handoff
-									</p>
-									<p className="mt-1 text-sm font-medium text-white">
-										Intercom conversation
-									</p>
-								</div>
-								<MessageCircle
-									className="text-cyan-200"
-									size={22}
-									aria-hidden="true"
-								/>
-							</div>
-							<div className="space-y-3">
-								<div className="max-w-[85%] rounded-2xl rounded-tl-md bg-white/10 px-4 py-3 text-sm text-white/80">
-									Where do I enable 2FA for my account?
-								</div>
-								<div className="ml-auto max-w-[90%] rounded-2xl rounded-tr-md bg-cyan-200 px-4 py-3 text-sm text-[#09111F]">
-									I can open Security Settings and show you the 2FA control.
-								</div>
-								<div className="rounded-2xl border border-emerald-300/25 bg-emerald-300/10 p-4">
-									<div className="mb-3 flex items-center gap-2 text-sm font-medium text-emerald-100">
-										<Route size={17} aria-hidden="true" />
-										/settings/security
-									</div>
-									<div className="rounded-xl bg-[#080B12] p-3">
-										<div className="flex items-center justify-between">
-											<span className="text-sm text-white">
-												Two-factor authentication
-											</span>
-											<span className="rounded-full bg-emerald-300 px-3 py-1 text-xs font-medium text-[#07140E]">
-												Highlighted
-											</span>
-										</div>
-									</div>
-								</div>
-								<div className="flex items-center gap-2 text-xs text-white/45">
-									<ShieldCheck size={15} aria-hidden="true" />
-									Clicks and account changes stay approval-gated in the app.
-								</div>
-							</div>
-						</div>
-					</div>
-				</div>
-
-				<div className="relative z-10 flex justify-center gap-4 pb-12">
-					{[
-						{ label: "Connector", Icon: MessageCircle },
-						{ label: "Handoff", Icon: Route },
-						{ label: "Safety", Icon: ShieldCheck },
-					].map(({ label, Icon }) => (
-						<a
-							key={label}
-							href="#"
-							aria-label={label}
-							className="rounded-full border border-white/15 bg-[#080B12]/40 p-4 text-white/80 hover:text-white hover:bg-white/5 transition-colors"
-						>
-							<Icon size={20} aria-hidden="true" />
-						</a>
-					))}
-				</div>
-			</section>
-
-			<AboutSection />
-			<FeaturedVideoSection />
-			<PhilosophySection />
-			<ServicesSection />
-
-			<footer className="relative bg-[#080B12] px-6 pb-10 pt-2 overflow-hidden">
-				<div className="relative z-10 max-w-6xl mx-auto px-1 py-5 flex flex-col gap-3 border-t border-white/10 md:flex-row md:items-center md:justify-between">
-					<div>
-						<p className="text-white text-lg font-semibold tracking-tight">
-							GuideLayer
-						</p>
-						<p className="text-white/45 text-xs mt-1">
-							Support-channel handoffs for complex SaaS products.
-						</p>
-					</div>
-					<div className="flex items-center gap-5 text-xs text-white/55">
-						<span>Intercom</span>
-						<span>Zendesk</span>
-						<span>In-app SDK</span>
-					</div>
-				</div>
-			</footer>
-
-			{isAccessModalOpen && (
-				<div
-					className="fixed inset-0 z-50 flex items-center justify-center bg-[#080B12]/80 px-6 backdrop-blur-md"
-					role="dialog"
-					aria-modal="true"
-					aria-labelledby="early-access-title"
-				>
-					<div className="liquid-glass w-full max-w-md rounded-[28px] p-6 md:p-8">
-						<div className="flex items-start justify-between gap-6">
-							<div>
-								<p className="text-white/45 text-xs uppercase tracking-[0.22em]">
-									Connector beta
-								</p>
-								<h2
-									id="early-access-title"
-									className="mt-2 text-2xl text-white tracking-tight"
-								>
-									Get early access
-								</h2>
-							</div>
-							<button
-								type="button"
-								onClick={() => setIsAccessModalOpen(false)}
-								className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white/70 hover:text-white hover:bg-white/5 transition-colors"
-							>
-								Close
-							</button>
-						</div>
-
-						<form
-							className="mt-7 flex flex-col gap-3"
-							onSubmit={handleAccessSubmit}
-						>
-							<input
-								type="email"
-								autoComplete="email"
-								placeholder="Email address"
-								aria-label="Early access email address"
-								value={accessEmail}
-								onChange={(event) => setAccessEmail(event.target.value)}
-								className="rounded-full border border-white/20 bg-[#080B12]/30 px-5 py-3 text-sm text-white placeholder:text-white/35 outline-none"
-							/>
-							<input
-								type="text"
-								autoComplete="off"
-								placeholder="Access code"
-								aria-label="Early access code"
-								value={accessCode}
-								onChange={(event) => setAccessCode(event.target.value)}
-								className="rounded-full border border-white/20 bg-[#080B12]/30 px-5 py-3 text-sm uppercase tracking-[0.18em] text-white placeholder:text-white/35 outline-none"
-							/>
-							<button
-								type="submit"
-								disabled={accessState === "submitting"}
-								className="mt-2 rounded-full bg-cyan-200 px-6 py-3 text-sm font-medium text-[#080B12] hover:bg-white disabled:cursor-not-allowed disabled:opacity-60 transition-colors"
-							>
-								{accessState === "submitting"
-									? "Checking..."
-									: "Confirm access"}
-							</button>
-						</form>
-
-						{accessMessage && (
-							<p
-								className={`mt-4 text-sm ${
-									accessState === "error" ? "text-red-200" : "text-white/70"
-								}`}
-								role="status"
-							>
-								{accessMessage}
-							</p>
-						)}
-					</div>
-				</div>
-			)}
-		</main>
-	);
+		<footer id="contact" className="site-footer"><div className="footer-top"><div><a className="brand" href="#top"><Mark /><span>GuideLayer</span></a><p>Safe in-browser guidance for the support answers your team already knows.</p></div><div className="footer-columns"><div><b>Product</b><a href="#product">How it works</a><a href="#safety">Safety</a><a href="#pricing">Pricing</a></div><div><b>Company</b><a href="#customers">Customers</a><a href="#changelog">Changelog</a><a href="mailto:hello@guidelayer.app">Contact</a></div><div><b>Stay in the loop</b><a href="mailto:hello@guidelayer.app">hello@guidelayer.app</a><a href="#top">LinkedIn ↗</a></div></div></div><div className="footer-bottom"><span>© 2026 GuideLayer</span><span>Built for consent-first support.</span><span>Privacy · Terms</span></div><div className="footer-wordmark">GUIDELAYER</div></footer>
+	</main>
 };
 
 export default Index;
