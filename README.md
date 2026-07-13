@@ -24,7 +24,6 @@ apps/
   web/    Next.js app: marketing page (/), dashboard with install
           snippet + live sessions (/dashboard), the Nimbus demo SaaS
           (/demo), and the agent API (/api/agent/step).
-  landing/  unrelated production landing page (Stealth Markets).
 ```
 
 ## Quick start

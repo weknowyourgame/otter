@@ -9,9 +9,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-	title: "Otto — support that does it for you",
+	title: "Otto | Support that gets the task done",
 	description:
-		"Otto is an AI support agent that lives in your product. When customers ask how, it takes the cursor — with their permission — and completes the task in front of them.",
+		"Otto is an embeddable AI support agent that helps customers complete tasks inside your product.",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
