@@ -1,0 +1,23 @@
+{
+	"name": "otto-core",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Otto's agent engine — turns a page snapshot + conversation into the next browser action. Consumed by apps/web API routes; holds the only LLM-provider code in the repo.",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "node scripts/build.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist"
+	},
+	"devDependencies": {
+		"esbuild": "^0.21.0",
+		"typescript": "^5.6.3"
+	}
+}
