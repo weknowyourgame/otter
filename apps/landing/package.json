@@ -10,8 +10,6 @@
 		"verify": "node scripts/verify.mjs"
 	},
 	"dependencies": {
-		"ai-proxy-core": "*",
-		"ai-widget-sdk": "*",
 		"framer-motion": "^11.11.17",
 		"lucide-react": "^0.460.0",
 		"react": "^18.3.1",
