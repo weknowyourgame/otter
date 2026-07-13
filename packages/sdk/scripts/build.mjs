@@ -6,19 +6,24 @@ const watch = process.argv.includes("--watch");
 rmSync(new URL("../dist", import.meta.url), { recursive: true, force: true });
 
 const common = {
-	entryPoints: ["src/index.ts"],
 	bundle: true,
 	sourcemap: true,
-	target: "es2019",
+	target: "es2020",
 	logLevel: "info",
 };
 
-const esm = { ...common, format: "esm", outfile: "dist/ai-widget-sdk.esm.js" };
+const esm = {
+	...common,
+	entryPoints: ["src/index.ts"],
+	format: "esm",
+	outfile: "dist/otto-sdk.esm.js",
+};
 const global = {
 	...common,
+	entryPoints: ["src/global.ts"],
 	format: "iife",
-	globalName: "AIWidgetSDK",
-	outfile: "dist/ai-widget-sdk.global.js",
+	globalName: "Otto",
+	outfile: "dist/otto-sdk.global.js",
 };
 
 if (watch) {

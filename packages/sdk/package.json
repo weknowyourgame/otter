@@ -1,19 +1,19 @@
 {
-	"name": "ai-widget-sdk",
+	"name": "otto-sdk",
 	"version": "0.1.0",
 	"private": true,
-	"description": "Embeddable, approval-gated AI DOM assistant widget — observe the page, propose an action, ask permission, then scroll+highlight. Ships as a single <script> tag or an npm import.",
+	"description": "Otto — the embeddable AI support agent that completes the task instead of explaining it. One script tag: chat widget + a consent-gated executor that drives your app's UI with a visible cursor.",
 	"type": "module",
-	"main": "dist/ai-widget-sdk.esm.js",
-	"module": "dist/ai-widget-sdk.esm.js",
+	"main": "dist/otto-sdk.esm.js",
+	"module": "dist/otto-sdk.esm.js",
 	"types": "dist/types/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/types/index.d.ts",
-			"import": "./dist/ai-widget-sdk.esm.js",
-			"default": "./dist/ai-widget-sdk.esm.js"
+			"import": "./dist/otto-sdk.esm.js",
+			"default": "./dist/otto-sdk.esm.js"
 		},
-		"./global": "./dist/ai-widget-sdk.global.js"
+		"./global": "./dist/otto-sdk.global.js"
 	},
 	"files": [
 		"dist",
