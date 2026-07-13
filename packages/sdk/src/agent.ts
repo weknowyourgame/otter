@@ -49,7 +49,7 @@ export class AgentLoop {
 	async start(message: string): Promise<void> {
 		if (this.running) return;
 		this.ui.user(message);
-		await this.run(message, this.ui.trail(), undefined);
+		await this.run(message, null, undefined);
 	}
 
 	/** Continue a task across a full page reload. */
@@ -69,7 +69,7 @@ export class AgentLoop {
 		if (state.panelOpen) this.ui.open();
 		// Give the destination page a beat to hydrate before observing.
 		await new Promise((r) => setTimeout(r, 600));
-		await this.run(undefined, liveTrail ?? this.ui.trail(), { ok: true });
+		await this.run(undefined, liveTrail, { ok: true });
 	}
 
 	private persistForHardNav(): void {
@@ -85,13 +85,16 @@ export class AgentLoop {
 
 	private async run(
 		message: string | undefined,
-		trail: Trail,
+		trail: Trail | null,
 		lastAction: ExecutionResult | undefined,
 	): Promise<void> {
 		this.running = true;
 		this.stopped = false;
 		this.ui.setBusy(true);
-		let steps = trail.count;
+		let steps = trail?.count ?? 0;
+		// Created lazily on the first real step, so pure Q&A turns never show
+		// a trail box and the consent card lands before any step rows.
+		const ensureTrail = (): Trail => (trail ??= this.ui.trail());
 
 		try {
 			while (true) {
@@ -119,10 +122,7 @@ export class AgentLoop {
 				const action = resp.action;
 
 				if (action.type === "say") {
-					trail.finish(trail.count ? "done" : "stopped");
-					if (trail.count === 0) {
-						// pure Q&A turn — drop the empty trail silently
-					}
+					trail?.finish("done");
 					this.ui.agent(action.text);
 					return;
 				}
@@ -162,7 +162,7 @@ export class AgentLoop {
 				}
 
 				this.ui.pill(true, resp.status);
-				const handle = trail.step(resp.status ?? defaultStatus(action));
+				const handle = ensureTrail().step(resp.status ?? defaultStatus(action));
 
 				// A hard navigation unloads this page — save state so the loop
 				// resumes on the other side.
@@ -188,8 +188,8 @@ export class AgentLoop {
 		}
 	}
 
-	private finish(trail: Trail, kind: "done" | "fail" | "stopped", text: string, error = false): void {
-		trail.finish(kind);
+	private finish(trail: Trail | null, kind: "done" | "fail" | "stopped", text: string, error = false): void {
+		trail?.finish(kind);
 		this.ui.agent(text, { error });
 		this.ui.pill(false);
 	}

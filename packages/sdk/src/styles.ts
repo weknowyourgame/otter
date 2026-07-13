@@ -134,6 +134,9 @@ textarea { font: inherit; }
 	gap: 10px;
 	overscroll-behavior: contain;
 }
+/* Children of an overflowing flex column shrink by default — the trail box
+   (overflow:hidden, no min-content floor) would collapse to a 2px line. */
+.otto-messages > * { flex: none; }
 .otto-messages::-webkit-scrollbar { width: 8px; }
 .otto-messages::-webkit-scrollbar-thumb { background: var(--otto-surface-2); border-radius: 4px; }
 .otto-messages::-webkit-scrollbar-track { background: transparent; }
