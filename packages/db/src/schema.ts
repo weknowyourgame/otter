@@ -57,3 +57,21 @@ export const chunks = sqliteTable("chunks", {
 
 export type ChunkRow = typeof chunks.$inferSelect;
 export type NewChunkRow = typeof chunks.$inferInsert;
+
+/**
+ * A durable fact about a user, scoped by userKey (their email — the only
+ * identity Otto has today, via OttoConfig.user forwarded on each step).
+ * No semantic/embedding-based recall like cossistant's optional
+ * models.embed — just the most recent facts for that user, injected once
+ * at session start. Revisit if the fact count per user grows enough that
+ * "most recent N" stops being a good enough recall strategy.
+ */
+export const memories = sqliteTable("memories", {
+	id: text("id").primaryKey(),
+	userKey: text("user_key").notNull(),
+	content: text("content").notNull(),
+	createdAt: integer("created_at").notNull(),
+});
+
+export type MemoryRow = typeof memories.$inferSelect;
+export type NewMemoryRow = typeof memories.$inferInsert;

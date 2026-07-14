@@ -46,6 +46,21 @@ const TOOLS = [
 	}, ["reason"]),
 ];
 
+const MEMORY_TOOLS = [
+	tool(
+		"remember",
+		"Store a durable fact about this user for future sessions — a stated preference, a constraint, or something they've already done (e.g. 'already enabled 2FA'). Don't store one-off details that only matter for the current task. Resolves server-side, doesn't end your turn.",
+		{ content: { type: "string" } },
+		["content"],
+	),
+	tool(
+		"forget",
+		"Delete a previously remembered fact that's now stale or wrong. Use the [id] shown in the known-facts list you were given.",
+		{ memory_id: { type: "string" } },
+		["memory_id"],
+	),
+];
+
 function tool(
 	name: string,
 	description: string,
@@ -62,16 +77,24 @@ function tool(
 	};
 }
 
-/** The raw assistant message, to append to history verbatim, in both variants. */
+/** The raw assistant message, to append to history verbatim, in all variants. */
 export type LLMStep =
 	| { kind: "action"; action: AgentAction; status?: string; assistantMessage: ChatMessage }
-	| { kind: "search"; query: string; toolCallId: string; assistantMessage: ChatMessage };
+	| { kind: "search"; query: string; toolCallId: string; assistantMessage: ChatMessage }
+	| { kind: "remember"; content: string; toolCallId: string; assistantMessage: ChatMessage }
+	| { kind: "forget"; memoryId: string; toolCallId: string; assistantMessage: ChatMessage };
 
 export async function requestNextAction(
 	messages: ChatMessage[],
 	apiKey: string,
 	model: string,
+	options: { includeMemoryTools?: boolean } = {},
 ): Promise<LLMStep> {
+	// Memory tools are only offered when there's a userKey to scope them to
+	// (see engine.ts) — no point letting the model call a tool that can't
+	// actually persist anything for an anonymous session.
+	const tools = options.includeMemoryTools ? [...TOOLS, ...MEMORY_TOOLS] : TOOLS;
+
 	const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
 		method: "POST",
 		headers: {
@@ -82,7 +105,7 @@ export async function requestNextAction(
 		body: JSON.stringify({
 			model,
 			messages,
-			tools: TOOLS,
+			tools,
 			tool_choice: "auto",
 			temperature: 0.2,
 			max_tokens: 600,
@@ -128,6 +151,12 @@ export async function requestNextAction(
 
 	if (call.function.name === "search_knowledge_base") {
 		return { kind: "search", query: String(args.query ?? ""), toolCallId: call.id, assistantMessage };
+	}
+	if (call.function.name === "remember") {
+		return { kind: "remember", content: String(args.content ?? ""), toolCallId: call.id, assistantMessage };
+	}
+	if (call.function.name === "forget") {
+		return { kind: "forget", memoryId: String(args.memory_id ?? ""), toolCallId: call.id, assistantMessage };
 	}
 
 	const status = typeof args.status === "string" ? args.status : undefined;

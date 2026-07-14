@@ -55,6 +55,19 @@ CREATE TABLE IF NOT EXISTS chunks (
 );
 `;
 
+const CREATE_MEMORIES_TABLE = `
+CREATE TABLE IF NOT EXISTS memories (
+	id TEXT PRIMARY KEY,
+	user_key TEXT NOT NULL,
+	content TEXT NOT NULL,
+	created_at INTEGER NOT NULL
+);
+`;
+
+const CREATE_MEMORIES_USER_KEY_INDEX = `
+CREATE INDEX IF NOT EXISTS memories_user_key_idx ON memories(user_key);
+`;
+
 let db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
 /**
@@ -74,6 +87,8 @@ export function getDb(): ReturnType<typeof drizzle<typeof schema>> {
 	sqlite.exec(CREATE_SESSIONS_TABLE);
 	sqlite.exec(CREATE_DOCS_TABLE);
 	sqlite.exec(CREATE_CHUNKS_TABLE);
+	sqlite.exec(CREATE_MEMORIES_TABLE);
+	sqlite.exec(CREATE_MEMORIES_USER_KEY_INDEX);
 
 	db = drizzle(sqlite, { schema });
 	return db;

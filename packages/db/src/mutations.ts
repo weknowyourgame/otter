@@ -1,6 +1,18 @@
 import { eq, lt } from "drizzle-orm";
 import { getDb } from "./connection.js";
-import { type ChunkRow, chunks, type DocRow, docs, type NewChunkRow, type NewDocRow, type NewSessionRow, sessions } from "./schema.js";
+import {
+	type ChunkRow,
+	chunks,
+	type DocRow,
+	docs,
+	type MemoryRow,
+	memories,
+	type NewChunkRow,
+	type NewDocRow,
+	type NewMemoryRow,
+	type NewSessionRow,
+	sessions,
+} from "./schema.js";
 
 export function upsertSession(row: NewSessionRow): void {
 	getDb()
@@ -50,4 +62,14 @@ export function replaceChunksForDoc(docId: string, rows: NewChunkRow[]): ChunkRo
 
 export function setChunkEmbedding(id: string, embedding: string): void {
 	getDb().update(chunks).set({ embedding }).where(eq(chunks.id, id)).run();
+}
+
+export function insertMemory(row: NewMemoryRow): MemoryRow {
+	return getDb().insert(memories).values(row).returning().get();
+}
+
+/** Returns true if a row was actually deleted, so a forget-tool call can report "nothing to forget" honestly. */
+export function deleteMemory(id: string): boolean {
+	const deleted = getDb().delete(memories).where(eq(memories.id, id)).returning({ id: memories.id }).all();
+	return deleted.length > 0;
 }

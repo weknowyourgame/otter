@@ -45,12 +45,24 @@ export interface LastActionReport {
 	error?: string;
 }
 
+export interface StepRequestUser {
+	email?: string;
+	name?: string;
+}
+
 export interface StepRequest {
 	sessionId?: string;
 	/** Present when the user typed something new (starts or redirects the task). */
 	message?: string;
 	snapshot: PageSnapshot;
 	lastAction?: LastActionReport;
+	/**
+	 * Session attribution, forwarded from OttoConfig.user by the SDK — it was
+	 * already being sent (agent.ts's stepPayload includes it) but this type
+	 * never declared it, so the server silently dropped it. Wiring it up now:
+	 * `email` is the only identity Otto has for cross-session memory (Phase 9).
+	 */
+	user?: StepRequestUser;
 }
 
 export interface StepResponse {

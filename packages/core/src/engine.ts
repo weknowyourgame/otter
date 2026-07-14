@@ -8,7 +8,8 @@ import {
 import { formatKnowledgeResultForModel, searchKnowledgeBase } from "./knowledge.js";
 import { requestNextAction, type ChatMessage } from "./llm.js";
 import { localNextAction, type LocalPlannerState } from "./local.js";
-import { SYSTEM_PROMPT, renderSnapshot } from "./prompt.js";
+import { formatKnownFactsForPrompt, forgetFact, loadKnownFacts, rememberFact } from "./memory.js";
+import { buildSystemPrompt, renderSnapshot } from "./prompt.js";
 import type {
 	AgentAction,
 	EngineConfig,
@@ -21,7 +22,7 @@ import type {
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const DEFAULT_MAX_STEPS = 24;
 const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
-const MAX_KNOWLEDGE_SEARCHES_PER_STEP = 3;
+const MAX_TOOL_RESOLUTION_ITERATIONS = 3;
 
 interface Session {
 	id: string;
@@ -103,8 +104,17 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 	const model = config.model?.trim() || DEFAULT_MODEL;
 	const maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;
 
+	const userKey = req.user?.email?.trim() || undefined;
+
 	let session = req.sessionId ? maybeFromRow(getSessionRow(req.sessionId)) : undefined;
 	if (!session) {
+		const history: ChatMessage[] = [{ role: "system", content: buildSystemPrompt(Boolean(userKey)) }];
+		if (userKey) {
+			const facts = loadKnownFacts(userKey);
+			if (facts.length > 0) {
+				history.push({ role: "system", content: formatKnownFactsForPrompt(facts) });
+			}
+		}
 		session = {
 			id: newId(),
 			createdAt: Date.now(),
@@ -113,7 +123,7 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 			steps: 0,
 			source: apiKey ? "ai" : "local",
 			state: "active",
-			history: [{ role: "system", content: SYSTEM_PROMPT }],
+			history,
 			events: [],
 		};
 	}
@@ -138,7 +148,7 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 	}
 
 	const response = apiKey
-		? await aiStep(session, req, apiKey, model)
+		? await aiStep(session, req, apiKey, model, userKey)
 		: localStep(session, req);
 
 	if (response.status) record(session, "step", response.status);
@@ -160,6 +170,7 @@ async function aiStep(
 	req: StepRequest,
 	apiKey: string,
 	model: string,
+	userKey: string | undefined,
 ): Promise<StepResponse> {
 	const snapshotText = renderSnapshot(req.snapshot);
 
@@ -199,22 +210,45 @@ async function aiStep(
 	}
 
 	try {
-		// search_knowledge_base resolves server-side, inline: the SDK never
-		// sees it, only the client-facing actions in AgentAction. Bounded so a
-		// model that keeps re-searching can't loop forever within one runStep().
-		for (let iteration = 0; iteration < MAX_KNOWLEDGE_SEARCHES_PER_STEP; iteration++) {
-			const step = await requestNextAction(session.history, apiKey, model);
+		// search_knowledge_base/remember/forget all resolve server-side, inline:
+		// the SDK never sees them, only the client-facing actions in
+		// AgentAction. Bounded so a model that keeps calling tools can't loop
+		// forever within one runStep().
+		for (let iteration = 0; iteration < MAX_TOOL_RESOLUTION_ITERATIONS; iteration++) {
+			const step = await requestNextAction(session.history, apiKey, model, { includeMemoryTools: Boolean(userKey) });
 			session.history.push(step.assistantMessage);
 
 			if (step.kind === "action") {
 				return { sessionId: session.id, action: step.action, status: step.status, source: "ai" };
 			}
 
-			const result = await searchKnowledgeBase(step.query, apiKey);
+			if (step.kind === "search") {
+				const result = await searchKnowledgeBase(step.query, apiKey);
+				session.history.push({
+					role: "tool",
+					tool_call_id: step.toolCallId,
+					content: formatKnowledgeResultForModel(result),
+				});
+				continue;
+			}
+
+			if (step.kind === "remember") {
+				// userKey is guaranteed here — the tool is only offered when it's set.
+				const memory = rememberFact(userKey as string, step.content);
+				session.history.push({
+					role: "tool",
+					tool_call_id: step.toolCallId,
+					content: `Remembered as [${memory.id}].`,
+				});
+				continue;
+			}
+
+			// step.kind === "forget"
+			const deleted = forgetFact(userKey as string, step.memoryId);
 			session.history.push({
 				role: "tool",
 				tool_call_id: step.toolCallId,
-				content: formatKnowledgeResultForModel(result),
+				content: deleted ? "Forgotten." : `No memory found with id [${step.memoryId}].`,
 			});
 		}
 

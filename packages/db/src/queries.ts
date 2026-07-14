@@ -1,6 +1,6 @@
 import { asc, desc, eq } from "drizzle-orm";
 import { getDb } from "./connection.js";
-import { type ChunkRow, chunks, type DocRow, docs, type SessionRow, sessions } from "./schema.js";
+import { type ChunkRow, chunks, type DocRow, docs, type MemoryRow, memories, type SessionRow, sessions } from "./schema.js";
 
 /** Sync — bun:sqlite (and drizzle's bun-sqlite driver) are synchronous. */
 export function getSession(id: string): SessionRow | undefined {
@@ -26,4 +26,9 @@ export function listChunksForDoc(docId: string): ChunkRow[] {
 /** All chunks across all docs — Phase 8's embedding step and retrieval will page through this. */
 export function listAllChunks(): ChunkRow[] {
 	return getDb().select().from(chunks).all();
+}
+
+/** Most recent facts for a user, newest first — injected once at session start. */
+export function listMemoriesForUser(userKey: string, limit = 20): MemoryRow[] {
+	return getDb().select().from(memories).where(eq(memories.userKey, userKey)).orderBy(desc(memories.createdAt)).limit(limit).all();
 }
