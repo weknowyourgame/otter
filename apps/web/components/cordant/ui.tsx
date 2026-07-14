@@ -143,7 +143,7 @@ export function Checkbox({ checked, onChange, label }: { checked: boolean; onCha
 			aria-label={label}
 			onClick={() => onChange(!checked)}
 			className={`grid h-[18px] w-[18px] flex-none place-items-center rounded-[5px] border transition ${
-				checked ? "border-zinc-900 bg-zinc-900" : "border-zinc-300 bg-white hover:border-zinc-400"
+				checked ? "border-indigo-600 bg-indigo-600" : "border-zinc-300 bg-white hover:border-zinc-400"
 			}`}
 		>
 			{checked && (
@@ -159,7 +159,7 @@ export function Input(props: React.InputHTMLAttributes<HTMLInputElement>) {
 	return (
 		<input
 			{...props}
-			className={`w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-[13.5px] text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 ${props.className ?? ""}`}
+			className={`w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-[13.5px] text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 ${props.className ?? ""}`}
 		/>
 	);
 }
@@ -168,7 +168,7 @@ export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement
 	return (
 		<textarea
 			{...props}
-			className={`w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-[13.5px] text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-500 focus:ring-2 focus:ring-zinc-200 ${props.className ?? ""}`}
+			className={`w-full rounded-lg border border-zinc-300 px-3.5 py-2 text-[13.5px] text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 ${props.className ?? ""}`}
 		/>
 	);
 }
@@ -191,7 +191,7 @@ export function Select({
 			aria-label={ariaLabel}
 			value={value}
 			onChange={(e) => onChange(e.target.value)}
-			className={`rounded-lg border border-zinc-300 px-3 py-2 text-[13px] text-zinc-700 outline-none focus:border-zinc-500 ${className ?? ""}`}
+			className={`rounded-lg border border-zinc-300 px-3 py-2 text-[13px] text-zinc-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 ${className ?? ""}`}
 		>
 			{options.map((o) => (
 				<option key={o}>{o}</option>
@@ -237,7 +237,7 @@ export function Tabs({ tabs, active, onChange }: { tabs: string[]; active: strin
 					type="button"
 					onClick={() => onChange(t)}
 					className={`-mb-px border-b-2 px-3.5 py-2.5 text-[13px] font-medium transition ${
-						active === t ? "border-zinc-900 text-zinc-900" : "border-transparent text-zinc-500 hover:text-zinc-800"
+						active === t ? "border-indigo-600 text-indigo-700" : "border-transparent text-zinc-500 hover:text-zinc-800"
 					}`}
 				>
 					{t}

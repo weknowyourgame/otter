@@ -49,7 +49,7 @@ export function CordantShell({ children }: { children: ReactNode }) {
 		<div className="flex min-h-screen bg-zinc-50 text-zinc-900">
 			<aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-zinc-200 bg-white max-md:hidden">
 				<div className="flex items-center gap-2.5 border-b border-zinc-100 px-5" style={{ height: 60 }}>
-					<span className="grid h-7 w-7 place-items-center rounded-lg bg-zinc-900">
+					<span className="grid h-7 w-7 place-items-center rounded-lg bg-indigo-600">
 						<CordantMark />
 					</span>
 					<div className="min-w-0">
@@ -170,20 +170,20 @@ function NavLink({
 				active
 					? danger
 						? "bg-red-50 text-red-700"
-						: "bg-zinc-100 text-zinc-900"
+						: "bg-indigo-50 text-indigo-700"
 					: danger
 						? "text-red-500 hover:bg-red-50"
-						: "text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900"
+						: "text-zinc-600 hover:bg-zinc-100/70 hover:text-zinc-900"
 			}`}
 		>
 			{icon && (
-				<svg viewBox="0 0 24 24" className={`h-[17px] w-[17px] flex-none ${active ? "" : "text-zinc-400"}`} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+				<svg viewBox="0 0 24 24" className={`h-[17px] w-[17px] flex-none ${active ? "text-indigo-600" : "text-zinc-400"}`} fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
 					{icon}
 				</svg>
 			)}
 			<span className="flex-1 truncate">{label}</span>
 			{count !== undefined && count > 0 && (
-				<span className="rounded-full bg-zinc-900 px-1.5 py-0.5 text-[10px] font-bold text-white">{count}</span>
+				<span className="rounded-full bg-indigo-600 px-1.5 py-0.5 text-[10px] font-bold text-white">{count}</span>
 			)}
 		</Link>
 	);
