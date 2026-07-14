@@ -1,0 +1,21 @@
+@import "tailwindcss";
+
+/* Otto's app surfaces (dashboard, demo). This file is exclusive to the
+	 (app) route group — the marketing site has its own, completely separate
+	 globals.css, so tokens here can never be pulled out from under it by an
+	 edit to that file (and vice versa). Cordant's own pages (/demo) are
+	 deliberately written against Tailwind's stock palette only and don't
+	 depend on these; only the dashboard uses them. */
+
+@theme {
+	--color-ink: #0a0b0e;
+	--color-accent: #5b6cf9;
+	--color-accent-soft: #7c89ff;
+}
+
+body {
+	font-family: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+		"Helvetica Neue", Arial, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
