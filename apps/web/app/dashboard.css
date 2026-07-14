@@ -1,10 +1,8 @@
-@font-face {
-	font-family: "Otto Stout";
-	src: url("/marketing/F37Stout-Regular.woff2") format("woff2");
-	font-display: swap;
-}
-
 :root {
+	/* Dashboard identity: change these tokens to retheme every workspace route. */
+	--od-font-body:
+		var(--font-dashboard-face), "IBM Plex Sans", system-ui, sans-serif;
+	--od-font-mono: var(--font-dashboard-mono-face), "IBM Plex Mono", monospace;
 	--od-bg: #080808;
 	--od-bg-raised: #0d0d0d;
 	--od-bg-soft: #121212;
@@ -14,8 +12,10 @@
 	--od-text: #f2f2f2;
 	--od-muted: #8d8d8d;
 	--od-muted-strong: #b7b7b7;
-	--od-orange: #ff4d12;
-	--od-orange-soft: #2b130d;
+	--od-accent: #69d8c8;
+	--od-accent-soft: #0e2b26;
+	--od-danger: #f07482;
+	--od-danger-soft: #2a1116;
 	--od-green: #18bc84;
 	--od-blue: #90b7ff;
 }
@@ -38,7 +38,7 @@
 	min-width: 320px;
 	background: var(--od-bg);
 	color: var(--od-text);
-	font-family: var(--font-inter), system-ui, sans-serif;
+	font-family: var(--od-font-body);
 	font-size: 14px;
 }
 
@@ -112,7 +112,7 @@
 	padding: 2px 7px;
 	color: #bdbdbd;
 	font:
-		12px / 1.2 ui-monospace,
+		12px / 1.2 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -123,7 +123,7 @@
 	gap: 10px;
 	color: #b5b5b5;
 	font:
-		13px / 1.2 ui-monospace,
+		13px / 1.2 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -221,7 +221,7 @@
 .od-nav-item.is-active {
 	border-color: #222;
 	background: #171717;
-	box-shadow: inset 2px 0 0 var(--od-orange);
+	box-shadow: inset 2px 0 0 var(--od-accent);
 	color: white;
 }
 
@@ -271,22 +271,22 @@
 }
 
 .od-usage-card {
-	border: 1px dashed #5a2716;
-	background: #100b09;
+	border: 1px dashed #28564d;
+	background: #091310;
 	padding: 15px 16px;
 	margin-bottom: 4px;
 }
 
 .od-usage-card > a {
-	color: var(--od-orange);
+	color: var(--od-accent);
 	font-weight: 650;
 	text-decoration: none;
 }
 
 .od-usage-card > p {
-	border: 1px solid #5f2a18;
-	background: #1c0e09;
-	color: #d9653e;
+	border: 1px solid #29584e;
+	background: #0d211c;
+	color: #82c8ba;
 	font-size: 11px;
 	line-height: 1.45;
 	margin: 12px 0 13px;
@@ -412,7 +412,7 @@
 .od-mode-grid button:focus-visible,
 .od-goal-picker button:focus-visible,
 .od-tone-picker button:focus-visible {
-	outline: 2px solid var(--od-orange);
+	outline: 2px solid var(--od-accent);
 	outline-offset: 2px;
 }
 
@@ -473,13 +473,13 @@
 }
 
 .od-button--danger {
-	border-color: #71341f;
-	background: #2a150f;
-	color: #ff7142;
+	border-color: #6d3039;
+	background: var(--od-danger-soft);
+	color: var(--od-danger);
 }
 
 .od-button--danger:hover:not(:disabled) {
-	background: #361910;
+	background: #39171e;
 }
 
 .od-page-title {
@@ -525,7 +525,7 @@
 }
 
 .od-settings-section.is-danger .od-section-copy h2 {
-	color: #ff6c3c;
+	color: var(--od-danger);
 }
 
 .od-panel {
@@ -708,8 +708,8 @@
 }
 
 .od-toggle.is-on {
-	border-color: #a55c45;
-	background: var(--od-orange);
+	border-color: #4c9185;
+	background: var(--od-accent);
 }
 
 .od-toggle.is-on > span {
@@ -821,10 +821,10 @@
 }
 
 .od-empty-state h2 {
-	font:
-		26px / 1.1 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: 26px;
+	font-weight: 500;
+	line-height: 1.1;
 	margin: 0;
 }
 
@@ -888,7 +888,7 @@
 .od-list-heading a:hover,
 .od-source-limits a:hover,
 .od-file-counter a:hover {
-	color: var(--od-orange);
+	color: var(--od-accent);
 }
 
 .od-content-page,
@@ -1062,10 +1062,10 @@
 }
 
 .od-org-summary strong {
-	font:
-		30px / 1.15 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: 30px;
+	font-weight: 500;
+	line-height: 1.15;
 }
 
 .od-org-summary__mark {
@@ -1148,15 +1148,15 @@
 	grid-template-columns: 28px minmax(0, 1fr) auto;
 	align-items: center;
 	gap: 15px;
-	border: 1px dashed #4c2518;
-	background: #100b09;
+	border: 1px dashed #28564d;
+	background: #091310;
 	margin-top: 50px;
 	padding: 18px;
 }
 
 .od-next-step > svg,
 .od-next-step a {
-	color: var(--od-orange);
+	color: var(--od-accent);
 }
 
 .od-next-step strong {
@@ -1164,7 +1164,7 @@
 }
 
 .od-next-step p {
-	color: #8b7e79;
+	color: #84958f;
 	font-size: 11px;
 	margin: 4px 0 0;
 }
@@ -1213,17 +1213,17 @@
 }
 
 .od-plan-current h3 {
-	font:
-		35px / 1 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: 35px;
+	font-weight: 500;
+	line-height: 1;
 	margin: 16px 0 8px;
 }
 
 .od-plan-current h3 small {
 	color: #7c7c7c;
 	font:
-		12px / 1 var(--font-inter),
+		12px / 1 var(--od-font-body),
 		sans-serif;
 }
 
@@ -1260,7 +1260,7 @@
 }
 
 .od-meter--orange .od-meter__track > span {
-	background: var(--od-orange);
+	background: var(--od-accent);
 }
 
 .od-meter--blue .od-meter__track > span {
@@ -1292,7 +1292,7 @@
 
 .od-key-cell {
 	gap: 3px;
-	font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+	font-family: var(--od-font-mono), SFMono-Regular, Menlo, monospace;
 }
 
 .od-byok {
@@ -1330,7 +1330,7 @@
 	border: 1px solid #2e2e2e;
 	color: #797979;
 	font:
-		9px ui-monospace,
+		9px var(--od-font-mono),
 		monospace;
 	margin-top: 21px;
 }
@@ -1377,10 +1377,10 @@
 }
 
 .od-modal__header h2 {
-	font:
-		22px / 1.1 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: 22px;
+	font-weight: 500;
+	line-height: 1.1;
 	margin: 0;
 }
 
@@ -1443,7 +1443,7 @@
 	place-items: center;
 	border: 1px solid #343434;
 	background: #161616;
-	color: var(--od-orange);
+	color: var(--od-accent);
 }
 
 .od-agent-identity > div:nth-child(2),
@@ -1499,9 +1499,9 @@
 
 .od-preset-strip button.is-active,
 .od-tone-picker button.is-active {
-	border-color: #6b321f;
-	background: #1d0e09;
-	color: var(--od-orange);
+	border-color: #32675d;
+	background: var(--od-accent-soft);
+	color: var(--od-accent);
 }
 
 .od-tool-section {
@@ -1634,7 +1634,7 @@
 
 .od-source-limits > a {
 	display: block;
-	color: var(--od-orange);
+	color: var(--od-accent);
 	text-align: right;
 	margin-top: 22px;
 }
@@ -1668,7 +1668,7 @@
 	border-left: 1px solid #3a3a3a;
 	color: #c5c5c5;
 	font:
-		12px / 1.2 ui-monospace,
+		12px / 1.2 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -1761,7 +1761,7 @@
 }
 
 .od-file-counter a {
-	color: var(--od-orange);
+	color: var(--od-accent);
 }
 
 .od-visually-hidden {
@@ -1787,7 +1787,7 @@
 	min-height: 100vh;
 	background: #080808;
 	color: var(--od-text);
-	font-family: var(--font-inter), system-ui, sans-serif;
+	font-family: var(--od-font-body), system-ui, sans-serif;
 }
 
 .od-flow__topbar {
@@ -1836,9 +1836,9 @@
 }
 
 .od-flow__aside > div:first-child > span {
-	color: var(--od-orange);
+	color: var(--od-accent);
 	font:
-		12px / 1 ui-monospace,
+		12px / 1 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -1847,10 +1847,10 @@
 
 .od-flow__aside h1 {
 	max-width: 520px;
-	font:
-		clamp(42px, 5vw, 72px) / 0.98 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: clamp(42px, 5vw, 72px);
+	font-weight: 500;
+	line-height: 1.02;
 	margin: 24px 0;
 }
 
@@ -1879,7 +1879,7 @@
 }
 
 .od-flow__progress i.is-active {
-	background: var(--od-orange);
+	background: var(--od-accent);
 }
 
 .od-flow__main {
@@ -1911,7 +1911,7 @@
 	place-items: center;
 	border: 1px solid #343434;
 	background: #141414;
-	color: var(--od-orange);
+	color: var(--od-accent);
 }
 
 .od-flow-card__head h2 {
@@ -1972,10 +1972,10 @@
 }
 
 .od-mode-grid button.is-active {
-	border-color: #6e321f;
-	background: #150d0a;
+	border-color: #32675d;
+	background: var(--od-accent-soft);
 	color: white;
-	box-shadow: inset 0 -2px 0 var(--od-orange);
+	box-shadow: inset 0 -2px 0 var(--od-accent);
 }
 
 .od-mode-grid button strong {
@@ -1993,7 +1993,7 @@
 	position: absolute;
 	top: 15px;
 	right: 15px;
-	color: var(--od-orange);
+	color: var(--od-accent);
 	font-size: 9px;
 	text-transform: uppercase;
 }
@@ -2011,7 +2011,7 @@
 	border-bottom: 1px solid #252525;
 	color: #8f8f8f;
 	font:
-		11px / 1 ui-monospace,
+		11px / 1 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -2023,7 +2023,7 @@
 	overflow: auto;
 	color: #bbb;
 	font:
-		11px / 1.65 ui-monospace,
+		11px / 1.65 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -2097,10 +2097,10 @@
 }
 
 .od-flow-success h2 {
-	font:
-		30px / 1.05 "Otto Stout",
-		var(--font-inter),
-		sans-serif;
+	font-family: var(--od-font-body);
+	font-size: 30px;
+	font-weight: 500;
+	line-height: 1.05;
 	margin: 2px 0 -10px;
 }
 
@@ -2192,14 +2192,14 @@
 }
 
 .od-goal-picker button.is-active {
-	border-color: #6a321f;
-	background: #180e0a;
+	border-color: #32675d;
+	background: var(--od-accent-soft);
 	color: white;
 }
 
 .od-goal-picker button.is-active i {
-	border-color: var(--od-orange);
-	background: var(--od-orange);
+	border-color: var(--od-accent);
+	background: var(--od-accent);
 	color: white;
 }
 
@@ -2212,14 +2212,14 @@
 	flex-direction: column;
 	gap: 14px;
 	border: 1px dashed #333;
-	color: var(--od-orange);
+	color: var(--od-accent);
 	overflow: hidden;
 }
 
 .od-analysis-visual > span {
 	color: #aaa;
 	font:
-		11px / 1 ui-monospace,
+		11px / 1 var(--od-font-mono),
 		SFMono-Regular,
 		Menlo,
 		monospace;
@@ -2229,7 +2229,7 @@
 	position: absolute;
 	width: 75px;
 	height: 75px;
-	border: 1px solid rgba(255, 77, 18, 0.45);
+	border: 1px solid rgba(105, 216, 200, 0.45);
 	border-radius: 50%;
 	animation: od-pulse 1.8s ease-out infinite;
 }
@@ -2304,8 +2304,8 @@
 }
 
 .od-agent-summary > span {
-	border-color: #6b321f;
-	color: var(--od-orange);
+	border-color: #32675d;
+	color: var(--od-accent);
 }
 
 .od-tone-picker > div {
