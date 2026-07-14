@@ -1,0 +1,117 @@
+import { createHmac, randomBytes } from "node:crypto";
+import {
+	type ApiKeyRow,
+	getActiveApiKeyByHash,
+	insertApiKey,
+	listAllowedOrigins,
+	listApiKeysForTenant,
+	revokeApiKey,
+	touchApiKey,
+} from "otto-db";
+
+export type ApiKeyType = "public" | "secret";
+export type ApiKeyMode = "test" | "live";
+
+const DEFAULT_DEV_SECRET = "otto-local-api-key-secret-change-before-production";
+
+function hashingSecret(): string {
+	const secret = process.env.OTTO_API_KEY_SECRET?.trim();
+	if (secret) return secret;
+	if (process.env.NODE_ENV === "production") {
+		throw new Error("OTTO_API_KEY_SECRET is required in production");
+	}
+	return DEFAULT_DEV_SECRET;
+}
+
+export function generateApiKey(type: ApiKeyType, mode: ApiKeyMode): string {
+	const prefix = type === "public" ? "pk" : "sk";
+	return `${prefix}_${mode}_${randomBytes(32).toString("hex")}`;
+}
+
+export function hashApiKey(rawKey: string, secret = hashingSecret()): string {
+	return createHmac("sha256", secret).update(rawKey).digest("hex");
+}
+
+export function isValidApiKeyFormat(rawKey: string): boolean {
+	return /^(pk|sk)_(test|live)_[0-9a-f]{64}$/.test(rawKey);
+}
+
+export function normalizeOrigin(input: string): string {
+	const trimmed = input.trim();
+	if (!trimmed || trimmed.includes("*")) throw new Error("invalid_origin");
+	const candidate = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+		? trimmed
+		: `${trimmed.startsWith("localhost") || trimmed.startsWith("127.0.0.1") ? "http" : "https"}://${trimmed}`;
+	const url = new URL(candidate);
+	if (
+		!["http:", "https:"].includes(url.protocol) ||
+		url.username ||
+		url.password ||
+		url.origin === "null"
+	) {
+		throw new Error("invalid_origin");
+	}
+	if (url.pathname !== "/" || url.search || url.hash)
+		throw new Error("origin_must_not_include_path");
+	return url.origin;
+}
+
+export function createApiKey(input: {
+	tenantId: string;
+	userId: string;
+	name: string;
+	type: ApiKeyType;
+	mode: ApiKeyMode;
+}): { key: ApiKeyRow; rawKey: string } {
+	const rawKey = generateApiKey(input.type, input.mode);
+	const prefix = rawKey.slice(0, rawKey.indexOf("_", 3));
+	const key = insertApiKey({
+		id: crypto.randomUUID(),
+		tenantId: input.tenantId,
+		createdBy: input.userId,
+		name: input.name,
+		type: input.type,
+		mode: input.mode,
+		keyHash: hashApiKey(rawKey),
+		keyPrefix: prefix,
+		lastFour: rawKey.slice(-4),
+		createdAt: Date.now(),
+	});
+	return { key, rawKey };
+}
+
+export function serializeApiKey(key: ApiKeyRow) {
+	return {
+		id: key.id,
+		name: key.name,
+		type: key.type,
+		mode: key.mode,
+		maskedKey: `${key.keyPrefix}_${"*".repeat(8)}${key.lastFour}`,
+		createdAt: key.createdAt,
+		lastUsedAt: key.lastUsedAt,
+	};
+}
+
+export function listTenantApiKeys(tenantId: string) {
+	return listApiKeysForTenant(tenantId).map(serializeApiKey);
+}
+
+export function revokeTenantApiKey(id: string, tenantId: string): boolean {
+	return revokeApiKey(id, tenantId);
+}
+
+export type ValidatedApiKey = {
+	key: ApiKeyRow;
+	origins: string[];
+};
+
+export function validateApiKey(rawKey: string): ValidatedApiKey | undefined {
+	if (!isValidApiKeyFormat(rawKey)) return undefined;
+	const key = getActiveApiKeyByHash(hashApiKey(rawKey));
+	if (!key) return undefined;
+	return { key, origins: listAllowedOrigins(key.tenantId) };
+}
+
+export function markApiKeyUsed(id: string): void {
+	touchApiKey(id);
+}

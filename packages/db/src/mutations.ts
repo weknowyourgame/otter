@@ -1,4 +1,4 @@
-import { eq, lt } from "drizzle-orm";
+import { and, eq, lt } from "drizzle-orm";
 import { getDb } from "./connection.js";
 import {
 	type ChunkRow,
@@ -21,6 +21,8 @@ export function upsertSession(row: NewSessionRow): void {
 		.onConflictDoUpdate({
 			target: sessions.id,
 			set: {
+				tenantId: row.tenantId,
+				apiKeyId: row.apiKeyId,
 				updatedAt: row.updatedAt,
 				title: row.title,
 				steps: row.steps,
@@ -35,7 +37,10 @@ export function upsertSession(row: NewSessionRow): void {
 }
 
 export function deleteExpiredSessions(olderThanUpdatedAt: number): void {
-	getDb().delete(sessions).where(lt(sessions.updatedAt, olderThanUpdatedAt)).run();
+	getDb()
+		.delete(sessions)
+		.where(lt(sessions.updatedAt, olderThanUpdatedAt))
+		.run();
 }
 
 export function insertDoc(row: NewDocRow): DocRow {
@@ -44,16 +49,29 @@ export function insertDoc(row: NewDocRow): DocRow {
 
 export function updateDocStatus(
 	id: string,
-	patch: { status: DocRow["status"]; title?: string | null; errorMessage?: string | null; updatedAt: number },
+	patch: {
+		status: DocRow["status"];
+		title?: string | null;
+		errorMessage?: string | null;
+		updatedAt: number;
+	},
 ): void {
 	getDb()
 		.update(docs)
-		.set({ status: patch.status, title: patch.title, errorMessage: patch.errorMessage, updatedAt: patch.updatedAt })
+		.set({
+			status: patch.status,
+			title: patch.title,
+			errorMessage: patch.errorMessage,
+			updatedAt: patch.updatedAt,
+		})
 		.where(eq(docs.id, id))
 		.run();
 }
 
-export function replaceChunksForDoc(docId: string, rows: NewChunkRow[]): ChunkRow[] {
+export function replaceChunksForDoc(
+	docId: string,
+	rows: NewChunkRow[],
+): ChunkRow[] {
 	const db = getDb();
 	db.delete(chunks).where(eq(chunks.docId, docId)).run();
 	if (rows.length === 0) return [];
@@ -69,7 +87,15 @@ export function insertMemory(row: NewMemoryRow): MemoryRow {
 }
 
 /** Returns true if a row was actually deleted, so a forget-tool call can report "nothing to forget" honestly. */
-export function deleteMemory(id: string): boolean {
-	const deleted = getDb().delete(memories).where(eq(memories.id, id)).returning({ id: memories.id }).all();
+export function deleteMemory(id: string, tenantId?: string): boolean {
+	const deleted = getDb()
+		.delete(memories)
+		.where(
+			tenantId
+				? and(eq(memories.id, id), eq(memories.tenantId, tenantId))
+				: eq(memories.id, id),
+		)
+		.returning({ id: memories.id })
+		.all();
 	return deleted.length > 0;
 }

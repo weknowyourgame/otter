@@ -5,10 +5,18 @@ import {
 	type SessionRow,
 	upsertSession,
 } from "otto-db";
-import { formatKnowledgeResultForModel, searchKnowledgeBase } from "./knowledge.js";
-import { requestNextAction, type ChatMessage } from "./llm.js";
-import { localNextAction, type LocalPlannerState } from "./local.js";
-import { formatKnownFactsForPrompt, forgetFact, loadKnownFacts, rememberFact } from "./memory.js";
+import {
+	formatKnowledgeResultForModel,
+	searchKnowledgeBase,
+} from "./knowledge.js";
+import { type ChatMessage, requestNextAction } from "./llm.js";
+import { type LocalPlannerState, localNextAction } from "./local.js";
+import {
+	forgetFact,
+	formatKnownFactsForPrompt,
+	loadKnownFacts,
+	rememberFact,
+} from "./memory.js";
 import { buildSystemPrompt, renderSnapshot } from "./prompt.js";
 import type {
 	AgentAction,
@@ -26,6 +34,8 @@ const MAX_TOOL_RESOLUTION_ITERATIONS = 3;
 
 interface Session {
 	id: string;
+	tenantId?: string;
+	apiKeyId?: string;
 	createdAt: number;
 	updatedAt: number;
 	title: string;
@@ -46,6 +56,8 @@ interface Session {
 function fromRow(row: SessionRow): Session {
 	return {
 		id: row.id,
+		tenantId: row.tenantId ?? undefined,
+		apiKeyId: row.apiKeyId ?? undefined,
 		createdAt: row.createdAt,
 		updatedAt: row.updatedAt,
 		title: row.title,
@@ -65,6 +77,8 @@ function maybeFromRow(row: SessionRow | undefined): Session | undefined {
 function toRow(session: Session): Parameters<typeof upsertSession>[0] {
 	return {
 		id: session.id,
+		tenantId: session.tenantId ?? null,
+		apiKeyId: session.apiKeyId ?? null,
 		createdAt: session.createdAt,
 		updatedAt: session.updatedAt,
 		title: session.title,
@@ -87,9 +101,14 @@ function newId(): string {
 	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-function record(session: Session, kind: SessionEvent["kind"], text: string): void {
+function record(
+	session: Session,
+	kind: SessionEvent["kind"],
+	text: string,
+): void {
 	session.events.push({ at: Date.now(), kind, text });
-	if (session.events.length > 200) session.events.splice(0, session.events.length - 200);
+	if (session.events.length > 200)
+		session.events.splice(0, session.events.length - 200);
 }
 
 /**
@@ -97,7 +116,10 @@ function record(session: Session, kind: SessionEvent["kind"], text: string): voi
  * when the user typed something, with `lastAction` after executing what we
  * returned last time. Always answers with exactly one next action.
  */
-export async function runStep(req: StepRequest, config: EngineConfig = {}): Promise<StepResponse> {
+export async function runStep(
+	req: StepRequest,
+	config: EngineConfig = {},
+): Promise<StepResponse> {
 	sweep();
 
 	// Checked before touching session state at all — an in-flight session
@@ -105,10 +127,17 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 	// This is a backstop in addition to the SDK's client-side Stop button,
 	// not a replacement for it: Stop must keep working even if this server
 	// (or Redis, if config.pauseStore is backed by it) is unreachable.
-	if (req.sessionId && config.pauseStore && (await config.pauseStore.isPaused(req.sessionId))) {
+	if (
+		req.sessionId &&
+		config.pauseStore &&
+		(await config.pauseStore.isPaused(req.sessionId))
+	) {
 		return {
 			sessionId: req.sessionId,
-			action: { type: "say", text: "This session is paused right now. Ask again in a moment, or reach out if you need it resumed sooner." },
+			action: {
+				type: "say",
+				text: "This session is paused right now. Ask again in a moment, or reach out if you need it resumed sooner.",
+			},
 			source: "ai",
 		};
 	}
@@ -119,17 +148,29 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 
 	const userKey = req.user?.email?.trim() || undefined;
 
-	let session = req.sessionId ? maybeFromRow(getSessionRow(req.sessionId)) : undefined;
+	let session = req.sessionId
+		? maybeFromRow(getSessionRow(req.sessionId))
+		: undefined;
+	if (session && config.tenantId && session.tenantId !== config.tenantId) {
+		throw new Error("session_not_found");
+	}
 	if (!session) {
-		const history: ChatMessage[] = [{ role: "system", content: buildSystemPrompt(Boolean(userKey)) }];
+		const history: ChatMessage[] = [
+			{ role: "system", content: buildSystemPrompt(Boolean(userKey)) },
+		];
 		if (userKey) {
-			const facts = loadKnownFacts(userKey);
+			const facts = loadKnownFacts(userKey, config.tenantId);
 			if (facts.length > 0) {
-				history.push({ role: "system", content: formatKnownFactsForPrompt(facts) });
+				history.push({
+					role: "system",
+					content: formatKnownFactsForPrompt(facts),
+				});
 			}
 		}
 		session = {
 			id: newId(),
+			tenantId: config.tenantId,
+			apiKeyId: config.apiKeyId,
 			createdAt: Date.now(),
 			updatedAt: Date.now(),
 			title: req.message?.slice(0, 80) ?? "Session",
@@ -153,7 +194,8 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 		session.state = "failed";
 		const action: AgentAction = {
 			type: "fail",
-			reason: "I hit my step limit for one task — that usually means I'm going in circles. Mind rephrasing or narrowing it down?",
+			reason:
+				"I hit my step limit for one task — that usually means I'm going in circles. Mind rephrasing or narrowing it down?",
 		};
 		record(session, "result", action.reason);
 		upsertSession(toRow(session));
@@ -165,7 +207,8 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 		: localStep(session, req);
 
 	if (response.status) record(session, "step", response.status);
-	if (response.action.type === "say") record(session, "agent", response.action.text);
+	if (response.action.type === "say")
+		record(session, "agent", response.action.text);
 	if (response.action.type === "done") {
 		session.state = "done";
 		record(session, "result", response.action.summary);
@@ -193,11 +236,14 @@ async function aiStep(
 			msg.content = msg.content.split("\n")[0] + "\n(page state superseded)";
 		}
 		if (msg.role === "user" && msg.content.includes("ELEMENTS:")) {
-			msg.content = msg.content.split("CURRENT PAGE STATE:")[0] + "(page state superseded)";
+			msg.content =
+				msg.content.split("CURRENT PAGE STATE:")[0] + "(page state superseded)";
 		}
 	}
 
-	const lastAssistant = [...session.history].reverse().find((m) => m.role === "assistant");
+	const lastAssistant = [...session.history]
+		.reverse()
+		.find((m) => m.role === "assistant");
 	const pendingCall = lastAssistant?.tool_calls?.[0];
 
 	if (pendingCall && req.lastAction) {
@@ -227,16 +273,31 @@ async function aiStep(
 		// the SDK never sees them, only the client-facing actions in
 		// AgentAction. Bounded so a model that keeps calling tools can't loop
 		// forever within one runStep().
-		for (let iteration = 0; iteration < MAX_TOOL_RESOLUTION_ITERATIONS; iteration++) {
-			const step = await requestNextAction(session.history, apiKey, model, { includeMemoryTools: Boolean(userKey) });
+		for (
+			let iteration = 0;
+			iteration < MAX_TOOL_RESOLUTION_ITERATIONS;
+			iteration++
+		) {
+			const step = await requestNextAction(session.history, apiKey, model, {
+				includeMemoryTools: Boolean(userKey),
+			});
 			session.history.push(step.assistantMessage);
 
 			if (step.kind === "action") {
-				return { sessionId: session.id, action: step.action, status: step.status, source: "ai" };
+				return {
+					sessionId: session.id,
+					action: step.action,
+					status: step.status,
+					source: "ai",
+				};
 			}
 
 			if (step.kind === "search") {
-				const result = await searchKnowledgeBase(step.query, apiKey);
+				const result = await searchKnowledgeBase(
+					step.query,
+					apiKey,
+					session.tenantId,
+				);
 				session.history.push({
 					role: "tool",
 					tool_call_id: step.toolCallId,
@@ -247,7 +308,11 @@ async function aiStep(
 
 			if (step.kind === "remember") {
 				// userKey is guaranteed here — the tool is only offered when it's set.
-				const memory = rememberFact(userKey as string, step.content);
+				const memory = rememberFact(
+					userKey as string,
+					step.content,
+					session.tenantId,
+				);
 				session.history.push({
 					role: "tool",
 					tool_call_id: step.toolCallId,
@@ -257,17 +322,26 @@ async function aiStep(
 			}
 
 			// step.kind === "forget"
-			const deleted = forgetFact(userKey as string, step.memoryId);
+			const deleted = forgetFact(
+				userKey as string,
+				step.memoryId,
+				session.tenantId,
+			);
 			session.history.push({
 				role: "tool",
 				tool_call_id: step.toolCallId,
-				content: deleted ? "Forgotten." : `No memory found with id [${step.memoryId}].`,
+				content: deleted
+					? "Forgotten."
+					: `No memory found with id [${step.memoryId}].`,
 			});
 		}
 
 		return {
 			sessionId: session.id,
-			action: { type: "say", text: "I couldn't pin that down after a few tries — could you rephrase the question?" },
+			action: {
+				type: "say",
+				text: "I couldn't pin that down after a few tries — could you rephrase the question?",
+			},
 			source: "ai",
 		};
 	} catch (err) {
@@ -297,16 +371,18 @@ function localStep(session: Session, req: StepRequest): StepResponse {
 }
 
 /** Recent sessions, newest first — powers the dashboard. */
-export function listSessions(limit = 50): SessionSummary[] {
+export function listSessions(limit = 50, tenantId?: string): SessionSummary[] {
 	sweep();
-	return listSessionRows(limit).map(({ id, createdAt, updatedAt, title, steps, source, state, events }) => ({
-		id,
-		createdAt,
-		updatedAt,
-		title,
-		steps,
-		source,
-		state,
-		events: JSON.parse(events) as SessionEvent[],
-	}));
+	return listSessionRows(limit, tenantId).map(
+		({ id, createdAt, updatedAt, title, steps, source, state, events }) => ({
+			id,
+			createdAt,
+			updatedAt,
+			title,
+			steps,
+			source,
+			state,
+			events: JSON.parse(events) as SessionEvent[],
+		}),
+	);
 }

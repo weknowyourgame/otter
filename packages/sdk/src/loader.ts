@@ -6,7 +6,7 @@
 // finishes loading are queued and replayed once it installs itself.
 //
 //   <script src="https://cdn.example.com/otto-loader.global.js"
-//           data-endpoint="/api/agent" data-accent="#5B6CF9" defer></script>
+//           data-endpoint="/api/agent" data-public-key="pk_live_..." defer></script>
 
 import type { OttoConfig, OttoInstance } from "./types.js";
 
@@ -28,6 +28,7 @@ function configFromDataset(dataset: DOMStringMap): OttoConfig {
 	return {
 		endpoint: dataset.endpoint || undefined,
 		wsEndpoint: dataset.wsEndpoint || undefined,
+		publicKey: dataset.publicKey || undefined,
 		name: dataset.name || undefined,
 		accent: dataset.accent || undefined,
 		theme: (dataset.theme as OttoConfig["theme"]) || undefined,
@@ -37,7 +38,11 @@ function configFromDataset(dataset: DOMStringMap): OttoConfig {
 
 function createStub(config: OttoConfig): LoaderStub {
 	const queue: QueuedCall[] = [];
-	const stub = { __isOttoLoaderStub: true, __config: config, __queue: queue } as LoaderStub;
+	const stub = {
+		__isOttoLoaderStub: true,
+		__config: config,
+		__queue: queue,
+	} as LoaderStub;
 	for (const method of STUB_METHODS) {
 		stub[method] = ((...args: unknown[]) => {
 			queue.push({ method, args });
@@ -54,7 +59,10 @@ function createStub(config: OttoConfig): LoaderStub {
 
 	const globalWindow = window as LoaderWindow;
 	const existing = globalWindow.Otto;
-	if (existing && ("__isOttoRuntime" in existing || "__isOttoLoaderStub" in existing)) {
+	if (
+		existing &&
+		("__isOttoRuntime" in existing || "__isOttoLoaderStub" in existing)
+	) {
 		return; // runtime already installed, or another loader tag already ran
 	}
 

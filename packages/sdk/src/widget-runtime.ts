@@ -22,6 +22,7 @@ function configFromDataset(dataset: DOMStringMap | undefined): OttoConfig {
 	return {
 		endpoint: dataset.endpoint || undefined,
 		wsEndpoint: dataset.wsEndpoint || undefined,
+		publicKey: dataset.publicKey || undefined,
 		name: dataset.name || undefined,
 		accent: dataset.accent || undefined,
 		theme: (dataset.theme as OttoConfig["theme"]) || undefined,
@@ -42,7 +43,9 @@ function configFromDataset(dataset: DOMStringMap | undefined): OttoConfig {
 	const script = document.currentScript;
 	const config =
 		existing?.__config ??
-		configFromDataset(script instanceof HTMLScriptElement ? script.dataset : undefined);
+		configFromDataset(
+			script instanceof HTMLScriptElement ? script.dataset : undefined,
+		);
 
 	const instance = init(config) as RuntimeInstance;
 	instance.__isOttoRuntime = true;

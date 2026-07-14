@@ -2,16 +2,16 @@
 // Survives full page reloads by persisting its state to sessionStorage
 // right before a hard navigation and resuming on the next init().
 
-import { Executor } from "./executor.js";
+import type { Executor } from "./executor.js";
 import { findByRef, observe } from "./observe.js";
 import { describeRisk, isSensitiveInput } from "./risk.js";
-import type { Trail, WidgetUI } from "./ui.js";
 import type {
 	AgentAction,
 	ExecutionResult,
 	ResolvedConfig,
 	StepResponse,
 } from "./types.js";
+import type { Trail, WidgetUI } from "./ui.js";
 
 const RESUME_KEY = "otto:resume";
 const SOCKET_OPEN_TIMEOUT_MS = 3000;
@@ -37,7 +37,10 @@ export class AgentLoop {
 	private aborter: AbortController | null = null;
 	private socket: WebSocket | null = null;
 	private socketOpening: Promise<WebSocket> | null = null;
-	private readonly pendingSocketRequests = new Map<string, PendingSocketRequest>();
+	private readonly pendingSocketRequests = new Map<
+		string,
+		PendingSocketRequest
+	>();
 
 	constructor(
 		private config: ResolvedConfig,
@@ -108,18 +111,31 @@ export class AgentLoop {
 		let steps = trail?.count ?? 0;
 		// Created lazily on the first real step, so pure Q&A turns never show
 		// a trail box and the consent card lands before any step rows.
-		const ensureTrail = (): Trail => (trail ??= this.ui.trail());
+		const ensureTrail = (): Trail => {
+			trail ??= this.ui.trail();
+			return trail;
+		};
 
 		try {
 			while (true) {
-				if (this.stopped) return this.finish(trail, "stopped", "Stopped. Nothing else will be touched.");
+				if (this.stopped)
+					return this.finish(
+						trail,
+						"stopped",
+						"Stopped. Nothing else will be touched.",
+					);
 
 				this.ui.typing(steps === 0 && !lastAction);
 				let resp: StepResponse;
 				try {
 					resp = await this.requestStep(message, lastAction);
-				} catch (err) {
-					if (this.stopped) return this.finish(trail, "stopped", "Stopped. Nothing else will be touched.");
+				} catch {
+					if (this.stopped)
+						return this.finish(
+							trail,
+							"stopped",
+							"Stopped. Nothing else will be touched.",
+						);
 					this.ui.typing(false);
 					return this.finish(
 						trail,
@@ -154,7 +170,11 @@ export class AgentLoop {
 				if (!this.consentGranted) {
 					const allowed = await this.ui.consent();
 					if (!allowed) {
-						return this.finish(trail, "stopped", "No problem — I won't touch anything. Ask me whenever you're ready.");
+						return this.finish(
+							trail,
+							"stopped",
+							"No problem — I won't touch anything. Ask me whenever you're ready.",
+						);
 					}
 					this.consentGranted = true;
 				}
@@ -164,15 +184,29 @@ export class AgentLoop {
 					this.ui.pill(false);
 					const approved = await this.ui.confirmDanger(risk);
 					if (!approved) {
-						return this.finish(trail, "stopped", "Skipped that step and stopped there — tell me how you'd like to proceed.");
+						return this.finish(
+							trail,
+							"stopped",
+							"Skipped that step and stopped there — tell me how you'd like to proceed.",
+						);
 					}
 				}
 
-				if (this.stopped) return this.finish(trail, "stopped", "Stopped. Nothing else will be touched.");
+				if (this.stopped)
+					return this.finish(
+						trail,
+						"stopped",
+						"Stopped. Nothing else will be touched.",
+					);
 
 				steps += 1;
 				if (steps > this.config.maxSteps) {
-					return this.finish(trail, "fail", "I hit my safety cap on steps for one task. Rephrase or break it down and I'll keep going.", true);
+					return this.finish(
+						trail,
+						"fail",
+						"I hit my safety cap on steps for one task. Rephrase or break it down and I'll keep going.",
+						true,
+					);
 				}
 
 				this.ui.pill(true, resp.status);
@@ -180,7 +214,8 @@ export class AgentLoop {
 
 				// A hard navigation unloads this page — save state so the loop
 				// resumes on the other side.
-				if (action.type === "navigate" || action.type === "click") this.persistForHardNav();
+				if (action.type === "navigate" || action.type === "click")
+					this.persistForHardNav();
 
 				const result = await this.executor.execute(action);
 				handle.setDone(result.ok);
@@ -202,7 +237,12 @@ export class AgentLoop {
 		}
 	}
 
-	private finish(trail: Trail | null, kind: "done" | "fail" | "stopped", text: string, error = false): void {
+	private finish(
+		trail: Trail | null,
+		kind: "done" | "fail" | "stopped",
+		text: string,
+		error = false,
+	): void {
 		trail?.finish(kind);
 		this.ui.agent(text, { error });
 		this.ui.pill(false);
@@ -239,12 +279,17 @@ export class AgentLoop {
 		return this.requestStepViaHttp(message, lastAction);
 	}
 
-	private stepPayload(message: string | undefined, lastAction: ExecutionResult | undefined) {
+	private stepPayload(
+		message: string | undefined,
+		lastAction: ExecutionResult | undefined,
+	) {
 		return {
 			sessionId: this.sessionId ?? undefined,
 			message,
 			snapshot: observe(),
-			lastAction: lastAction ? { ok: lastAction.ok, error: lastAction.error } : undefined,
+			lastAction: lastAction
+				? { ok: lastAction.ok, error: lastAction.error }
+				: undefined,
 			user: this.config.user,
 		};
 	}
@@ -256,9 +301,16 @@ export class AgentLoop {
 		this.aborter = new AbortController();
 		const timeout = setTimeout(() => this.aborter?.abort(), STEP_TIMEOUT_MS);
 		try {
-			const res = await fetch(`${this.config.endpoint}/step`, {
+			const url = new URL(`${this.config.endpoint}/step`, window.location.href);
+			if (this.config.publicKey)
+				url.searchParams.set("key", this.config.publicKey);
+			const headers: Record<string, string> = {
+				"content-type": "application/json",
+			};
+			if (this.config.publicKey) headers["x-otto-key"] = this.config.publicKey;
+			const res = await fetch(url, {
 				method: "POST",
-				headers: { "content-type": "application/json" },
+				headers,
 				signal: this.aborter.signal,
 				body: JSON.stringify(this.stepPayload(message, lastAction)),
 			});
@@ -271,11 +323,15 @@ export class AgentLoop {
 	}
 
 	private async ensureSocket(): Promise<WebSocket> {
-		if (this.socket && this.socket.readyState === WebSocket.OPEN) return this.socket;
+		if (this.socket && this.socket.readyState === WebSocket.OPEN)
+			return this.socket;
 		if (this.socketOpening) return this.socketOpening;
 
-		const url = this.config.wsEndpoint;
-		if (!url) throw new Error("no_ws_endpoint");
+		const endpoint = this.config.wsEndpoint;
+		if (!endpoint) throw new Error("no_ws_endpoint");
+		const url = new URL(endpoint, window.location.href);
+		if (this.config.publicKey)
+			url.searchParams.set("key", this.config.publicKey);
 
 		this.socketOpening = new Promise<WebSocket>((resolve, reject) => {
 			const ws = new WebSocket(url);
@@ -317,7 +373,12 @@ export class AgentLoop {
 	}
 
 	private onSocketMessage(event: MessageEvent): void {
-		let parsed: { type: string; requestId?: string; result?: StepResponse; error?: string };
+		let parsed: {
+			type: string;
+			requestId?: string;
+			result?: StepResponse;
+			error?: string;
+		};
 		try {
 			parsed = JSON.parse(String(event.data));
 		} catch {
@@ -359,7 +420,13 @@ export class AgentLoop {
 				},
 			});
 
-			ws.send(JSON.stringify({ type: "step", requestId, ...this.stepPayload(message, lastAction) }));
+			ws.send(
+				JSON.stringify({
+					type: "step",
+					requestId,
+					...this.stepPayload(message, lastAction),
+				}),
+			);
 		});
 	}
 }

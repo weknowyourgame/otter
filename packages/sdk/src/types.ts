@@ -6,6 +6,8 @@ export interface OttoUser {
 export interface OttoConfig {
 	/** Base URL of the agent backend; the SDK POSTs to `${endpoint}/step`. */
 	endpoint?: string;
+	/** Embeddable tenant key issued from Dashboard -> Developers. */
+	publicKey?: string;
 	/**
 	 * WebSocket URL for the realtime step socket (e.g. "ws://localhost:8787/ws").
 	 * Opt-in: unset by default, so existing embeds keep using the HTTP POST
@@ -31,9 +33,12 @@ export interface OttoConfig {
 	hideBranding?: boolean;
 }
 
-export type ResolvedConfig = Required<Omit<OttoConfig, "user" | "wsEndpoint">> & {
+export type ResolvedConfig = Required<
+	Omit<OttoConfig, "user" | "wsEndpoint" | "publicKey">
+> & {
 	user: OttoUser;
 	wsEndpoint?: string;
+	publicKey?: string;
 };
 
 export interface OttoInstance {

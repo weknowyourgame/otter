@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import { AuthBoundary } from "@/components/dashboard/auth-boundary";
 import "./globals.css";
 
 const dashboardSans = IBM_Plex_Sans({
@@ -34,7 +35,9 @@ export default function AppRootLayout({
 			lang="en"
 			className={`${dashboardSans.variable} ${dashboardMono.variable}`}
 		>
-			<body>{children}</body>
+			<body>
+				<AuthBoundary>{children}</AuthBoundary>
+			</body>
 		</html>
 	);
 }
