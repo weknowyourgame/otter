@@ -109,7 +109,7 @@ export function localNextAction(state: LocalPlannerState, snapshot: PageSnapshot
 	let navScore = 0;
 	for (const el of snapshot.elements) {
 		if (el.role !== "link" || !el.href) continue;
-		const target = el.href.split("?")[0];
+		const target = el.href.split("?")[0] ?? el.href;
 		if (state.visitedPaths.includes(target)) continue;
 		const score = scoreName(`${el.name} ${el.href}`, primary, related);
 		if (score > navScore) {
