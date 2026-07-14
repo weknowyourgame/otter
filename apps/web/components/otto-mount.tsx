@@ -12,7 +12,7 @@ export function OttoMount() {
 			name: "Otto",
 			accent: "#5B6CF9",
 			theme: "dark",
-			user: { email: "demo@nimbus.io", name: "Demo User" },
+			user: { email: "demo@cordant.io", name: "Demo User" },
 		});
 		return () => otto.destroy();
 	}, []);

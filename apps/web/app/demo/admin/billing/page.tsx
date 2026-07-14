@@ -1,37 +1,26 @@
 "use client";
 
-import { useStore } from "@/components/nimbus/store";
-import { Badge, Button, PageHeader, Panel, Row } from "@/components/nimbus/ui";
+import { useStore } from "@/components/cordant/store";
+import { Badge, Button, PageHeader, Panel, Row } from "@/components/cordant/ui";
 
 const INVOICES = [
-	{ id: "INV-2041", date: "Jun 1, 2026", amount: "$49.00", status: "Paid" },
-	{ id: "INV-1987", date: "May 1, 2026", amount: "$49.00", status: "Paid" },
-	{ id: "INV-1904", date: "Apr 1, 2026", amount: "$49.00", status: "Paid" },
+	{ id: "INV-2041", date: "Jun 1, 2026", amount: "$249.00", status: "Paid" },
+	{ id: "INV-1987", date: "May 1, 2026", amount: "$249.00", status: "Paid" },
+	{ id: "INV-1904", date: "Apr 1, 2026", amount: "$249.00", status: "Paid" },
 ];
 
-export default function Billing() {
-	const [plan, setPlan] = useStore<"starter" | "growth">("plan", "starter");
+export default function AdminBilling() {
+	const [plan, setPlan] = useStore<"team" | "business" | "enterprise">("plan", "team");
 
 	return (
 		<>
-			<PageHeader title="Billing" sub="Plan, payment method, and invoices." />
+			<PageHeader title="Billing" sub="Plan, payment method, and invoices for the whole workspace." crumbs={[{ label: "Admin console" }, { label: "Billing" }]} />
 
 			<Panel title="Current plan">
-				<div className="grid gap-4 sm:grid-cols-2">
-					<PlanCard
-						name="Starter"
-						price="$49"
-						blurb="Up to 2,000 documents / month"
-						current={plan === "starter"}
-						onSelect={() => setPlan("starter")}
-					/>
-					<PlanCard
-						name="Growth"
-						price="$199"
-						blurb="Unlimited documents, priority support"
-						current={plan === "growth"}
-						onSelect={() => setPlan("growth")}
-					/>
+				<div className="grid gap-4 sm:grid-cols-3">
+					<PlanCard name="Team" price="$249" blurb="Up to 25 seats, 10k tickets/mo" current={plan === "team"} onSelect={() => setPlan("team")} />
+					<PlanCard name="Business" price="$799" blurb="Unlimited seats, automation, SSO" current={plan === "business"} onSelect={() => setPlan("business")} />
+					<PlanCard name="Enterprise" price="Custom" blurb="Dedicated support, audit exports" current={plan === "enterprise"} onSelect={() => setPlan("enterprise")} />
 				</div>
 			</Panel>
 
@@ -69,35 +58,21 @@ export default function Billing() {
 	);
 }
 
-function PlanCard({
-	name,
-	price,
-	blurb,
-	current,
-	onSelect,
-}: {
-	name: string;
-	price: string;
-	blurb: string;
-	current: boolean;
-	onSelect: () => void;
-}) {
+function PlanCard({ name, price, blurb, current, onSelect }: { name: string; price: string; blurb: string; current: boolean; onSelect: () => void }) {
 	return (
-		<div
-			className={`rounded-xl border p-5 ${current ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200"}`}
-		>
+		<div className={`rounded-xl border p-5 ${current ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200"}`}>
 			<div className="mb-1 flex items-center justify-between">
 				<p className="text-[14px] font-semibold text-zinc-900">{name}</p>
 				{current && <Badge tone="blue">Current plan</Badge>}
 			</div>
 			<p className="mb-1 text-2xl font-semibold tracking-tight text-zinc-900">
 				{price}
-				<span className="text-[13px] font-normal text-zinc-500"> / month</span>
+				{price !== "Custom" && <span className="text-[13px] font-normal text-zinc-500"> / month</span>}
 			</p>
 			<p className="mb-4 text-[12.5px] text-zinc-500">{blurb}</p>
 			{!current && (
 				<Button variant="primary" onClick={onSelect}>
-					{name === "Growth" ? "Upgrade to Growth" : "Downgrade to Starter"}
+					Switch to {name}
 				</Button>
 			)}
 		</div>

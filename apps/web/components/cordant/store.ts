@@ -2,12 +2,12 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-// Tiny persistent store for the demo SaaS so Otto's actions have real,
-// observable consequences that survive navigation. localStorage + a
-// custom event so every subscribed component re-renders on change.
+// Tiny persistent store so Otto's actions have real, observable consequences
+// that survive navigation. localStorage + a custom event so every
+// subscribed component re-renders on change.
 
-const PREFIX = "nimbus:";
-const EVENT = "nimbus-store";
+const PREFIX = "cordant:";
+const EVENT = "cordant-store";
 
 export function useStore<T>(key: string, initial: T): [T, (next: T) => void] {
 	const storageKey = PREFIX + key;

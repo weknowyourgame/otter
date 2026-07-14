@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 import { OttoMount } from "@/components/otto-mount";
-import { NimbusShell } from "@/components/nimbus/shell";
+import { CordantShell } from "@/components/cordant/shell";
 
 export const metadata: Metadata = {
-	title: "Nimbus — demo workspace",
-	description: "A live demo SaaS with real settings. Ask Otto to change something.",
+	title: "Cordant — demo workspace",
+	description: "A live enterprise support console with real tickets, projects, automation, and admin settings. Ask Otto to do something.",
 };
 
 export default function DemoLayout({ children }: { children: React.ReactNode }) {
 	return (
 		<div className="min-h-screen bg-paper text-zinc-900">
-			<NimbusShell>{children}</NimbusShell>
+			<CordantShell>{children}</CordantShell>
 			<OttoMount />
 		</div>
 	);

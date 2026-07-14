@@ -1,21 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/components/nimbus/store";
-import { Button, Input, PageHeader, Panel } from "@/components/nimbus/ui";
+import { useStore } from "@/components/cordant/store";
+import { Button, Input, PageHeader, Panel } from "@/components/cordant/ui";
 
 export default function Profile() {
 	const [profile, setProfile] = useStore("profile", {
 		name: "Demo User",
-		email: "demo@nimbus.io",
-		title: "Operations",
+		email: "demo@cordant.io",
+		title: "Head of Support Ops",
 	});
 	const [draft, setDraft] = useState(profile);
 	const [saved, setSaved] = useState(false);
 
 	return (
 		<>
-			<PageHeader title="Profile" sub="How you appear across the workspace." />
+			<PageHeader title="Profile" sub="How you appear across the workspace." crumbs={[{ label: "My settings" }, { label: "Profile" }]} />
 			<Panel
 				title="Your details"
 				footer={

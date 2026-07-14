@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useStore } from "@/components/nimbus/store";
-import { Badge, Button, FakeQR, Input, PageHeader, Panel, Row, Toggle } from "@/components/nimbus/ui";
+import { useStore } from "@/components/cordant/store";
+import { Badge, Button, FakeQR, Input, PageHeader, Panel, Row, Toggle } from "@/components/cordant/ui";
 
 export default function Security() {
 	const [twoFA, setTwoFA] = useStore("2fa-enabled", false);
@@ -24,7 +24,11 @@ export default function Security() {
 
 	return (
 		<>
-			<PageHeader title="Security" sub="Authentication and session protection for your account." />
+			<PageHeader
+				title="Security"
+				sub="Authentication and session protection for your own account — this only affects you, not the whole workspace."
+				crumbs={[{ label: "My settings" }, { label: "Security" }]}
+			/>
 
 			<Panel title="Two-factor authentication" sub="A second factor keeps your account safe even if your password leaks.">
 				{!twoFA && stage === null && (
@@ -39,15 +43,15 @@ export default function Security() {
 					<div className="py-2">
 						<p className="mb-1 text-[13.5px] font-semibold text-zinc-800">Step 1 · Scan this QR code</p>
 						<p className="mb-5 text-[12.5px] text-zinc-500">
-							Open your authenticator app and scan the code to add Nimbus.
+							Open your authenticator app and scan the code to add Cordant.
 						</p>
 						<div className="mb-5 flex items-center gap-6 max-sm:flex-col max-sm:items-start">
-							<FakeQR seed="nimbus-demo-2fa" />
+							<FakeQR seed="cordant-demo-2fa" />
 							<div className="text-[12.5px] leading-relaxed text-zinc-500">
 								<p className="mb-1 font-medium text-zinc-700">Can't scan?</p>
 								<p>Enter this setup key manually:</p>
 								<code className="mt-1.5 block w-fit rounded-lg bg-zinc-100 px-3 py-1.5 font-mono text-[12px] tracking-widest text-zinc-800">
-									NIMB USDE MO2F AKEY
+									CORD ANTD EMO2 FAKY
 								</code>
 							</div>
 						</div>
