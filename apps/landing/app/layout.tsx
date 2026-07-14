@@ -1,10 +1,16 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Bricolage_Grotesque, Manrope } from "next/font/google";
 import "./globals.css";
 
-const inter = Inter({
+const landingDisplay = Bricolage_Grotesque({
 	subsets: ["latin"],
-	variable: "--font-inter",
+	variable: "--font-landing-display-face",
+	display: "swap",
+});
+
+const landingBody = Manrope({
+	subsets: ["latin"],
+	variable: "--font-landing-body-face",
 	display: "swap",
 });
 
@@ -14,9 +20,16 @@ export const metadata: Metadata = {
 		"Otto is an embeddable AI support agent that helps customers complete tasks inside your product.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+	children,
+}: {
+	children: React.ReactNode;
+}) {
 	return (
-		<html lang="en" className={inter.variable}>
+		<html
+			lang="en"
+			className={`${landingDisplay.variable} ${landingBody.variable}`}
+		>
 			<body>{children}</body>
 		</html>
 	);
