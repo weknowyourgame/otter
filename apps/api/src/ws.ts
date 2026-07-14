@@ -10,7 +10,7 @@
 // per-session viewer). Add that layer when there's an actual second
 // subscriber to fan out to.
 
-import { runStep, type StepRequest } from "otto-core";
+import { type EngineConfig, runStep, type StepRequest } from "otto-core";
 
 interface ClientStepMessage {
 	type: "step";
@@ -19,6 +19,8 @@ interface ClientStepMessage {
 	message?: string;
 	snapshot: StepRequest["snapshot"];
 	lastAction?: StepRequest["lastAction"];
+	/** Was already silently dropped here too — same gap fixed for the HTTP route in Phase 9. */
+	user?: StepRequest["user"];
 }
 
 type ClientMessage = ClientStepMessage;
@@ -37,7 +39,7 @@ function isClientStepMessage(value: unknown): value is ClientStepMessage {
 	);
 }
 
-export async function handleSocketMessage(raw: string): Promise<string> {
+export async function handleSocketMessage(raw: string, engineConfig: EngineConfig): Promise<string> {
 	let parsed: unknown;
 	try {
 		parsed = JSON.parse(raw);
@@ -60,11 +62,9 @@ export async function handleSocketMessage(raw: string): Promise<string> {
 				message: parsed.message,
 				snapshot: parsed.snapshot,
 				lastAction: parsed.lastAction,
+				user: parsed.user,
 			},
-			{
-				apiKey: process.env.OPENROUTER_API_KEY,
-				model: process.env.AGENT_MODEL,
-			},
+			engineConfig,
 		);
 		return JSON.stringify({ type: "step_result", requestId: parsed.requestId, result });
 	} catch (err) {

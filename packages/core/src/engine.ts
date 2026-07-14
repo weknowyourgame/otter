@@ -100,6 +100,19 @@ function record(session: Session, kind: SessionEvent["kind"], text: string): voi
 export async function runStep(req: StepRequest, config: EngineConfig = {}): Promise<StepResponse> {
 	sweep();
 
+	// Checked before touching session state at all — an in-flight session
+	// someone paused from the dashboard shouldn't advance even one more step.
+	// This is a backstop in addition to the SDK's client-side Stop button,
+	// not a replacement for it: Stop must keep working even if this server
+	// (or Redis, if config.pauseStore is backed by it) is unreachable.
+	if (req.sessionId && config.pauseStore && (await config.pauseStore.isPaused(req.sessionId))) {
+		return {
+			sessionId: req.sessionId,
+			action: { type: "say", text: "This session is paused right now. Ask again in a moment, or reach out if you need it resumed sooner." },
+			source: "ai",
+		};
+	}
+
 	const apiKey = config.apiKey?.trim() || undefined;
 	const model = config.model?.trim() || DEFAULT_MODEL;
 	const maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;

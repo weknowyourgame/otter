@@ -3,6 +3,8 @@
 // the engine answers with exactly one next action, and the SDK executes it
 // and reports back — one POST per step until `done`, `say`, or `fail`.
 
+import type { PauseStore } from "./safety.js";
+
 export interface ElementState {
 	disabled?: boolean;
 	checked?: boolean;
@@ -78,6 +80,8 @@ export interface EngineConfig {
 	apiKey?: string;
 	model?: string;
 	maxSteps?: number;
+	/** Optional — if omitted, sessions can never be paused. See safety.ts. */
+	pauseStore?: PauseStore;
 }
 
 // ---- session bookkeeping (also powers the dashboard) ----

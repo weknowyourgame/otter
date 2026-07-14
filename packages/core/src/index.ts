@@ -3,6 +3,7 @@ export { requestEmbedding } from "./embeddings.js";
 export { formatKnowledgeResultForModel, searchKnowledgeBase } from "./knowledge.js";
 export type { KnowledgeMatch, KnowledgeSearchResult } from "./knowledge.js";
 export { buildSystemPrompt, renderSnapshot } from "./prompt.js";
+export type { PauseStore } from "./safety.js";
 export type {
 	AgentAction,
 	ElementState,
