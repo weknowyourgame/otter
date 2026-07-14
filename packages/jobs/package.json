@@ -1,0 +1,26 @@
+{
+	"name": "otto-jobs",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Job triggers (producers) that enqueue work for apps/workers to consume — sits between apps/api and the BullMQ queues over otto-redis.",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc -p tsconfig.json --outDir dist"
+	},
+	"dependencies": {
+		"bullmq": "^5.34.4",
+		"otto-redis": "workspace:*"
+	},
+	"devDependencies": {
+		"typescript": "^5.6.3"
+	}
+}

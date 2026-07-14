@@ -25,3 +25,35 @@ export const sessions = sqliteTable("sessions", {
 
 export type SessionRow = typeof sessions.$inferSelect;
 export type NewSessionRow = typeof sessions.$inferInsert;
+
+/**
+ * A knowledge-base source document (today: one scraped URL). Chunked and
+ * embedded (embedding populated by Phase 8, null until then) so the answer
+ * path can retrieve grounded context instead of the agent guessing.
+ */
+export const docs = sqliteTable("docs", {
+	id: text("id").primaryKey(),
+	url: text("url").notNull(),
+	title: text("title"),
+	status: text("status", { enum: ["pending", "crawling", "ready", "failed"] }).notNull(),
+	errorMessage: text("error_message"),
+	createdAt: integer("created_at").notNull(),
+	updatedAt: integer("updated_at").notNull(),
+});
+
+export type DocRow = typeof docs.$inferSelect;
+export type NewDocRow = typeof docs.$inferInsert;
+
+export const chunks = sqliteTable("chunks", {
+	id: text("id").primaryKey(),
+	docId: text("doc_id")
+		.notNull()
+		.references(() => docs.id, { onDelete: "cascade" }),
+	content: text("content").notNull(),
+	/** JSON-serialized number[]. Null until Phase 8 runs embedding generation. */
+	embedding: text("embedding"),
+	createdAt: integer("created_at").notNull(),
+});
+
+export type ChunkRow = typeof chunks.$inferSelect;
+export type NewChunkRow = typeof chunks.$inferInsert;

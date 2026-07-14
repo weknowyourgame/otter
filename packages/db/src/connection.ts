@@ -33,6 +33,28 @@ CREATE TABLE IF NOT EXISTS sessions (
 );
 `;
 
+const CREATE_DOCS_TABLE = `
+CREATE TABLE IF NOT EXISTS docs (
+	id TEXT PRIMARY KEY,
+	url TEXT NOT NULL,
+	title TEXT,
+	status TEXT NOT NULL,
+	error_message TEXT,
+	created_at INTEGER NOT NULL,
+	updated_at INTEGER NOT NULL
+);
+`;
+
+const CREATE_CHUNKS_TABLE = `
+CREATE TABLE IF NOT EXISTS chunks (
+	id TEXT PRIMARY KEY,
+	doc_id TEXT NOT NULL REFERENCES docs(id) ON DELETE CASCADE,
+	content TEXT NOT NULL,
+	embedding TEXT,
+	created_at INTEGER NOT NULL
+);
+`;
+
 let db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 
 /**
@@ -48,7 +70,10 @@ export function getDb(): ReturnType<typeof drizzle<typeof schema>> {
 	mkdirSync(dirname(path), { recursive: true });
 	const sqlite = new Database(path, { create: true });
 	sqlite.exec("PRAGMA journal_mode = WAL;");
+	sqlite.exec("PRAGMA foreign_keys = ON;");
 	sqlite.exec(CREATE_SESSIONS_TABLE);
+	sqlite.exec(CREATE_DOCS_TABLE);
+	sqlite.exec(CREATE_CHUNKS_TABLE);
 
 	db = drizzle(sqlite, { schema });
 	return db;

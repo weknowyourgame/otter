@@ -11,7 +11,9 @@
 	"dependencies": {
 		"hono": "^4.6.14",
 		"otto-core": "workspace:*",
-		"otto-db": "workspace:*"
+		"otto-db": "workspace:*",
+		"otto-jobs": "workspace:*",
+		"otto-redis": "workspace:*"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.2.11",

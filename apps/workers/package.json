@@ -1,0 +1,21 @@
+{
+	"name": "otto-workers",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Background job processor. Currently: web-crawl (fetch a URL via Firecrawl, chunk it, store it in otto-db as a pending knowledge doc).",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --hot src/index.ts",
+		"start": "bun run src/index.ts"
+	},
+	"dependencies": {
+		"bullmq": "^5.34.4",
+		"otto-db": "workspace:*",
+		"otto-jobs": "workspace:*",
+		"otto-redis": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.2.11",
+		"typescript": "^5.6.3"
+	}
+}

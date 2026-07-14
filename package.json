@@ -9,8 +9,12 @@
 	"scripts": {
 		"build": "bun run --cwd packages/core build && bun run --cwd packages/sdk build",
 		"dev": "NEXT_DIST_DIR=.next-main bun run --cwd apps/web dev",
+		"dev:all": "bun run scripts/dev-all.ts",
+		"dev:landing": "NEXT_DIST_DIR=.next-main bun run --cwd apps/landing dev -- -p 3000",
+		"dev:web": "NEXT_DIST_DIR=.next-main bun run --cwd apps/web dev -- -p 3001",
 		"landing": "NEXT_DIST_DIR=.next-main bun run --cwd apps/landing dev",
 		"api": "bun run --cwd apps/api dev",
+		"workers": "bun run --cwd apps/workers dev",
 		"lint": "biome check .",
 		"changeset": "changeset",
 		"check:embed-size": "bun run scripts/checks/browser-embed-size.ts",
