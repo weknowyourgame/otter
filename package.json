@@ -12,7 +12,9 @@
 		"landing": "NEXT_DIST_DIR=.next-main bun run --cwd apps/landing dev",
 		"api": "bun run --cwd apps/api dev",
 		"lint": "biome check .",
-		"changeset": "changeset"
+		"changeset": "changeset",
+		"check:embed-size": "bun run scripts/checks/browser-embed-size.ts",
+		"prepare-package": "bun run scripts/prepare-package.ts"
 	},
 	"devDependencies": {
 		"@biomejs/biome": "2.2.6",

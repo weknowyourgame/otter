@@ -13,7 +13,8 @@
 			"import": "./dist/otto-sdk.esm.js",
 			"default": "./dist/otto-sdk.esm.js"
 		},
-		"./global": "./dist/otto-sdk.global.js"
+		"./loader": "./dist/otto-loader.global.js",
+		"./widget": "./dist/otto-widget.global.js"
 	},
 	"files": [
 		"dist",

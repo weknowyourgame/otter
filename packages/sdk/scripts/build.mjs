@@ -18,20 +18,30 @@ const esm = {
 	format: "esm",
 	outfile: "dist/otto-sdk.esm.js",
 };
-const global = {
+// The tiny bootstrap a customer's <script src> actually points at — kept
+// separate so it can be cached forever while the runtime below is
+// version-pinned. See src/loader.ts.
+const loader = {
 	...common,
-	entryPoints: ["src/global.ts"],
+	entryPoints: ["src/loader.ts"],
 	format: "iife",
-	globalName: "Otto",
-	outfile: "dist/otto-sdk.global.js",
+	outfile: "dist/otto-loader.global.js",
+};
+// The real runtime, lazy-loaded by the loader next to it.
+const widget = {
+	...common,
+	entryPoints: ["src/widget-runtime.ts"],
+	format: "iife",
+	outfile: "dist/otto-widget.global.js",
 };
 
+const builds = [esm, loader, widget];
+
 if (watch) {
-	const ctxEsm = await esbuild.context(esm);
-	const ctxGlobal = await esbuild.context(global);
-	await Promise.all([ctxEsm.watch(), ctxGlobal.watch()]);
+	const contexts = await Promise.all(builds.map((cfg) => esbuild.context(cfg)));
+	await Promise.all(contexts.map((ctx) => ctx.watch()));
 	console.log("Watching for changes...");
 } else {
-	await Promise.all([esbuild.build(esm), esbuild.build(global)]);
+	await Promise.all(builds.map((cfg) => esbuild.build(cfg)));
 	console.log("Build complete.");
 }
