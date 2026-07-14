@@ -8,3 +8,4 @@ dist/
 # packages/*/lib as real source — re-include it here
 !lib/
 graphify-out/
+cossistant/

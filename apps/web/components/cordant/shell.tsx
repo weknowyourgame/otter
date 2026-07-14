@@ -46,7 +46,7 @@ export function CordantShell({ children }: { children: ReactNode }) {
 	const context = inAdmin ? "admin" : inSettings ? "settings" : "workspace";
 
 	return (
-		<div className="flex min-h-screen">
+		<div className="flex min-h-screen bg-zinc-50 text-zinc-900">
 			<aside className="fixed inset-y-0 left-0 z-30 flex w-60 flex-col border-r border-zinc-200 bg-white max-md:hidden">
 				<div className="flex items-center gap-2.5 border-b border-zinc-100 px-5" style={{ height: 60 }}>
 					<span className="grid h-7 w-7 place-items-center rounded-lg bg-zinc-900">

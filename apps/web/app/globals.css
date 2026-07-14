@@ -1,11 +1,7 @@
 @import "tailwindcss";
 
 @theme {
-	--color-accent: #5b6cf9;
-	--color-accent-soft: #7c89ff;
 	--color-ink: #0a0b0e;
-	--color-ink-2: #101217;
-	--color-paper: #f7f8fa;
 	--font-sans: var(--font-inter), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
 		"Helvetica Neue", Arial, sans-serif;
 	--font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
@@ -13,33 +9,466 @@
 
 html {
 	scroll-behavior: smooth;
+	background: #000;
 }
 
 body {
+	margin: 0;
+	background: #000;
 	font-family: var(--font-sans);
 	-webkit-font-smoothing: antialiased;
 	text-rendering: optimizeLegibility;
 }
 
 ::selection {
-	background: rgba(91, 108, 249, 0.35);
+	background: rgba(255, 255, 255, 0.24);
 }
 
-/* Subtle dot grid used on the dark marketing surfaces. */
-.bg-grid {
-	background-image: radial-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px);
-	background-size: 28px 28px;
+video {
+	background: #000;
 }
 
-/* Soft top glow behind the hero. */
-.hero-glow {
-	background:
-		radial-gradient(52% 42% at 50% 0%, rgba(91, 108, 249, 0.22), transparent 70%),
-		radial-gradient(30% 26% at 68% 6%, rgba(124, 137, 255, 0.12), transparent 70%);
+[data-framer-name="Logos Ticker Container"] section {
+	opacity: 1 !important;
 }
 
-@media (prefers-reduced-motion: reduce) {
-	html {
-		scroll-behavior: auto;
+[data-framer-name="Logos Ticker Container"] svg {
+	color: #fff !important;
+	fill: #fff !important;
+}
+
+[data-otto-hero-field] canvas {
+	filter: saturate(1.08) contrast(1.08);
+}
+
+.otto-hero-heading {
+	translate: var(--otto-pointer-x, 0) var(--otto-pointer-y, 0);
+	transition: translate 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.otto-letter {
+	display: inline-block;
+	opacity: 0;
+	transform: translate3d(0, 18px, 0) scale(0.985);
+	filter: blur(8px);
+	animation: otto-letter-in 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(90ms + var(--otto-letter-index, 0) * 15ms);
+}
+
+.otto-hero-copy {
+	opacity: 0;
+	transform: translate3d(0, 18px, 0);
+	filter: blur(5px);
+	animation: otto-hero-copy-in 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(380ms + var(--otto-hero-copy-index, 0) * 75ms);
+}
+
+.otto-nav-shell {
+	animation: otto-nav-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	background: rgba(0, 0, 0, 0);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0);
+	transition:
+		background-color 400ms ease,
+		box-shadow 400ms ease,
+		backdrop-filter 400ms ease;
+}
+
+.otto-nav-shell.otto-nav-scrolled {
+	background: rgba(0, 0, 0, 0.78);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
+	backdrop-filter: blur(18px) saturate(1.35);
+}
+
+.otto-media-shell {
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+}
+
+.otto-media-shell::after {
+	position: absolute;
+	inset: -30%;
+	z-index: 4;
+	pointer-events: none;
+	content: "";
+	background: linear-gradient(104deg, transparent 40%, rgba(255, 255, 255, 0.12) 49%, transparent 58%);
+	opacity: 0;
+	transform: translate3d(-75%, 0, 0) rotate(4deg);
+}
+
+.otto-media-shell.otto-media-live::after {
+	animation: otto-media-glint 1500ms 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.otto-motion-video {
+	opacity: 0.15 !important;
+	scale: 1.055;
+	filter: saturate(0.72) brightness(0.72) blur(3px) !important;
+	transition:
+		opacity 1000ms cubic-bezier(0.16, 1, 0.3, 1),
+		filter 1100ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.otto-media-live .otto-motion-video {
+	opacity: 1 !important;
+	filter: saturate(1) brightness(1) blur(0) !important;
+	animation: otto-video-breathe 10s calc(var(--otto-video-index, 0) * -1.7s) ease-in-out infinite alternate;
+}
+
+.otto-parallax-target {
+	translate: 0 var(--otto-parallax-y, 0);
+	transition: translate 220ms linear;
+}
+
+.otto-reveal-item {
+	opacity: 0 !important;
+	translate: 0 30px;
+	filter: blur(7px);
+	transition:
+		opacity 820ms cubic-bezier(0.16, 1, 0.3, 1),
+		translate 900ms cubic-bezier(0.16, 1, 0.3, 1),
+		filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
+	transition-delay: calc(var(--otto-reveal-index, 0) * 65ms);
+}
+
+.otto-reveal-item.otto-reveal-in {
+	opacity: 1 !important;
+	translate: 0 0;
+	filter: blur(0);
+}
+
+.otto-marquee-track {
+	will-change: transform;
+	animation: otto-marquee var(--otto-marquee-duration, 32s) linear infinite;
+}
+
+.otto-marquee-reverse {
+	animation-direction: reverse;
+}
+
+.otto-marquee-track:hover {
+	animation-play-state: paused;
+}
+
+.otto-rail-card {
+	transition:
+		translate 360ms cubic-bezier(0.16, 1, 0.3, 1),
+		scale 360ms cubic-bezier(0.16, 1, 0.3, 1),
+		filter 360ms ease;
+}
+
+.otto-rail-card:hover {
+	z-index: 2;
+	translate: 0 -8px;
+	scale: 1.012;
+	filter: brightness(1.06);
+}
+
+.otto-review-track {
+	will-change: transform;
+	animation: otto-review-up var(--otto-review-duration, 38s) linear infinite;
+}
+
+.otto-review-reverse {
+	animation-name: otto-review-down;
+}
+
+.otto-metric-value {
+	position: relative;
+	opacity: 0;
+	filter: blur(10px);
+	transform: translate3d(0, 26px, 0) scale(0.96);
+}
+
+.otto-metric-value::after {
+	position: absolute;
+	right: 0;
+	bottom: -8px;
+	left: 0;
+	height: 1px;
+	content: "";
+	background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75), transparent);
+	opacity: 0;
+	transform: scaleX(0);
+}
+
+.otto-metric-value.otto-metric-live {
+	animation: otto-metric-in 1050ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(var(--otto-metric-index, 0) * 120ms);
+}
+
+.otto-metric-value.otto-metric-live::after {
+	animation: otto-metric-line 1200ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.otto-changelog-card {
+	--otto-card-rx: 0deg;
+	--otto-card-ry: 0deg;
+	--otto-card-x: 50%;
+	--otto-card-y: 50%;
+	position: relative;
+	z-index: 0;
+	translate: 0 0;
+	transform: perspective(900px) rotateX(var(--otto-card-rx)) rotateY(var(--otto-card-ry)) !important;
+	transform-style: preserve-3d;
+	will-change: transform, translate;
+	transition:
+		translate 420ms cubic-bezier(0.16, 1, 0.3, 1),
+		transform 180ms ease-out,
+		box-shadow 420ms ease;
+}
+
+.otto-changelog-card::after {
+	position: absolute;
+	inset: 0;
+	z-index: 4;
+	pointer-events: none;
+	content: "";
+	background: radial-gradient(
+		circle at var(--otto-card-x) var(--otto-card-y),
+		rgba(255, 255, 255, 0.15),
+		transparent 34%
+	);
+	opacity: 0;
+	transition: opacity 320ms ease;
+}
+
+.otto-changelog-card:hover {
+	z-index: 3;
+	translate: 0 -9px;
+	box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
+}
+
+.otto-changelog-card:hover::after {
+	opacity: 1;
+}
+
+.otto-changelog-card [data-framer-name="Image"] {
+	scale: 1;
+	transition:
+		scale 700ms cubic-bezier(0.16, 1, 0.3, 1),
+		filter 700ms ease;
+}
+
+.otto-changelog-card:hover [data-framer-name="Image"] {
+	scale: 1.035;
+	filter: saturate(1.12) brightness(1.04);
+}
+
+.otto-button-motion {
+	position: relative;
+	isolation: isolate;
+	overflow: hidden;
+	translate: 0 0;
+	transition:
+		translate 300ms cubic-bezier(0.16, 1, 0.3, 1),
+		filter 300ms ease;
+}
+
+.otto-button-motion::before {
+	position: absolute;
+	inset: -2px;
+	z-index: -1;
+	pointer-events: none;
+	content: "";
+	background: linear-gradient(110deg, transparent 20%, rgba(255, 255, 255, 0.2) 46%, transparent 72%);
+	transform: translate3d(-130%, 0, 0);
+	transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.otto-button-motion:hover {
+	translate: 0 -2px;
+	filter: brightness(1.08);
+}
+
+.otto-button-motion:hover::before {
+	transform: translate3d(130%, 0, 0);
+}
+
+.otto-cta-motion [data-framer-name="BG Stripes"] {
+	animation: otto-stripes-pulse 8s ease-in-out infinite alternate;
+}
+
+.otto-meteor {
+	opacity: 0;
+	will-change: translate, opacity;
+	animation: otto-meteor-flight var(--otto-streak-duration, 4.2s) linear infinite;
+	animation-delay: calc(var(--otto-streak-index, 0) * -370ms);
+	animation-play-state: paused;
+}
+
+.otto-cta-live .otto-meteor {
+	animation-play-state: running;
+}
+
+.otto-mobile-nav-open {
+	opacity: 1 !important;
+	pointer-events: auto !important;
+}
+
+.otto-mobile-menu-shell {
+	height: 343px !important;
+	overflow: visible !important;
+	background: #000 !important;
+}
+
+.otto-mobile-menu-host {
+	height: 343px !important;
+}
+
+.otto-mobile-menu-shell [data-framer-name="Top"][class*="talqy1"] {
+	transform: translateY(3px) rotate(45deg) !important;
+}
+
+.otto-mobile-menu-shell [data-framer-name="Bottom"] {
+	transform: translateY(-3px) rotate(-45deg) !important;
+}
+
+@keyframes otto-letter-in {
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0) scale(1);
+		filter: blur(0);
+	}
+}
+
+@keyframes otto-hero-copy-in {
+	to {
+		opacity: 1;
+		transform: translate3d(0, 0, 0);
+		filter: blur(0);
+	}
+}
+
+@keyframes otto-nav-in {
+	from {
+		opacity: 0;
+		translate: 0 -16px;
+	}
+
+	to {
+		opacity: 1;
+		translate: 0 0;
+	}
+}
+
+@keyframes otto-media-glint {
+	0% {
+		opacity: 0;
+		transform: translate3d(-75%, 0, 0) rotate(4deg);
+	}
+
+	18% {
+		opacity: 1;
+	}
+
+	100% {
+		opacity: 0;
+		transform: translate3d(75%, 0, 0) rotate(4deg);
+	}
+}
+
+@keyframes otto-video-breathe {
+	from {
+		scale: 1.018;
+	}
+
+	to {
+		scale: 1.045;
+	}
+}
+
+@keyframes otto-marquee {
+	to {
+		transform: translate3d(calc(var(--otto-marquee-distance, 0px) * -1), 0, 0);
+	}
+}
+
+@keyframes otto-review-up {
+	to {
+		transform: translate3d(0, calc(var(--otto-review-distance, 0px) * -1), 0);
+	}
+}
+
+@keyframes otto-review-down {
+	from {
+		transform: translate3d(0, calc(var(--otto-review-distance, 0px) * -1), 0);
+	}
+
+	to {
+		transform: translate3d(0, 0, 0);
+	}
+}
+
+@keyframes otto-metric-in {
+	0% {
+		opacity: 0;
+		filter: blur(10px);
+		transform: translate3d(0, 26px, 0) scale(0.96);
+	}
+
+	100% {
+		opacity: 1;
+		filter: blur(0);
+		transform: translate3d(0, 0, 0) scale(1);
+	}
+}
+
+@keyframes otto-metric-line {
+	0% {
+		opacity: 0;
+		transform: scaleX(0);
+	}
+
+	45% {
+		opacity: 0.9;
+	}
+
+	100% {
+		opacity: 0;
+		transform: scaleX(1);
+	}
+}
+
+@keyframes otto-meteor-flight {
+	0% {
+		opacity: 0;
+		translate: 340px 142px;
+	}
+
+	12% {
+		opacity: 0.95;
+	}
+
+	82% {
+		opacity: 0.85;
+	}
+
+	100% {
+		opacity: 0;
+		translate: -480px -200px;
+	}
+}
+
+@keyframes otto-stripes-pulse {
+	from {
+		opacity: 0.68;
+		filter: contrast(1) brightness(0.9);
+	}
+
+	to {
+		opacity: 1;
+		filter: contrast(1.08) brightness(1.08);
+	}
+}
+
+@media (max-width: 809.98px) {
+	.otto-reveal-item {
+		translate: 0 18px;
+	}
+
+	.otto-changelog-card:hover,
+	.otto-rail-card:hover {
+		translate: 0 -4px;
 	}
 }
