@@ -1,0 +1,26 @@
+{
+	"name": "otto-redis",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Shared ioredis connection helper — used for BullMQ job connections and, later, realtime pub/sub. Adapted from cossistant/packages/redis.",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "node scripts/build.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist"
+	},
+	"dependencies": {
+		"ioredis": "^5.4.1"
+	},
+	"devDependencies": {
+		"esbuild": "^0.28.1",
+		"typescript": "^5.6.3"
+	}
+}
