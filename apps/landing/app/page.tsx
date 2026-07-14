@@ -1,5 +1,6 @@
 import { ottoCss, ottoMarkup, ottoSvgTemplates } from "./otto-reference";
 import { OttoRuntime } from "./otto-runtime";
+import { LandingSupportSections } from "@/components/marketing/landing-support-sections";
 
 const pageMarkup = ottoMarkup
 	.replace(
@@ -22,6 +23,7 @@ export default function Home() {
 			<div dangerouslySetInnerHTML={{ __html: pageMarkup }} />
 			<div dangerouslySetInnerHTML={{ __html: ottoSvgTemplates }} />
 			<OttoRuntime />
+			<LandingSupportSections />
 		</>
 	);
 }
