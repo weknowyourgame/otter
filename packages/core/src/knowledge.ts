@@ -43,25 +43,38 @@ function cosineSimilarity(a: number[], b: number[]): number {
 	return dot / (Math.sqrt(normA) * Math.sqrt(normB));
 }
 
-export async function searchKnowledgeBase(query: string, apiKey: string): Promise<KnowledgeSearchResult> {
-	const rows = listAllChunks().filter((row) => row.embedding);
+export async function searchKnowledgeBase(
+	query: string,
+	apiKey: string,
+	tenantId?: string,
+): Promise<KnowledgeSearchResult> {
+	const rows = listAllChunks(tenantId).filter((row) => row.embedding);
 	if (rows.length === 0) return { matches: [], gap: true };
 
 	const queryEmbedding = await requestEmbedding(query, apiKey);
 
 	const scored = rows.map((row) => ({
 		content: row.content,
-		score: cosineSimilarity(queryEmbedding, JSON.parse(row.embedding as string) as number[]),
+		score: cosineSimilarity(
+			queryEmbedding,
+			JSON.parse(row.embedding as string) as number[],
+		),
 	}));
 	scored.sort((a, b) => b.score - a.score);
 
-	const matches = scored.slice(0, TOP_K).filter((m) => m.score >= RELEVANCE_THRESHOLD);
+	const matches = scored
+		.slice(0, TOP_K)
+		.filter((m) => m.score >= RELEVANCE_THRESHOLD);
 	return { matches, gap: matches.length === 0 };
 }
 
-export function formatKnowledgeResultForModel(result: KnowledgeSearchResult): string {
+export function formatKnowledgeResultForModel(
+	result: KnowledgeSearchResult,
+): string {
 	if (result.gap) {
 		return "No relevant information found in the knowledge base. Do not guess — tell the user honestly that you don't have documentation on this.";
 	}
-	return result.matches.map((m, i) => `[${i + 1}] (relevance ${m.score.toFixed(2)})\n${m.content}`).join("\n\n");
+	return result.matches
+		.map((m, i) => `[${i + 1}] (relevance ${m.score.toFixed(2)})\n${m.content}`)
+		.join("\n\n");
 }

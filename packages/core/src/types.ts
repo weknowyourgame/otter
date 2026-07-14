@@ -80,6 +80,10 @@ export interface EngineConfig {
 	apiKey?: string;
 	model?: string;
 	maxSteps?: number;
+	/** Tenant ownership attached by the authenticated API boundary. */
+	tenantId?: string;
+	/** API key used for this run, retained for audit and revocation tracing. */
+	apiKeyId?: string;
 	/** Optional — if omitted, sessions can never be paused. See safety.ts. */
 	pauseStore?: PauseStore;
 }

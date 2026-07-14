@@ -8,8 +8,9 @@
 		"start": "next start"
 	},
 	"dependencies": {
-		"next": "^15.0.0",
+		"better-auth": "1.6.15",
 		"lucide-react": "^0.460.0",
+		"next": "^15.0.0",
 		"otto-core": "*",
 		"otto-sdk": "*",
 		"react": "^18.3.1",
