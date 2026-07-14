@@ -1,0 +1,26 @@
+{
+	"name": "otto-db",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Session/step persistence for otto-core. SQLite via bun:sqlite + drizzle-orm — zero external infra, matching cossistant's schema/queries/mutations split at a scale that fits Otto today. Swap the driver for @drizzle-orm/postgres-js later without touching callers.",
+	"type": "module",
+	"main": "dist/index.js",
+	"types": "dist/index.d.ts",
+	"exports": {
+		".": {
+			"types": "./dist/index.d.ts",
+			"import": "./dist/index.js"
+		}
+	},
+	"files": ["dist"],
+	"scripts": {
+		"build": "tsc -p tsconfig.json --outDir dist"
+	},
+	"dependencies": {
+		"drizzle-orm": "^0.44.6"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.2.11",
+		"typescript": "^5.6.3"
+	}
+}

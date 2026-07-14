@@ -1,3 +1,10 @@
+import {
+	deleteExpiredSessions,
+	getSession as getSessionRow,
+	listSessions as listSessionRows,
+	type SessionRow,
+	upsertSession,
+} from "otto-db";
 import { requestNextAction, type ChatMessage } from "./llm.js";
 import { localNextAction, type LocalPlannerState } from "./local.js";
 import { SYSTEM_PROMPT, renderSnapshot } from "./prompt.js";
@@ -27,13 +34,48 @@ interface Session {
 	events: SessionEvent[];
 }
 
-const sessions = new Map<string, Session>();
+/**
+ * Sessions now live in otto-db (SQLite via bun:sqlite) instead of an
+ * in-memory Map, so they survive a server restart. otto-db's driver is
+ * synchronous, so runStep/listSessions keep their original sync/async
+ * shape — no caller (apps/web's API routes) needs to change.
+ */
+function fromRow(row: SessionRow): Session {
+	return {
+		id: row.id,
+		createdAt: row.createdAt,
+		updatedAt: row.updatedAt,
+		title: row.title,
+		steps: row.steps,
+		source: row.source,
+		state: row.state,
+		history: JSON.parse(row.history) as ChatMessage[],
+		local: row.local ? (JSON.parse(row.local) as LocalPlannerState) : undefined,
+		events: JSON.parse(row.events) as SessionEvent[],
+	};
+}
+
+function maybeFromRow(row: SessionRow | undefined): Session | undefined {
+	return row ? fromRow(row) : undefined;
+}
+
+function toRow(session: Session): Parameters<typeof upsertSession>[0] {
+	return {
+		id: session.id,
+		createdAt: session.createdAt,
+		updatedAt: session.updatedAt,
+		title: session.title,
+		steps: session.steps,
+		source: session.source,
+		state: session.state,
+		history: JSON.stringify(session.history),
+		local: session.local ? JSON.stringify(session.local) : null,
+		events: JSON.stringify(session.events),
+	};
+}
 
 function sweep(): void {
-	const now = Date.now();
-	for (const [id, s] of sessions) {
-		if (now - s.updatedAt > SESSION_TTL_MS) sessions.delete(id);
-	}
+	deleteExpiredSessions(Date.now() - SESSION_TTL_MS);
 }
 
 function newId(): string {
@@ -59,7 +101,7 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 	const model = config.model?.trim() || DEFAULT_MODEL;
 	const maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;
 
-	let session = req.sessionId ? sessions.get(req.sessionId) : undefined;
+	let session = req.sessionId ? maybeFromRow(getSessionRow(req.sessionId)) : undefined;
 	if (!session) {
 		session = {
 			id: newId(),
@@ -72,7 +114,6 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 			history: [{ role: "system", content: SYSTEM_PROMPT }],
 			events: [],
 		};
-		sessions.set(session.id, session);
 	}
 	session.updatedAt = Date.now();
 	session.steps += 1;
@@ -90,6 +131,7 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 			reason: "I hit my step limit for one task — that usually means I'm going in circles. Mind rephrasing or narrowing it down?",
 		};
 		record(session, "result", action.reason);
+		upsertSession(toRow(session));
 		return { sessionId: session.id, action, source: session.source };
 	}
 
@@ -107,6 +149,7 @@ export async function runStep(req: StepRequest, config: EngineConfig = {}): Prom
 		session.state = "failed";
 		record(session, "result", response.action.reason);
 	}
+	upsertSession(toRow(session));
 	return response;
 }
 
@@ -191,17 +234,14 @@ function localStep(session: Session, req: StepRequest): StepResponse {
 /** Recent sessions, newest first — powers the dashboard. */
 export function listSessions(limit = 50): SessionSummary[] {
 	sweep();
-	return [...sessions.values()]
-		.sort((a, b) => b.updatedAt - a.updatedAt)
-		.slice(0, limit)
-		.map(({ id, createdAt, updatedAt, title, steps, source, state, events }) => ({
-			id,
-			createdAt,
-			updatedAt,
-			title,
-			steps,
-			source,
-			state,
-			events,
-		}));
+	return listSessionRows(limit).map(({ id, createdAt, updatedAt, title, steps, source, state, events }) => ({
+		id,
+		createdAt,
+		updatedAt,
+		title,
+		steps,
+		source,
+		state,
+		events: JSON.parse(events) as SessionEvent[],
+	}));
 }
