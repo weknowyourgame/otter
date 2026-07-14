@@ -5,6 +5,7 @@ import {
 	CreditCard,
 	Image as ImageIcon,
 	KeyRound,
+	LoaderCircle,
 	Mail,
 	MoreHorizontal,
 	Plus,
@@ -14,7 +15,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import type { FormEvent } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
 	Button,
 	CopyButton,
@@ -493,38 +494,152 @@ export function BillingPage() {
 }
 
 type ApiKey = {
-	id: number;
+	id: string;
 	name: string;
-	type: string;
-	key: string;
-	created: string;
+	type: "public" | "secret";
+	mode: "test" | "live";
+	maskedKey: string;
+	createdAt: number;
+	lastUsedAt: number | null;
 };
-const seedKeys: ApiKey[] = [
-	{
-		id: 1,
-		name: "Otto - Test Public API Key",
-		type: "Test Public Key",
-		key: "pk_test_5e3d...91a2",
-		created: "Created Jul 14, 2026 at 10:54 PM",
-	},
-	{
-		id: 2,
-		name: "Otto - Public API Key",
-		type: "Live Public Key",
-		key: "pk_live_8b1c...85c5",
-		created: "Created Jul 14, 2026 at 10:54 PM",
-	},
-];
+
+type CreatedApiKey = ApiKey & { rawKey: string };
+type OriginField = { id: string; value: string };
+
+function keyTypeLabel(key: ApiKey): string {
+	return `${key.mode === "test" ? "Test" : "Live"} ${key.type === "public" ? "Public" : "Secret"} Key`;
+}
+
+function formatCreatedAt(timestamp: number): string {
+	return `Created ${new Intl.DateTimeFormat("en", { dateStyle: "medium", timeStyle: "short" }).format(timestamp)}`;
+}
+
+async function readApiError(response: Response): Promise<string> {
+	const body = (await response.json().catch(() => null)) as {
+		error?: string;
+	} | null;
+	return (
+		body?.error?.replaceAll("_", " ") || `Request failed (${response.status})`
+	);
+}
 
 export function DevelopersSettingsPage() {
-	const [keys, setKeys] = useState(seedKeys);
+	const [keys, setKeys] = useState<ApiKey[]>([]);
+	const [origins, setOrigins] = useState<OriginField[]>([]);
+	const [loading, setLoading] = useState(true);
+	const [savingOrigins, setSavingOrigins] = useState(false);
+	const [submittingKey, setSubmittingKey] = useState(false);
+	const [error, setError] = useState("");
 	const [keyOpen, setKeyOpen] = useState(false);
 	const [newKeyName, setNewKeyName] = useState("");
+	const [newKeyKind, setNewKeyKind] = useState("public:test");
+	const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
 	const [byok, setByok] = useState(false);
 	const [byokKey, setByokKey] = useState("");
-	const [domain, setDomain] = useState("otto.so");
+
+	useEffect(() => {
+		let active = true;
+		void Promise.all([
+			fetch("/api/account/keys"),
+			fetch("/api/account/origins"),
+		])
+			.then(async ([keysResponse, originsResponse]) => {
+				if (!keysResponse.ok) throw new Error(await readApiError(keysResponse));
+				if (!originsResponse.ok)
+					throw new Error(await readApiError(originsResponse));
+				const keysBody = (await keysResponse.json()) as { keys: ApiKey[] };
+				const originsBody = (await originsResponse.json()) as {
+					origins: string[];
+				};
+				if (!active) return;
+				setKeys(keysBody.keys);
+				setOrigins(
+					originsBody.origins.length > 0
+						? originsBody.origins.map((value) => ({
+								id: crypto.randomUUID(),
+								value,
+							}))
+						: [{ id: crypto.randomUUID(), value: window.location.origin }],
+				);
+			})
+			.catch((loadError: unknown) => {
+				if (active)
+					setError(
+						loadError instanceof Error
+							? loadError.message
+							: "Could not load developer settings",
+					);
+			})
+			.finally(() => {
+				if (active) setLoading(false);
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	async function revokeKey(id: string) {
+		setError("");
+		const response = await fetch(`/api/account/keys/${id}`, {
+			method: "DELETE",
+		});
+		if (!response.ok) {
+			setError(await readApiError(response));
+			return;
+		}
+		setKeys((current) => current.filter((key) => key.id !== id));
+	}
+
+	async function saveOrigins() {
+		setSavingOrigins(true);
+		setError("");
+		const response = await fetch("/api/account/origins", {
+			method: "PUT",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				origins: origins.map((origin) => origin.value.trim()).filter(Boolean),
+			}),
+		});
+		setSavingOrigins(false);
+		if (!response.ok) {
+			setError(await readApiError(response));
+			return;
+		}
+		const body = (await response.json()) as { origins: string[] };
+		setOrigins(
+			body.origins.map((value) => ({ id: crypto.randomUUID(), value })),
+		);
+	}
+
+	async function submitKey(event: FormEvent) {
+		event.preventDefault();
+		if (!newKeyName.trim()) return;
+		setSubmittingKey(true);
+		setError("");
+		const [type, mode] = newKeyKind.split(":") as [
+			ApiKey["type"],
+			ApiKey["mode"],
+		];
+		const response = await fetch("/api/account/keys", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ name: newKeyName.trim(), type, mode }),
+		});
+		setSubmittingKey(false);
+		if (!response.ok) {
+			setError(await readApiError(response));
+			return;
+		}
+		const body = (await response.json()) as { key: CreatedApiKey };
+		setKeys((current) => [...current, body.key]);
+		setCreatedKey(body.key);
+		setNewKeyName("");
+		setKeyOpen(false);
+	}
+
 	return (
 		<SettingsPageFrame title="Developers">
+			{error ? <div className="od-settings-error">{error}</div> : null}
 			<SettingsSection
 				description="Create, review, and revoke API keys connected to this website."
 				title="Public and private API keys"
@@ -541,32 +656,37 @@ export function DevelopersSettingsPage() {
 							</tr>
 						</thead>
 						<tbody>
+							{loading ? (
+								<tr>
+									<td className="od-table-message" colSpan={5}>
+										<LoaderCircle className="od-auth-spinner" size={15} />{" "}
+										Loading keys
+									</td>
+								</tr>
+							) : null}
+							{!loading && keys.length === 0 ? (
+								<tr>
+									<td className="od-table-message" colSpan={5}>
+										No keys yet. Create a public key for your first embed.
+									</td>
+								</tr>
+							) : null}
 							{keys.map((apiKey) => (
 								<tr key={apiKey.id}>
 									<td>
 										<strong>{apiKey.name}</strong>
-										<small>{apiKey.created}</small>
+										<small>{formatCreatedAt(apiKey.createdAt)}</small>
 									</td>
 									<td>
-										<span className="od-badge">{apiKey.type}</span>
+										<span className="od-badge">{keyTypeLabel(apiKey)}</span>
 									</td>
 									<td>—</td>
 									<td>
-										<span className="od-key-cell">
-											{apiKey.key}
-											<CopyButton
-												label={`Copy ${apiKey.name}`}
-												value={apiKey.key.replace("...", "_secret_")}
-											/>
-										</span>
+										<span className="od-key-cell">{apiKey.maskedKey}</span>
 									</td>
 									<td>
 										<Button
-											onClick={() =>
-												setKeys((current) =>
-													current.filter((key) => key.id !== apiKey.id),
-												)
-											}
+											onClick={() => void revokeKey(apiKey.id)}
 											size="sm"
 											variant="danger"
 										>
@@ -630,26 +750,62 @@ export function DevelopersSettingsPage() {
 				</PanelFooter>
 			</SettingsSection>
 			<SettingsSection
-				description="Only these domains and subdomains can use your public keys."
+				description="Only these exact origins can use public keys. Include the protocol and port for local development."
 				title="Allowed domains"
 			>
-				<div className="od-domain-row">
-					<Globe2Icon />
-					<Field
-						aria-label="Allowed domain"
-						label="Domain"
-						onChange={(event) => setDomain(event.target.value)}
-						value={domain}
-					/>
-					<Button aria-label="Remove domain" size="icon" variant="ghost">
-						<Trash2 size={15} />
-					</Button>
-				</div>
+				{origins.map((origin) => (
+					<div className="od-domain-row" key={origin.id}>
+						<Globe2Icon />
+						<Field
+							aria-label="Allowed origin"
+							label="Origin"
+							onChange={(event) =>
+								setOrigins((current) =>
+									current.map((item) =>
+										item.id === origin.id
+											? { ...item, value: event.target.value }
+											: item,
+									),
+								)
+							}
+							placeholder="https://app.example.com"
+							value={origin.value}
+						/>
+						<Button
+							aria-label="Remove origin"
+							onClick={() =>
+								setOrigins((current) =>
+									current.filter((item) => item.id !== origin.id),
+								)
+							}
+							size="icon"
+							variant="ghost"
+						>
+							<Trash2 size={15} />
+						</Button>
+					</div>
+				))}
 				<PanelFooter>
-					<Button>
+					<Button
+						onClick={() =>
+							setOrigins((current) => [
+								...current,
+								{ id: crypto.randomUUID(), value: "" },
+							])
+						}
+					>
 						<Plus size={15} /> Add domain
 					</Button>
-					<Button variant="primary">Save domains</Button>
+					<Button
+						disabled={savingOrigins}
+						onClick={() => void saveOrigins()}
+						variant="primary"
+					>
+						{savingOrigins ? (
+							<LoaderCircle className="od-auth-spinner" size={14} />
+						) : null}
+						Save domains
+					</Button>
 				</PanelFooter>
 			</SettingsSection>
 			<Modal
@@ -658,24 +814,7 @@ export function DevelopersSettingsPage() {
 				open={keyOpen}
 				title="Create API key"
 			>
-				<form
-					onSubmit={(event: FormEvent) => {
-						event.preventDefault();
-						if (!newKeyName.trim()) return;
-						setKeys((current) => [
-							...current,
-							{
-								id: Date.now(),
-								name: newKeyName,
-								type: "Test Public Key",
-								key: `pk_test_${Math.random().toString(16).slice(2, 6)}...${Math.random().toString(16).slice(2, 6)}`,
-								created: "Created just now",
-							},
-						]);
-						setNewKeyName("");
-						setKeyOpen(false);
-					}}
-				>
+				<form onSubmit={submitKey}>
 					<div className="od-modal__body">
 						<Field
 							autoFocus
@@ -684,10 +823,15 @@ export function DevelopersSettingsPage() {
 							placeholder="Preview deployment"
 							value={newKeyName}
 						/>
-						<SelectField defaultValue="Test Public Key" label="Key type">
-							<option>Test Public Key</option>
-							<option>Live Public Key</option>
-							<option>Private API Key</option>
+						<SelectField
+							label="Key type"
+							onChange={(event) => setNewKeyKind(event.target.value)}
+							value={newKeyKind}
+						>
+							<option value="public:test">Test Public Key</option>
+							<option value="public:live">Live Public Key</option>
+							<option value="secret:test">Test Secret Key</option>
+							<option value="secret:live">Live Secret Key</option>
 						</SelectField>
 						<div className="od-callout">
 							<KeyRound size={16} />
@@ -701,11 +845,41 @@ export function DevelopersSettingsPage() {
 						<Button onClick={() => setKeyOpen(false)} type="button">
 							Cancel
 						</Button>
-						<Button type="submit" variant="primary">
+						<Button disabled={submittingKey} type="submit" variant="primary">
+							{submittingKey ? (
+								<LoaderCircle className="od-auth-spinner" size={14} />
+							) : null}
 							Create key
 						</Button>
 					</div>
 				</form>
+			</Modal>
+			<Modal
+				description="This is the only time Otto will return the complete key."
+				onClose={() => setCreatedKey(null)}
+				open={Boolean(createdKey)}
+				title="Your API key is ready"
+			>
+				<div className="od-modal__body">
+					<div className="od-created-key">
+						<code>{createdKey?.rawKey}</code>
+						{createdKey ? (
+							<CopyButton label="Copy API key" value={createdKey.rawKey} />
+						) : null}
+					</div>
+					<div className="od-callout">
+						<KeyRound size={16} />
+						<p>
+							Add public keys to the Otto embed. Keep secret keys on trusted
+							servers only.
+						</p>
+					</div>
+				</div>
+				<div className="od-modal__footer">
+					<Button onClick={() => setCreatedKey(null)} variant="primary">
+						Done
+					</Button>
+				</div>
 			</Modal>
 		</SettingsPageFrame>
 	);

@@ -12,6 +12,7 @@ import {
 	Globe2,
 	HelpCircle,
 	Inbox,
+	LogOut,
 	Menu,
 	MessageSquareText,
 	PanelLeftClose,
@@ -28,6 +29,7 @@ import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { OttoGlyph } from "@/components/marks";
+import { authClient } from "@/lib/auth-client";
 import { Button, cx, SegmentedMeter } from "./ui";
 
 export type WorkspaceMode = "inbox" | "settings" | "agent" | "org";
@@ -155,6 +157,11 @@ function UsageCard() {
 	);
 }
 
+async function signOut(): Promise<void> {
+	await authClient.signOut();
+	window.location.assign("/login");
+}
+
 function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	const pathname = usePathname();
 	const items =
@@ -222,6 +229,13 @@ function SidebarFooter({ mode }: { mode: WorkspaceMode }) {
 					<Settings2 size={15} /> Settings
 				</Link>
 			) : null}
+			<Button
+				className="od-sidebar-signout"
+				onClick={() => void signOut()}
+				variant="ghost"
+			>
+				<LogOut size={15} /> Sign out
+			</Button>
 			<div className="od-org-switcher">
 				<span>O</span>
 				<div>
@@ -279,6 +293,15 @@ function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
 					<Settings2 size={16} />
 				</Link>
 				<button type="button">Feedback?</button>
+				<Button
+					aria-label="Sign out"
+					onClick={() => void signOut()}
+					size="icon"
+					title="Sign out"
+					variant="ghost"
+				>
+					<LogOut size={15} />
+				</Button>
 			</nav>
 		</header>
 	);

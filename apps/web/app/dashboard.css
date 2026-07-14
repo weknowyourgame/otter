@@ -26,6 +26,179 @@
 	letter-spacing: 0;
 }
 
+.od-auth-page,
+.od-auth-loading {
+	position: fixed;
+	inset: 0;
+	z-index: 20;
+	display: grid;
+	place-items: center;
+	background: var(--od-bg);
+	color: var(--od-text);
+	font-family: var(--od-font-body);
+	letter-spacing: 0;
+}
+
+.od-auth-loading {
+	grid-auto-flow: column;
+	gap: 12px;
+}
+
+.od-auth-loading__mark,
+.od-auth-brand > span {
+	display: grid;
+	width: 36px;
+	height: 36px;
+	place-items: center;
+	border-radius: 3px;
+	background: var(--od-text);
+	color: var(--od-bg);
+}
+
+.od-auth-spinner {
+	animation: od-auth-spin 850ms linear infinite;
+}
+
+@keyframes od-auth-spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.od-auth-grid {
+	position: absolute;
+	inset: 0;
+	display: grid;
+	grid-template-columns: repeat(8, minmax(72px, 1fr));
+	grid-template-rows: repeat(6, minmax(72px, 1fr));
+	opacity: 0.34;
+	pointer-events: none;
+}
+
+.od-auth-grid span {
+	border-right: 1px solid var(--od-border-soft);
+	border-bottom: 1px solid var(--od-border-soft);
+}
+
+.od-auth-panel {
+	position: relative;
+	z-index: 1;
+	width: min(calc(100vw - 32px), 470px);
+	border: 1px solid var(--od-border);
+	border-radius: 4px;
+	background: #0b0b0b;
+	box-shadow: 0 28px 90px rgba(0, 0, 0, 0.68);
+	overflow: hidden;
+}
+
+.od-auth-brand {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	border-bottom: 1px solid var(--od-border);
+	padding: 18px 20px;
+}
+
+.od-auth-brand > span {
+	width: 34px;
+	height: 34px;
+}
+
+.od-auth-brand strong,
+.od-auth-brand small {
+	display: block;
+}
+
+.od-auth-brand strong {
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.od-auth-brand small {
+	color: var(--od-muted);
+	font: 10px / 1.4 var(--od-font-mono);
+	margin-top: 2px;
+}
+
+.od-auth-copy {
+	padding: 34px 28px 25px;
+}
+
+.od-auth-copy p {
+	color: var(--od-accent);
+	font: 11px / 1.4 var(--od-font-mono);
+	margin: 0 0 12px;
+	text-transform: uppercase;
+}
+
+.od-auth-copy h1 {
+	max-width: 360px;
+	font-size: 29px;
+	font-weight: 500;
+	line-height: 1.14;
+	margin: 0;
+}
+
+.od-auth-tabs {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	border-top: 1px solid var(--od-border);
+	border-bottom: 1px solid var(--od-border);
+	background: #090909;
+}
+
+.od-auth-tabs button {
+	height: 44px;
+	border: 0;
+	border-right: 1px solid var(--od-border);
+	background: transparent;
+	color: var(--od-muted);
+	font: 12px var(--od-font-body);
+	cursor: pointer;
+}
+
+.od-auth-tabs button:last-child {
+	border-right: 0;
+}
+
+.od-auth-tabs button[aria-selected="true"] {
+	background: var(--od-bg-hover);
+	color: var(--od-text);
+	box-shadow: inset 0 -2px var(--od-accent);
+}
+
+.od-auth-form {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	padding: 25px 28px 28px;
+}
+
+.od-auth-error {
+	border: 1px solid #51262e;
+	background: var(--od-danger-soft);
+	color: var(--od-danger);
+	font-size: 11px;
+	line-height: 1.45;
+	margin: 0;
+	padding: 10px 12px;
+}
+
+.od-auth-submit {
+	width: 100%;
+	margin-top: 2px;
+}
+
+.od-auth-panel > footer {
+	display: flex;
+	justify-content: space-between;
+	gap: 12px;
+	border-top: 1px solid var(--od-border);
+	color: #676767;
+	font: 10px / 1.4 var(--od-font-mono);
+	padding: 13px 20px;
+}
+
 .od-app *,
 .od-flow * {
 	box-sizing: border-box;
@@ -270,6 +443,13 @@
 	color: white;
 }
 
+.od-sidebar__footer .od-sidebar-signout {
+	min-height: 40px;
+	justify-content: flex-start;
+	gap: 9px;
+	padding: 0 11px;
+}
+
 .od-usage-card {
 	border: 1px dashed #28564d;
 	background: #091310;
@@ -504,6 +684,16 @@
 .od-settings-stack {
 	width: min(100%, 820px);
 	margin: 72px auto 0;
+}
+
+.od-settings-error {
+	border: 1px solid #51262e;
+	background: var(--od-danger-soft);
+	color: var(--od-danger);
+	font-size: 12px;
+	line-height: 1.45;
+	margin-top: 22px;
+	padding: 11px 13px;
 }
 
 .od-settings-section {
@@ -985,6 +1175,18 @@
 	margin-top: 5px;
 }
 
+.od-table .od-table-message {
+	height: 92px;
+	color: var(--od-muted);
+	text-align: center;
+}
+
+.od-table-message svg {
+	display: inline-block;
+	margin-right: 7px;
+	vertical-align: -3px;
+}
+
 .od-person {
 	display: flex;
 	align-items: center;
@@ -1423,6 +1625,23 @@
 
 .od-callout p {
 	margin: 0;
+}
+
+.od-created-key {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) 34px;
+	align-items: center;
+	gap: 8px;
+	border: 1px solid #343434;
+	background: #080808;
+	padding: 8px 9px 8px 12px;
+}
+
+.od-created-key code {
+	min-width: 0;
+	color: #d6f8f2;
+	font: 11px / 1.5 var(--od-font-mono);
+	overflow-wrap: anywhere;
 }
 
 .od-agent-live {

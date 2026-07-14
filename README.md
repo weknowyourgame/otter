@@ -14,39 +14,44 @@ packages/
   core/   otto-core — the brain. runStep() takes {message?, snapshot,
           lastAction?} and returns exactly one next action via LLM
           tool-calling (OpenRouter), with a keyless local fallback
-          planner. In-memory sessions power the dashboard feed.
+          planner. Tenant-scoped SQLite sessions power the dashboard feed.
   sdk/    otto-sdk — the eyes and hands. Vanilla TS in one shadow root:
           DOM serializer (ref-stamped elements), executor (animated
           cursor + target ring, char-by-char typing, DOM-settle waits),
           chat UI with step trails, consent + destructive-action gates.
           Ships as npm ESM and a script-tag IIFE build.
 apps/
-  web/    Next.js app: marketing page (/), dashboard with install
-          snippet + live sessions (/dashboard), the Nimbus demo SaaS
-          (/demo), and the agent API (/api/agent/step).
+  api/    Hono + Bun backend: Better Auth, tenant API keys, origin-scoped
+          agent HTTP/WebSocket endpoints, sessions, and knowledge APIs.
+  web/    Next.js dashboard, auth UI, developer settings, the Cordant demo
+          SaaS (/demo), and same-origin proxies to apps/api.
 ```
 
 ## Quick start
 
 ```bash
-npm install
-npm run build     # builds otto-core + otto-sdk
-npm run dev       # apps/web on http://localhost:3000
+bun install
+bun run build
+bun run dev:all   # landing :3000, dashboard :3001, API :8787
 ```
 
-Open http://localhost:3000/demo and ask Otto to *"enable two-factor
-authentication for me"* — then watch the cursor. Sessions appear live at
-http://localhost:3000/dashboard.
+Create an account at http://localhost:3001/login, then issue a public key
+under **Settings -> Developers**. Register the exact origin that embeds Otto.
 
-### Environment (`apps/web/.env.local`)
+### API environment (`apps/api/.env`)
 
 ```bash
-OPENROUTER_API_KEY=   # enables the real agent (get one at openrouter.ai/keys)
-AGENT_MODEL=anthropic/claude-sonnet-4.5   # optional override
+BETTER_AUTH_URL=http://localhost:8787
+BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
+OTTO_API_KEY_SECRET=replace-with-a-different-32-character-secret
+OTTO_DASHBOARD_ORIGINS=http://localhost:3001
+OPENROUTER_API_KEY=
+AGENT_MODEL=anthropic/claude-sonnet-4.5
 ```
 
-Without a key the loop still runs on a deterministic keyword planner —
-good enough to demo the takeover UX, not the intelligence.
+Copy `apps/api/.env.example` and `apps/web/.env.example` for the complete
+local setup. Without an OpenRouter key the loop uses the deterministic local
+planner; agent requests still require an Otto tenant key.
 
 ## The loop
 
@@ -81,7 +86,8 @@ sessionStorage before a hard navigation and resumes on the other side.
 
 ```html
 <script src="https://your-cdn/otto-sdk.global.js"
-        data-endpoint="https://your-app.com/api/agent" defer></script>
+        data-endpoint="https://api.your-app.com"
+        data-public-key="pk_live_..." defer></script>
 ```
 
 or programmatically:
@@ -91,6 +97,7 @@ import { init } from "otto-sdk";
 
 init({
   endpoint: "/api/agent",
+  publicKey: "pk_live_...",
   name: "Otto",
   accent: "#5B6CF9",
   theme: "dark",            // "light" | "auto"
@@ -98,11 +105,16 @@ init({
 });
 ```
 
-## Status / not yet built
+## Status
 
-- Sessions are in-memory (single process). Real deployments need a store.
-- The `/api/agent/step` CORS is `*` and the dashboard key is a mock —
-  per-tenant API keys and auth come with the connector layer.
+- Sessions, knowledge, and memory persist in SQLite and are tenant-scoped.
+- Dashboard access uses Better Auth. Developer settings issue revocable,
+  hashed tenant API keys and register exact browser origins.
+- Agent HTTP and WebSocket requests require a valid key. CORS echoes only a
+  registered origin for that key's tenant; there is no wildcard fallback.
+
+## Not yet built
+
 - Helpdesk connectors (Zendesk/Jira/Intercom inbound tickets → guided
   replies, escalation back) are designed but intentionally removed from
   this iteration; they return as thin adapters on otto-core.
