@@ -1,5 +1,5 @@
 import { InboxPage } from "@/components/dashboard/core-pages";
 
 export default function Page() {
-	return <InboxPage />;
+	return <InboxPage filter="Spam" />;
 }

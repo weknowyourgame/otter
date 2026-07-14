@@ -1,0 +1,651 @@
+"use client";
+
+import {
+	ArrowLeft,
+	ArrowRight,
+	Bot,
+	Check,
+	CheckCircle2,
+	Code2,
+	Globe2,
+	LoaderCircle,
+	Sparkles,
+	TerminalSquare,
+	Users,
+} from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import type { FormEvent, ReactNode } from "react";
+import { useState } from "react";
+import { OttoGlyph } from "@/components/marks";
+import {
+	Button,
+	CopyButton,
+	cx,
+	Field,
+	SelectField,
+	SettingToggle,
+	TextAreaField,
+} from "./ui";
+
+function FlowShell({
+	eyebrow,
+	title,
+	description,
+	step,
+	total,
+	children,
+}: {
+	eyebrow: string;
+	title: string;
+	description: string;
+	step: number;
+	total: number;
+	children: ReactNode;
+}) {
+	return (
+		<div className="od-flow">
+			<header className="od-flow__topbar">
+				<Link aria-label="Otto dashboard" href="/dashboard">
+					<span>
+						<OttoGlyph className="h-4 w-4" />
+					</span>
+					<strong>Otto</strong>
+				</Link>
+				<Link href="/dashboard">
+					<ArrowLeft size={15} /> Back to dashboard
+				</Link>
+			</header>
+			<div className="od-flow__grid">
+				<aside className="od-flow__aside">
+					<div>
+						<span>{eyebrow}</span>
+						<h1>{title}</h1>
+						<p>{description}</p>
+					</div>
+					<div className="od-flow__progress">
+						<span>
+							Step {step} of {total}
+						</span>
+						<div>
+							{Array.from({ length: total }, (_, index) => index + 1).map(
+								(position) => (
+									<i
+										className={position <= step ? "is-active" : ""}
+										key={`flow-step-${position}`}
+									/>
+								),
+							)}
+						</div>
+					</div>
+				</aside>
+				<main className="od-flow__main">{children}</main>
+			</div>
+		</div>
+	);
+}
+
+export function OrganizationCreateFlow() {
+	const router = useRouter();
+	const [name, setName] = useState("");
+	const [slug, setSlug] = useState("");
+	return (
+		<FlowShell
+			description="Organizations keep websites, billing, and teammates under one roof."
+			eyebrow="New workspace"
+			step={1}
+			title="Create an organization."
+			total={1}
+		>
+			<form
+				className="od-flow-card"
+				onSubmit={(event) => {
+					event.preventDefault();
+					router.push("/websites/create");
+				}}
+			>
+				<div className="od-flow-card__head">
+					<span>
+						<Users size={19} />
+					</span>
+					<div>
+						<h2>Organization details</h2>
+						<p>You can invite teammates after the first website is ready.</p>
+					</div>
+				</div>
+				<div className="od-flow-card__body">
+					<Field
+						autoFocus
+						label="Organization name"
+						onChange={(event) => {
+							setName(event.target.value);
+							setSlug(
+								event.target.value
+									.toLowerCase()
+									.trim()
+									.replace(/[^a-z0-9]+/g, "-"),
+							);
+						}}
+						placeholder="Acme, Inc."
+						value={name}
+					/>
+					<Field
+						hint="Used in internal Otto URLs. You can change it later."
+						label="Organization slug"
+						onChange={(event) => setSlug(event.target.value)}
+						placeholder="acme"
+						value={slug}
+					/>
+				</div>
+				<div className="od-flow-card__footer">
+					<Link href="/org">Cancel</Link>
+					<Button disabled={!name.trim()} type="submit" variant="primary">
+						Create organization <ArrowRight size={15} />
+					</Button>
+				</div>
+			</form>
+		</FlowShell>
+	);
+}
+
+const installPrompt = `Add Otto support to this Next.js application.
+
+1. Install @otto/sdk with your existing package manager.
+2. Wrap the root layout with OttoProvider.
+3. Mount <OttoWidget /> once, near the end of the body.
+4. Use this public key: pk_test_otto_91a2
+5. Allow the domain configured for this website.
+
+Keep the existing visual system unchanged and verify the widget opens on mobile.`;
+
+export function WebsiteCreateFlow() {
+	const [step, setStep] = useState(1);
+	const [name, setName] = useState("");
+	const [domain, setDomain] = useState("");
+	const [framework, setFramework] = useState("Next.js");
+	const [mode, setMode] = useState("ai");
+	return (
+		<FlowShell
+			description="Create the site, choose a framework, then connect Otto with a generated key."
+			eyebrow="Website setup"
+			step={step}
+			title={
+				step === 1
+					? "Where will Otto live?"
+					: step === 2
+						? "Install Otto locally."
+						: "Your website is ready."
+			}
+			total={3}
+		>
+			{step === 1 ? (
+				<form
+					className="od-flow-card"
+					onSubmit={(event) => {
+						event.preventDefault();
+						setStep(2);
+					}}
+				>
+					<div className="od-flow-card__head">
+						<span>
+							<Globe2 size={19} />
+						</span>
+						<div>
+							<h2>Create your website</h2>
+							<p>
+								This becomes the boundary for conversations, agent settings, and
+								API keys.
+							</p>
+						</div>
+					</div>
+					<div className="od-flow-card__body">
+						<Field
+							autoFocus
+							label="Website name"
+							onChange={(event) => setName(event.target.value)}
+							placeholder="Acme Docs"
+							value={name}
+						/>
+						<Field
+							hint="We will add this to your public-key allowlist."
+							label="Production domain"
+							onChange={(event) => setDomain(event.target.value)}
+							placeholder="docs.acme.com"
+							value={domain}
+						/>
+						<SelectField
+							label="Framework"
+							onChange={(event) => setFramework(event.target.value)}
+							value={framework}
+						>
+							<option>Next.js</option>
+							<option>React</option>
+							<option>JavaScript</option>
+						</SelectField>
+					</div>
+					<div className="od-flow-card__footer">
+						<Link href="/org">Cancel</Link>
+						<Button disabled={!name || !domain} type="submit" variant="primary">
+							Create website <ArrowRight size={15} />
+						</Button>
+					</div>
+				</form>
+			) : null}
+			{step === 2 ? (
+				<div className="od-flow-card od-install-card">
+					<div className="od-flow-card__head">
+						<span>
+							<TerminalSquare size={19} />
+						</span>
+						<div>
+							<h2>Install Otto for {framework}</h2>
+							<p>
+								Use an AI coding assistant or follow the manual integration
+								steps.
+							</p>
+						</div>
+					</div>
+					<div className="od-flow-card__body">
+						<div className="od-mode-grid">
+							<button
+								className={mode === "ai" ? "is-active" : ""}
+								onClick={() => setMode("ai")}
+								type="button"
+							>
+								<Sparkles size={18} />
+								<strong>Copy prompt for AI</strong>
+								<p>
+									Fastest. Paste one complete prompt into Codex, Cursor, or
+									Claude.
+								</p>
+								<span>Recommended</span>
+							</button>
+							<button
+								className={mode === "manual" ? "is-active" : ""}
+								onClick={() => setMode("manual")}
+								type="button"
+							>
+								<Code2 size={18} />
+								<strong>Manual integration</strong>
+								<p>Install the SDK and add the widget yourself.</p>
+							</button>
+						</div>
+						{mode === "ai" ? (
+							<div className="od-code-block">
+								<div>
+									<span>AI setup prompt</span>
+									<CopyButton label="Copy setup prompt" value={installPrompt} />
+								</div>
+								<pre>{installPrompt}</pre>
+							</div>
+						) : (
+							<div className="od-manual-steps">
+								<div>
+									<span>1</span>
+									<div>
+										<strong>Install the SDK</strong>
+										<code>npm install @otto/sdk</code>
+									</div>
+								</div>
+								<div>
+									<span>2</span>
+									<div>
+										<strong>Add your public key</strong>
+										<code>pk_test_otto_91a2</code>
+									</div>
+								</div>
+								<div>
+									<span>3</span>
+									<div>
+										<strong>Mount the widget</strong>
+										<code>{"<OttoWidget />"}</code>
+									</div>
+								</div>
+							</div>
+						)}
+					</div>
+					<div className="od-flow-card__footer">
+						<Button onClick={() => setStep(1)}>Back</Button>
+						<Button onClick={() => setStep(3)} variant="primary">
+							I installed Otto <Check size={15} />
+						</Button>
+					</div>
+				</div>
+			) : null}
+			{step === 3 ? (
+				<div className="od-flow-card od-flow-success">
+					<div className="od-flow-card__body">
+						<div className="od-success-mark">
+							<CheckCircle2 size={27} />
+						</div>
+						<h2>{name} is connected.</h2>
+						<p>
+							We created test and live API keys, allowed {domain}, and prepared
+							the workspace for its first agent.
+						</p>
+						<div className="od-created-facts">
+							<div>
+								<span>Website</span>
+								<strong>{name}</strong>
+							</div>
+							<div>
+								<span>Domain</span>
+								<strong>{domain}</strong>
+							</div>
+							<div>
+								<span>Framework</span>
+								<strong>{framework}</strong>
+							</div>
+						</div>
+					</div>
+					<div className="od-flow-card__footer">
+						<Link
+							className="od-button od-button--secondary od-button--md"
+							href="/settings/developers"
+						>
+							View API keys
+						</Link>
+						<Link
+							className="od-button od-button--primary od-button--md"
+							href="/agent/create"
+						>
+							Create AI agent <ArrowRight size={15} />
+						</Link>
+					</div>
+				</div>
+			) : null}
+		</FlowShell>
+	);
+}
+
+const goals = [
+	"Answer product questions",
+	"Troubleshoot issues",
+	"Qualify leads",
+	"Route to a human",
+];
+const generatedPrompt =
+	"You are Otto Support, the thoughtful support teammate for Otto Labs. Answer clearly and directly using the knowledge base. Ask at most one focused clarification when necessary. Be warm without adding filler. Escalate account security, billing disputes, and requests where confidence is low.";
+
+export function AgentCreateFlow() {
+	const router = useRouter();
+	const [step, setStep] = useState(1);
+	const [name, setName] = useState("Otto Support");
+	const [crawl, setCrawl] = useState(true);
+	const [url, setUrl] = useState("https://otto.so");
+	const [selectedGoals, setSelectedGoals] = useState([goals[0], goals[1]]);
+	const [analysis, setAnalysis] = useState(0);
+	const [tone, setTone] = useState("Warm & concise");
+	const [model, setModel] = useState("Claude 3.7 Sonnet");
+	const [prompt, setPrompt] = useState(generatedPrompt);
+	const [saving, setSaving] = useState(false);
+
+	const continueFromBasics = () => {
+		setStep(2);
+		if (!crawl) {
+			setAnalysis(3);
+			window.setTimeout(() => setStep(3), 350);
+			return;
+		}
+		setAnalysis(1);
+		window.setTimeout(() => setAnalysis(2), 850);
+		window.setTimeout(() => setAnalysis(3), 1650);
+		window.setTimeout(() => setStep(3), 2300);
+	};
+
+	return (
+		<FlowShell
+			description="Give Otto a name, a goal, and enough context to feel like a member of your team."
+			eyebrow="New AI teammate"
+			step={step}
+			title={
+				step === 1
+					? "Create your support agent."
+					: step === 2
+						? "Learning your product."
+						: "Shape its personality."
+			}
+			total={3}
+		>
+			{step === 1 ? (
+				<form
+					className="od-flow-card"
+					onSubmit={(event: FormEvent) => {
+						event.preventDefault();
+						continueFromBasics();
+					}}
+				>
+					<div className="od-flow-card__head">
+						<span>
+							<Bot size={19} />
+						</span>
+						<div>
+							<h2>Agent basics</h2>
+							<p>Start with a clear job. You can tune every detail later.</p>
+						</div>
+					</div>
+					<div className="od-flow-card__body">
+						<Field
+							autoFocus
+							hint="Visible to your teammates and, optionally, visitors."
+							label="Agent name"
+							onChange={(event) => setName(event.target.value)}
+							value={name}
+						/>
+						<div className="od-crawl-choice">
+							<SettingToggle
+								checked={crawl}
+								description="Analyze your website to draft a personality and knowledge source."
+								onChange={setCrawl}
+								title="Crawl my website"
+							/>
+							{crawl ? (
+								<Field
+									hint="Free plan includes up to 25 discovered pages."
+									label="Website URL"
+									onChange={(event) => setUrl(event.target.value)}
+									type="url"
+									value={url}
+								/>
+							) : (
+								<TextAreaField
+									label="Describe your product"
+									placeholder="What do you sell, and who do you help?"
+									rows={4}
+								/>
+							)}
+						</div>
+						<div className="od-goal-picker">
+							<span>What should this agent do?</span>
+							<div>
+								{goals.map((goal) => (
+									<button
+										className={selectedGoals.includes(goal) ? "is-active" : ""}
+										key={goal}
+										onClick={() =>
+											setSelectedGoals((current) =>
+												current.includes(goal)
+													? current.filter((item) => item !== goal)
+													: [...current, goal],
+											)
+										}
+										type="button"
+									>
+										<i>
+											{selectedGoals.includes(goal) ? (
+												<Check size={12} />
+											) : null}
+										</i>
+										{goal}
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+					<div className="od-flow-card__footer">
+						<Link href="/dashboard">Cancel</Link>
+						<Button
+							disabled={
+								!name.trim() || selectedGoals.length === 0 || (crawl && !url)
+							}
+							type="submit"
+							variant="primary"
+						>
+							Continue <ArrowRight size={15} />
+						</Button>
+					</div>
+				</form>
+			) : null}
+			{step === 2 ? (
+				<div className="od-flow-card od-analysis-card">
+					<div className="od-flow-card__head">
+						<span>
+							<Sparkles size={19} />
+						</span>
+						<div>
+							<h2>Preparing {name}</h2>
+							<p>
+								Otto is gathering enough signal to draft a useful starting
+								point.
+							</p>
+						</div>
+					</div>
+					<div className="od-flow-card__body">
+						<div className="od-analysis-visual">
+							<Globe2 size={26} />
+							<div className="od-analysis-pulse" />
+							<span>{url.replace(/^https?:\/\//, "")}</span>
+						</div>
+						<div className="od-analysis-steps">
+							{[
+								[
+									1,
+									"Crawling your website",
+									"Reading linked pages and page structure",
+								],
+								[
+									2,
+									"Understanding your product",
+									"Finding the audience, offer, and recurring terminology",
+								],
+								[
+									3,
+									"Crafting agent personality",
+									"Turning those signals into a support-ready prompt",
+								],
+							].map(([index, title, description]) => (
+								<div
+									className={cx(
+										analysis >= Number(index) && "is-active",
+										analysis > Number(index) && "is-complete",
+									)}
+									key={title}
+								>
+									<span>
+										{analysis > Number(index) ? (
+											<Check size={13} />
+										) : analysis === Number(index) ? (
+											<LoaderCircle className="od-spin" size={13} />
+										) : (
+											index
+										)}
+									</span>
+									<div>
+										<strong>{title}</strong>
+										<p>{description}</p>
+									</div>
+								</div>
+							))}
+						</div>
+					</div>
+				</div>
+			) : null}
+			{step === 3 ? (
+				<div className="od-flow-card od-personality-card">
+					<div className="od-flow-card__head">
+						<span>
+							<WandIcon />
+						</span>
+						<div>
+							<h2>Agent personality</h2>
+							<p>Review the generated behavior, model, and response style.</p>
+						</div>
+					</div>
+					<div className="od-flow-card__body">
+						<div className="od-agent-summary">
+							<div className="od-agent-avatar">
+								<Bot size={22} />
+							</div>
+							<div>
+								<strong>{name}</strong>
+								<p>
+									{selectedGoals.length} goals ·{" "}
+									{crawl ? "3 pages discovered" : "Manual context"}
+								</p>
+							</div>
+							<span>Draft ready</span>
+						</div>
+						<div className="od-tone-picker">
+							<span>Response style</span>
+							<div>
+								{["Concise", "Warm & concise", "Technical", "Playful"].map(
+									(item) => (
+										<button
+											className={tone === item ? "is-active" : ""}
+											key={item}
+											onClick={() => setTone(item)}
+											type="button"
+										>
+											{item}
+										</button>
+									),
+								)}
+							</div>
+						</div>
+						<SelectField
+							label="AI model"
+							onChange={(event) => setModel(event.target.value)}
+							value={model}
+						>
+							<option>Claude 3.7 Sonnet</option>
+							<option>GPT-4.1 mini</option>
+							<option>Gemini 2.5 Flash</option>
+						</SelectField>
+						<TextAreaField
+							hint="You can mention enabled tools using @tool-name after setup."
+							label="System prompt"
+							onChange={(event) => setPrompt(event.target.value)}
+							rows={10}
+							value={prompt}
+						/>
+					</div>
+					<div className="od-flow-card__footer">
+						<Button onClick={() => setStep(1)}>Edit basics</Button>
+						<Button
+							disabled={!prompt.trim() || saving}
+							onClick={() => {
+								setSaving(true);
+								window.setTimeout(() => router.push("/agent"), 900);
+							}}
+							variant="primary"
+						>
+							{saving ? (
+								<>
+									<LoaderCircle className="od-spin" size={14} /> Saving...
+								</>
+							) : (
+								<>
+									Finish setup <Check size={15} />
+								</>
+							)}
+						</Button>
+					</div>
+				</div>
+			) : null}
+		</FlowShell>
+	);
+}
+
+function WandIcon() {
+	return <Sparkles size={19} />;
+}
