@@ -2,7 +2,7 @@
 	"name": "otto-workers",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Background job processor. Currently: web-crawl (fetch a URL via Firecrawl, chunk it, store it in otto-db as a pending knowledge doc).",
+	"description": "Background job processor. Currently: web-crawl (fetch a URL via Firecrawl, chunk it, embed each chunk, store it in otto-db as a searchable knowledge doc).",
 	"type": "module",
 	"scripts": {
 		"dev": "bun run --hot src/index.ts",
@@ -10,6 +10,7 @@
 	},
 	"dependencies": {
 		"bullmq": "^5.34.4",
+		"otto-core": "workspace:*",
 		"otto-db": "workspace:*",
 		"otto-jobs": "workspace:*",
 		"otto-redis": "workspace:*"

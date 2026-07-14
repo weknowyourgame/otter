@@ -7,6 +7,7 @@ const connection = getBullConnectionOptions(redisUrl);
 const webCrawlWorker = createWebCrawlWorker({
 	connection,
 	firecrawlApiKey: process.env.FIRECRAWL_API_KEY,
+	openRouterApiKey: process.env.OPENROUTER_API_KEY,
 });
 
 await webCrawlWorker.start();

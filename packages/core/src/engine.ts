@@ -5,6 +5,7 @@ import {
 	type SessionRow,
 	upsertSession,
 } from "otto-db";
+import { formatKnowledgeResultForModel, searchKnowledgeBase } from "./knowledge.js";
 import { requestNextAction, type ChatMessage } from "./llm.js";
 import { localNextAction, type LocalPlannerState } from "./local.js";
 import { SYSTEM_PROMPT, renderSnapshot } from "./prompt.js";
@@ -20,6 +21,7 @@ import type {
 const SESSION_TTL_MS = 30 * 60 * 1000;
 const DEFAULT_MAX_STEPS = 24;
 const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
+const MAX_KNOWLEDGE_SEARCHES_PER_STEP = 3;
 
 interface Session {
 	id: string;
@@ -197,12 +199,28 @@ async function aiStep(
 	}
 
 	try {
-		const step = await requestNextAction(session.history, apiKey, model);
-		session.history.push(step.assistantMessage);
+		// search_knowledge_base resolves server-side, inline: the SDK never
+		// sees it, only the client-facing actions in AgentAction. Bounded so a
+		// model that keeps re-searching can't loop forever within one runStep().
+		for (let iteration = 0; iteration < MAX_KNOWLEDGE_SEARCHES_PER_STEP; iteration++) {
+			const step = await requestNextAction(session.history, apiKey, model);
+			session.history.push(step.assistantMessage);
+
+			if (step.kind === "action") {
+				return { sessionId: session.id, action: step.action, status: step.status, source: "ai" };
+			}
+
+			const result = await searchKnowledgeBase(step.query, apiKey);
+			session.history.push({
+				role: "tool",
+				tool_call_id: step.toolCallId,
+				content: formatKnowledgeResultForModel(result),
+			});
+		}
+
 		return {
 			sessionId: session.id,
-			action: step.action,
-			status: step.status,
+			action: { type: "say", text: "I couldn't pin that down after a few tries — could you rephrase the question?" },
 			source: "ai",
 		};
 	} catch (err) {

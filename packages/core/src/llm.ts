@@ -32,6 +32,12 @@ const TOOLS = [
 	tool("say", "Send the user a message and pause for their reply.", {
 		text: { type: "string" },
 	}, ["text"]),
+	tool(
+		"search_knowledge_base",
+		"Look up relevant info from the app's help docs to answer a question. Use this when the user is asking what/how/why something works, not asking you to perform an action. Resolves server-side — you'll get results back and can call it again or answer.",
+		{ query: { type: "string", description: "What to search for" } },
+		["query"],
+	),
 	tool("done", "The task is complete and the page state proves it.", {
 		summary: { type: "string", description: "One short friendly sentence" },
 	}, ["summary"]),
@@ -56,12 +62,10 @@ function tool(
 	};
 }
 
-export interface LLMStep {
-	action: AgentAction;
-	status?: string;
-	/** The raw assistant message, to append to history verbatim. */
-	assistantMessage: ChatMessage;
-}
+/** The raw assistant message, to append to history verbatim, in both variants. */
+export type LLMStep =
+	| { kind: "action"; action: AgentAction; status?: string; assistantMessage: ChatMessage }
+	| { kind: "search"; query: string; toolCallId: string; assistantMessage: ChatMessage };
 
 export async function requestNextAction(
 	messages: ChatMessage[],
@@ -112,7 +116,7 @@ export async function requestNextAction(
 	if (!call) {
 		// Model answered in prose — treat it as say() so the loop still behaves.
 		const text = (msg.content ?? "").trim() || "I'm not sure how to proceed — could you rephrase?";
-		return { action: { type: "say", text }, assistantMessage };
+		return { kind: "action", action: { type: "say", text }, assistantMessage };
 	}
 
 	let args: Record<string, unknown> = {};
@@ -122,9 +126,13 @@ export async function requestNextAction(
 		throw new Error("openrouter_bad_tool_args");
 	}
 
+	if (call.function.name === "search_knowledge_base") {
+		return { kind: "search", query: String(args.query ?? ""), toolCallId: call.id, assistantMessage };
+	}
+
 	const status = typeof args.status === "string" ? args.status : undefined;
 	const action = toAction(call.function.name, args);
-	return { action, status, assistantMessage };
+	return { kind: "action", action, status, assistantMessage };
 }
 
 function toAction(name: string, args: Record<string, unknown>): AgentAction {

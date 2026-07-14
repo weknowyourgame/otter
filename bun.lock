@@ -69,6 +69,7 @@
       "version": "0.1.0",
       "dependencies": {
         "bullmq": "^5.34.4",
+        "otto-core": "workspace:*",
         "otto-db": "workspace:*",
         "otto-jobs": "workspace:*",
         "otto-redis": "workspace:*",

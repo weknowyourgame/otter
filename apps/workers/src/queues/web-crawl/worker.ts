@@ -5,7 +5,8 @@
 // Phase 5 is on hold), no plan-based size limits (no billing). Just:
 // fetch one page, chunk it, store it, mark the doc ready or failed.
 
-import { updateDocStatus, replaceChunksForDoc } from "otto-db";
+import { requestEmbedding } from "otto-core";
+import { updateDocStatus, replaceChunksForDoc, setChunkEmbedding } from "otto-db";
 import type { RedisOptions } from "otto-redis";
 import { QUEUE_NAMES, type WebCrawlJobData } from "otto-jobs";
 import { Job, Worker } from "bullmq";
@@ -15,9 +16,10 @@ import { FirecrawlService } from "../../services/firecrawl.js";
 type WorkerConfig = {
 	connection: RedisOptions;
 	firecrawlApiKey: string | undefined;
+	openRouterApiKey: string | undefined;
 };
 
-export function createWebCrawlWorker({ connection, firecrawlApiKey }: WorkerConfig) {
+export function createWebCrawlWorker({ connection, firecrawlApiKey, openRouterApiKey }: WorkerConfig) {
 	const firecrawl = new FirecrawlService(firecrawlApiKey);
 	let worker: Worker<WebCrawlJobData> | null = null;
 
@@ -27,7 +29,7 @@ export function createWebCrawlWorker({ connection, firecrawlApiKey }: WorkerConf
 
 			worker = new Worker<WebCrawlJobData>(
 				QUEUE_NAMES.WEB_CRAWL,
-				async (job: Job<WebCrawlJobData>) => processWebCrawlJob(firecrawl, job.data),
+				async (job: Job<WebCrawlJobData>) => processWebCrawlJob(firecrawl, openRouterApiKey, job.data),
 				{ connection, concurrency: 2 },
 			);
 
@@ -47,7 +49,11 @@ export function createWebCrawlWorker({ connection, firecrawlApiKey }: WorkerConf
 	};
 }
 
-export async function processWebCrawlJob(firecrawl: FirecrawlService, data: WebCrawlJobData): Promise<void> {
+export async function processWebCrawlJob(
+	firecrawl: FirecrawlService,
+	openRouterApiKey: string | undefined,
+	data: WebCrawlJobData,
+): Promise<void> {
 	const { docId, url } = data;
 
 	if (!firecrawl.isConfigured()) {
@@ -65,7 +71,7 @@ export async function processWebCrawlJob(firecrawl: FirecrawlService, data: WebC
 
 	const chunkTexts = chunkMarkdown(result.markdown);
 	const now = Date.now();
-	replaceChunksForDoc(
+	const insertedChunks = replaceChunksForDoc(
 		docId,
 		chunkTexts.map((content, i) => ({
 			id: `${docId}:${i}`,
@@ -75,6 +81,26 @@ export async function processWebCrawlJob(firecrawl: FirecrawlService, data: WebC
 			createdAt: now,
 		})),
 	);
+
+	// Embeddings are best-effort here: a doc without them still stores its
+	// raw content, it's just invisible to vector-search's retrieval (which
+	// only looks at chunks with a non-null embedding) until re-ingested with
+	// a key configured. Not worth failing the whole ingestion over.
+	if (openRouterApiKey) {
+		let embedded = 0;
+		for (const chunk of insertedChunks) {
+			try {
+				const embedding = await requestEmbedding(chunk.content, openRouterApiKey);
+				setChunkEmbedding(chunk.id, JSON.stringify(embedding));
+				embedded++;
+			} catch (error) {
+				console.error(`[worker:web-crawl] Failed to embed chunk ${chunk.id}`, error);
+			}
+		}
+		console.log(`[worker:web-crawl] Embedded ${embedded}/${insertedChunks.length} chunks for doc ${docId}`);
+	} else {
+		console.warn(`[worker:web-crawl] OPENROUTER_API_KEY not set — doc ${docId} stored but not searchable yet`);
+	}
 
 	updateDocStatus(docId, { status: "ready", title: result.title, errorMessage: null, updatedAt: Date.now() });
 	console.log(`[worker:web-crawl] Ingested ${url} -> ${chunkTexts.length} chunks (doc ${docId})`);
