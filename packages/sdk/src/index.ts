@@ -7,16 +7,24 @@
 import { AgentLoop } from "./agent.js";
 import { Cursor, TargetRing } from "./cursor.js";
 import { Executor } from "./executor.js";
-import { WidgetUI } from "./ui.js";
 import type { OttoConfig, OttoInstance, ResolvedConfig } from "./types.js";
+import { WidgetUI } from "./ui.js";
 
-export type { OttoConfig, OttoInstance, OttoUser, PageSnapshot, AgentAction } from "./types.js";
+export type {
+	AgentAction,
+	OttoConfig,
+	OttoInstance,
+	OttoUser,
+	PageSnapshot,
+} from "./types.js";
 
 let active: OttoInstance | null = null;
 
 export function init(userConfig: OttoConfig = {}): OttoInstance {
 	if (active) {
-		console.warn("[otto-sdk] init() called while already active — reusing existing instance.");
+		console.warn(
+			"[otto-sdk] init() called while already active — reusing existing instance.",
+		);
 		return active;
 	}
 	if (typeof document === "undefined") {
@@ -26,6 +34,7 @@ export function init(userConfig: OttoConfig = {}): OttoInstance {
 	const config: ResolvedConfig = {
 		endpoint: (userConfig.endpoint ?? "/api/agent").replace(/\/$/, ""),
 		wsEndpoint: userConfig.wsEndpoint,
+		publicKey: userConfig.publicKey?.trim() || undefined,
 		name: userConfig.name ?? "Otto",
 		accent: userConfig.accent ?? "#5B6CF9",
 		theme: userConfig.theme ?? "dark",
@@ -37,7 +46,9 @@ export function init(userConfig: OttoConfig = {}): OttoInstance {
 		user: userConfig.user ?? {},
 	};
 
-	const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+	const reducedMotion = window.matchMedia(
+		"(prefers-reduced-motion: reduce)",
+	).matches;
 
 	let loop: AgentLoop;
 	const ui = new WidgetUI(config, {

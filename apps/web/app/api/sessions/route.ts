@@ -1,7 +1,7 @@
-import { listSessions } from "otto-core";
+import { proxyToOttoApi } from "@/lib/otto-api-proxy";
 
 export const dynamic = "force-dynamic";
 
-export async function GET(): Promise<Response> {
-	return Response.json({ sessions: listSessions(50) });
+export function GET(request: Request): Promise<Response> {
+	return proxyToOttoApi(request, "/sessions");
 }
