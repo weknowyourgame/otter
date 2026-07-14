@@ -1,0 +1,20 @@
+{
+	"name": "otto-api",
+	"private": true,
+	"version": "0.1.0",
+	"description": "Standalone agent backend (Hono + Bun): POST /step and GET /sessions (same contract as apps/web's routes, moved here), plus GET /ws for the realtime step socket. apps/web's own /api/agent/step and /api/sessions routes are untouched and keep working as an HTTP fallback.",
+	"type": "module",
+	"scripts": {
+		"dev": "bun run --hot src/index.ts",
+		"start": "bun run src/index.ts"
+	},
+	"dependencies": {
+		"hono": "^4.6.14",
+		"otto-core": "workspace:*",
+		"otto-db": "workspace:*"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.2.11",
+		"typescript": "^5.6.3"
+	}
+}

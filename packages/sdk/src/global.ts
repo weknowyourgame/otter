@@ -12,6 +12,7 @@ const script = document.currentScript;
 if (script instanceof HTMLScriptElement && script.dataset.endpoint !== undefined) {
 	const config: OttoConfig = {
 		endpoint: script.dataset.endpoint || undefined,
+		wsEndpoint: script.dataset.wsEndpoint || undefined,
 		name: script.dataset.name || undefined,
 		accent: script.dataset.accent || undefined,
 		theme: (script.dataset.theme as OttoConfig["theme"]) || undefined,

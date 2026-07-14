@@ -14,6 +14,13 @@ import type {
 } from "./types.js";
 
 const RESUME_KEY = "otto:resume";
+const SOCKET_OPEN_TIMEOUT_MS = 3000;
+const STEP_TIMEOUT_MS = 30000;
+
+interface PendingSocketRequest {
+	resolve: (value: StepResponse) => void;
+	reject: (reason: Error) => void;
+}
 
 interface ResumeState {
 	sessionId: string;
@@ -28,6 +35,9 @@ export class AgentLoop {
 	private running = false;
 	private stopped = false;
 	private aborter: AbortController | null = null;
+	private socket: WebSocket | null = null;
+	private socketOpening: Promise<WebSocket> | null = null;
+	private readonly pendingSocketRequests = new Map<string, PendingSocketRequest>();
 
 	constructor(
 		private config: ResolvedConfig,
@@ -43,6 +53,10 @@ export class AgentLoop {
 		if (!this.running) return;
 		this.stopped = true;
 		this.aborter?.abort();
+		for (const pending of this.pendingSocketRequests.values()) {
+			pending.reject(new Error("stopped"));
+		}
+		this.pendingSocketRequests.clear();
 	}
 
 	/** Entry point for a user message (typed or programmatic). */
@@ -213,20 +227,40 @@ export class AgentLoop {
 		message: string | undefined,
 		lastAction: ExecutionResult | undefined,
 	): Promise<StepResponse> {
+		if (this.config.wsEndpoint) {
+			try {
+				return await this.requestStepViaSocket(message, lastAction);
+			} catch {
+				// Socket unavailable or this turn failed on it — fall back to
+				// HTTP for this call. The socket itself may still be usable for
+				// the next turn (requestStepViaSocket reopens lazily).
+			}
+		}
+		return this.requestStepViaHttp(message, lastAction);
+	}
+
+	private stepPayload(message: string | undefined, lastAction: ExecutionResult | undefined) {
+		return {
+			sessionId: this.sessionId ?? undefined,
+			message,
+			snapshot: observe(),
+			lastAction: lastAction ? { ok: lastAction.ok, error: lastAction.error } : undefined,
+			user: this.config.user,
+		};
+	}
+
+	private async requestStepViaHttp(
+		message: string | undefined,
+		lastAction: ExecutionResult | undefined,
+	): Promise<StepResponse> {
 		this.aborter = new AbortController();
-		const timeout = setTimeout(() => this.aborter?.abort(), 30000);
+		const timeout = setTimeout(() => this.aborter?.abort(), STEP_TIMEOUT_MS);
 		try {
 			const res = await fetch(`${this.config.endpoint}/step`, {
 				method: "POST",
 				headers: { "content-type": "application/json" },
 				signal: this.aborter.signal,
-				body: JSON.stringify({
-					sessionId: this.sessionId ?? undefined,
-					message,
-					snapshot: observe(),
-					lastAction: lastAction ? { ok: lastAction.ok, error: lastAction.error } : undefined,
-					user: this.config.user,
-				}),
+				body: JSON.stringify(this.stepPayload(message, lastAction)),
 			});
 			if (!res.ok) throw new Error(`step_http_${res.status}`);
 			return (await res.json()) as StepResponse;
@@ -234,6 +268,99 @@ export class AgentLoop {
 			clearTimeout(timeout);
 			this.aborter = null;
 		}
+	}
+
+	private async ensureSocket(): Promise<WebSocket> {
+		if (this.socket && this.socket.readyState === WebSocket.OPEN) return this.socket;
+		if (this.socketOpening) return this.socketOpening;
+
+		const url = this.config.wsEndpoint;
+		if (!url) throw new Error("no_ws_endpoint");
+
+		this.socketOpening = new Promise<WebSocket>((resolve, reject) => {
+			const ws = new WebSocket(url);
+			const timeout = setTimeout(() => {
+				ws.close();
+				reject(new Error("ws_open_timeout"));
+			}, SOCKET_OPEN_TIMEOUT_MS);
+
+			ws.addEventListener(
+				"open",
+				() => {
+					clearTimeout(timeout);
+					this.socket = ws;
+					resolve(ws);
+				},
+				{ once: true },
+			);
+			ws.addEventListener(
+				"error",
+				() => {
+					clearTimeout(timeout);
+					reject(new Error("ws_error"));
+				},
+				{ once: true },
+			);
+			ws.addEventListener("message", (event) => this.onSocketMessage(event));
+			ws.addEventListener("close", () => {
+				if (this.socket === ws) this.socket = null;
+				for (const pending of this.pendingSocketRequests.values()) {
+					pending.reject(new Error("ws_closed"));
+				}
+				this.pendingSocketRequests.clear();
+			});
+		}).finally(() => {
+			this.socketOpening = null;
+		});
+
+		return this.socketOpening;
+	}
+
+	private onSocketMessage(event: MessageEvent): void {
+		let parsed: { type: string; requestId?: string; result?: StepResponse; error?: string };
+		try {
+			parsed = JSON.parse(String(event.data));
+		} catch {
+			return;
+		}
+		if (!parsed.requestId) return;
+		const pending = this.pendingSocketRequests.get(parsed.requestId);
+		if (!pending) return;
+		this.pendingSocketRequests.delete(parsed.requestId);
+
+		if (parsed.type === "step_result" && parsed.result) {
+			pending.resolve(parsed.result);
+		} else {
+			pending.reject(new Error(parsed.error ?? "ws_step_failed"));
+		}
+	}
+
+	private async requestStepViaSocket(
+		message: string | undefined,
+		lastAction: ExecutionResult | undefined,
+	): Promise<StepResponse> {
+		const ws = await this.ensureSocket();
+		const requestId = crypto.randomUUID();
+
+		return new Promise<StepResponse>((resolve, reject) => {
+			const timeout = setTimeout(() => {
+				this.pendingSocketRequests.delete(requestId);
+				reject(new Error("ws_step_timeout"));
+			}, STEP_TIMEOUT_MS);
+
+			this.pendingSocketRequests.set(requestId, {
+				resolve: (value) => {
+					clearTimeout(timeout);
+					resolve(value);
+				},
+				reject: (err) => {
+					clearTimeout(timeout);
+					reject(err);
+				},
+			});
+
+			ws.send(JSON.stringify({ type: "step", requestId, ...this.stepPayload(message, lastAction) }));
+		});
 	}
 }
 

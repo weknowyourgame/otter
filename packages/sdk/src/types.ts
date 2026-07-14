@@ -6,6 +6,13 @@ export interface OttoUser {
 export interface OttoConfig {
 	/** Base URL of the agent backend; the SDK POSTs to `${endpoint}/step`. */
 	endpoint?: string;
+	/**
+	 * WebSocket URL for the realtime step socket (e.g. "ws://localhost:8787/ws").
+	 * Opt-in: unset by default, so existing embeds keep using the HTTP POST
+	 * loop unchanged. When set, the SDK uses the socket and falls back to
+	 * `${endpoint}/step` for any call the socket can't complete.
+	 */
+	wsEndpoint?: string;
 	/** Display name for the assistant. Default "Otto". */
 	name?: string;
 	/** Accent color (buttons, cursor, highlights). Default "#5B6CF9". */
@@ -24,7 +31,10 @@ export interface OttoConfig {
 	hideBranding?: boolean;
 }
 
-export type ResolvedConfig = Required<Omit<OttoConfig, "user">> & { user: OttoUser };
+export type ResolvedConfig = Required<Omit<OttoConfig, "user" | "wsEndpoint">> & {
+	user: OttoUser;
+	wsEndpoint?: string;
+};
 
 export interface OttoInstance {
 	open(): void;

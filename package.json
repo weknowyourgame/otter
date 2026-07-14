@@ -10,6 +10,7 @@
 		"build": "bun run --cwd packages/core build && bun run --cwd packages/sdk build",
 		"dev": "NEXT_DIST_DIR=.next-main bun run --cwd apps/web dev",
 		"landing": "NEXT_DIST_DIR=.next-main bun run --cwd apps/landing dev",
+		"api": "bun run --cwd apps/api dev",
 		"lint": "biome check .",
 		"changeset": "changeset"
 	},

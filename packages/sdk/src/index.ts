@@ -25,6 +25,7 @@ export function init(userConfig: OttoConfig = {}): OttoInstance {
 
 	const config: ResolvedConfig = {
 		endpoint: (userConfig.endpoint ?? "/api/agent").replace(/\/$/, ""),
+		wsEndpoint: userConfig.wsEndpoint,
 		name: userConfig.name ?? "Otto",
 		accent: userConfig.accent ?? "#5B6CF9",
 		theme: userConfig.theme ?? "dark",
