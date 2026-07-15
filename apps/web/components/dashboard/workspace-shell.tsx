@@ -1,7 +1,7 @@
 "use client";
 
 import {
-	Archive,
+	ArrowLeft,
 	Bell,
 	BookOpen,
 	Bot,
@@ -11,6 +11,7 @@ import {
 	Files,
 	Globe2,
 	HelpCircle,
+	Home,
 	Inbox,
 	LogOut,
 	Menu,
@@ -22,17 +23,24 @@ import {
 	Users,
 	WalletCards,
 	WandSparkles,
-	X,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { useState } from "react";
 import { OttoGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 import { Button, cx, SegmentedMeter } from "./ui";
 
-export type WorkspaceMode = "inbox" | "settings" | "agent" | "org";
+export type WorkspaceMode = "inbox" | "settings" | "agent" | "org" | "contacts";
+
+const SUPPORT_EMAIL = "support@otto.so";
+
+function gmailComposeHref(subject: string) {
+	return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
+		SUPPORT_EMAIL,
+	)}&su=${encodeURIComponent(subject)}`;
+}
 
 type NavItem = {
 	label: string;
@@ -42,7 +50,49 @@ type NavItem = {
 	aliases?: string[];
 	group?: boolean;
 	sub?: boolean;
+	match?:
+		| "dashboard"
+		| "inbox"
+		| "agent"
+		| "contacts"
+		| "websites"
+		| "settings";
 };
+
+const primaryItems: NavItem[] = [
+	{
+		label: "Dashboard",
+		href: "/dashboard",
+		icon: <Home size={16} />,
+		match: "dashboard",
+	},
+	{
+		label: "Inbox",
+		href: "/dashboard?filter=inbox",
+		count: "0",
+		icon: <Inbox size={16} />,
+		match: "inbox",
+	},
+	{ label: "Agent", href: "/agent", icon: <Bot size={16} />, match: "agent" },
+	{
+		label: "Contacts",
+		href: "/contacts",
+		icon: <Users size={16} />,
+		match: "contacts",
+	},
+	{
+		label: "Websites",
+		href: "/org",
+		icon: <Globe2 size={16} />,
+		match: "websites",
+	},
+	{
+		label: "Settings",
+		href: "/settings",
+		icon: <Settings2 size={16} />,
+		match: "settings",
+	},
+];
 
 const settingsItems: NavItem[] = [
 	{
@@ -104,25 +154,6 @@ const agentItems: NavItem[] = [
 	},
 ];
 
-const inboxItems: NavItem[] = [
-	{ label: "Inbox", href: "/dashboard", count: "0", icon: <Inbox size={16} /> },
-	{
-		label: "Resolved",
-		href: "/dashboard/resolved",
-		icon: <Sparkles size={16} />,
-	},
-	{
-		label: "Spam",
-		href: "/dashboard/spam",
-		icon: <MessageSquareText size={16} />,
-	},
-	{
-		label: "Archived",
-		href: "/dashboard/archived",
-		icon: <Archive size={16} />,
-	},
-];
-
 const orgItems: NavItem[] = [
 	{ label: "Workspace", href: "/org", icon: <Globe2 size={16} /> },
 	{
@@ -164,71 +195,123 @@ async function signOut(): Promise<void> {
 
 function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	const pathname = usePathname();
-	const items =
+	const searchParams = useSearchParams();
+	const filterParam = searchParams.get("filter")?.toLowerCase();
+	const hasInboxFilter =
+		filterParam === "inbox" ||
+		filterParam === "resolved" ||
+		filterParam === "archived" ||
+		filterParam === "spam";
+	const secondaryItems =
 		mode === "settings"
 			? settingsItems
 			: mode === "agent"
 				? agentItems
 				: mode === "org"
 					? orgItems
-					: inboxItems;
-	return (
-		<nav className="od-sidebar__nav" aria-label={`${mode} navigation`}>
-			{items.map((item, index) => {
-				const aliases = [item.href, ...(item.aliases ?? [])];
-				const exactRoot = [
-					"/settings",
-					"/agent",
-					"/org",
-					"/dashboard",
-				].includes(item.href);
-				const isActive =
-					!item.group &&
-					aliases.some((href) =>
-						exactRoot ? pathname === href : pathname.startsWith(href),
-					);
-				const beforeSub = item.sub && !items[index - 1]?.sub;
-				return (
-					<div
-						key={`${item.href}-${item.label}`}
-						className={beforeSub ? "od-nav-subgroup" : undefined}
+					: [];
+	const secondaryLabel =
+		mode === "settings"
+			? "Settings"
+			: mode === "agent"
+				? "Agent"
+				: mode === "org"
+					? "Websites"
+					: "";
+
+	function isPrimaryActive(item: NavItem) {
+		switch (item.match) {
+			case "dashboard":
+				return pathname === "/dashboard" && !hasInboxFilter;
+			case "inbox":
+				return pathname === "/dashboard" && hasInboxFilter;
+			case "agent":
+				return pathname.startsWith("/agent");
+			case "contacts":
+				return pathname.startsWith("/contacts");
+			case "websites":
+				return pathname.startsWith("/org") || pathname.startsWith("/websites");
+			case "settings":
+				return pathname.startsWith("/settings") || pathname === "/billing";
+			default:
+				return false;
+		}
+	}
+
+	function isSecondaryActive(item: NavItem) {
+		const aliases = [item.href, ...(item.aliases ?? [])];
+		const exactRoot = ["/settings", "/agent", "/org"].includes(item.href);
+		return (
+			!item.group &&
+			aliases.some((href) =>
+				exactRoot ? pathname === href : pathname.startsWith(href),
+			)
+		);
+	}
+
+	function renderItems(
+		items: NavItem[],
+		activeFor: (item: NavItem) => boolean,
+	) {
+		return items.map((item, index) => {
+			const isActive = activeFor(item);
+			const beforeSub = item.sub && !items[index - 1]?.sub;
+			return (
+				<div
+					key={`${item.href}-${item.label}`}
+					className={beforeSub ? "od-nav-subgroup" : undefined}
+				>
+					<Link
+						aria-current={isActive ? "page" : undefined}
+						className={cx(
+							"od-nav-item",
+							item.sub && "is-sub",
+							isActive && "is-active",
+						)}
+						href={item.href}
 					>
-						<Link
-							className={cx(
-								"od-nav-item",
-								item.sub && "is-sub",
-								isActive && "is-active",
-							)}
-							href={item.href}
-						>
-							<span className="od-nav-item__icon">{item.icon}</span>
-							<span>{item.label}</span>
-							{item.count ? (
-								<span className="od-nav-item__count">{item.count}</span>
-							) : null}
-						</Link>
-					</div>
-				);
-			})}
-		</nav>
+						<span className="od-nav-item__icon">{item.icon}</span>
+						<span>{item.label}</span>
+						{item.count ? (
+							<span className="od-nav-item__count">{item.count}</span>
+						) : null}
+					</Link>
+				</div>
+			);
+		});
+	}
+
+	return (
+		<div className="od-sidebar__nav">
+			<nav className="od-nav-section" aria-label="App navigation">
+				{renderItems(primaryItems, isPrimaryActive)}
+			</nav>
+			{secondaryItems.length > 0 ? (
+				<div className="od-nav-section od-nav-section--secondary">
+					<span className="od-nav-section__label">{secondaryLabel}</span>
+					<nav aria-label={`${secondaryLabel} navigation`}>
+						{renderItems(secondaryItems, isSecondaryActive)}
+					</nav>
+				</div>
+			) : null}
+		</div>
 	);
 }
 
-function SidebarFooter({ mode }: { mode: WorkspaceMode }) {
+function SidebarFooter() {
 	return (
 		<div className="od-sidebar__footer">
 			<UsageCard />
-			<Link href="/docs">
+			<a
+				href={gmailComposeHref("Otto Help Request")}
+				rel="noreferrer"
+				target="_blank"
+			>
 				<HelpCircle size={15} /> Need help?
-			</Link>
+			</a>
 			<Link href="/docs">
 				<BookOpen size={15} /> Docs
 			</Link>
-			{mode !== "settings" ? (
-				<Link href="/settings">
-					<Settings2 size={15} /> Settings
-				</Link>
-			) : null}
 			<Button
 				className="od-sidebar-signout"
 				onClick={() => void signOut()}
@@ -236,19 +319,24 @@ function SidebarFooter({ mode }: { mode: WorkspaceMode }) {
 			>
 				<LogOut size={15} /> Sign out
 			</Button>
-			<div className="od-org-switcher">
+			<Link
+				aria-label="Open Otto Labs organization"
+				className="od-org-switcher"
+				href="/org"
+			>
 				<span>O</span>
 				<div>
 					<strong>Otto Labs</strong>
 					<small>otto.so</small>
 				</div>
 				<ChevronDown size={14} />
-			</div>
+			</Link>
 		</div>
 	);
 }
 
 function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
+	const router = useRouter();
 	return (
 		<header className="od-topbar">
 			<div className="od-topbar__left">
@@ -263,24 +351,32 @@ function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
 				</Button>
 				<Link
 					aria-label="Otto dashboard"
-					className="od-topbar__mark"
+					className="od-topbar__brand"
 					href="/dashboard"
 				>
-					<OttoGlyph className="h-4 w-4" />
+					<span className="od-topbar__mark">
+						<OttoGlyph className="h-4 w-4" />
+					</span>
+					<span>Otto</span>
 				</Link>
-				<span className="od-version">v0.4.0</span>
-				<Link className="od-topbar__release" href="/changelog">
-					Agent memory and website training <X size={13} />
-				</Link>
+				<Button
+					className="od-topbar__back"
+					onClick={() => router.back()}
+					variant="ghost"
+				>
+					<ArrowLeft size={15} />
+					<span>Back</span>
+				</Button>
 			</div>
-			<nav className="od-topbar__links" aria-label="Workspace areas">
-				<Link className={mode === "agent" ? "is-active" : ""} href="/agent">
-					Agent
-				</Link>
-				<Link href="/contacts">Contacts</Link>
-				<Link className={mode === "org" ? "is-active" : ""} href="/org">
-					Websites
-				</Link>
+			<nav className="od-topbar__links" aria-label="Workspace actions">
+				<a
+					className="od-topbar__feedback"
+					href={gmailComposeHref("Otto Feedback")}
+					rel="noreferrer"
+					target="_blank"
+				>
+					Feedback?
+				</a>
 				<Link
 					aria-label="Settings"
 					className={cx(
@@ -292,7 +388,6 @@ function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
 				>
 					<Settings2 size={16} />
 				</Link>
-				<button type="button">Feedback?</button>
 				<Button
 					aria-label="Sign out"
 					onClick={() => void signOut()}
@@ -342,7 +437,7 @@ export function WorkspaceShell({
 						</Button>
 					</div>
 					<SidebarNav mode={mode} />
-					<SidebarFooter mode={mode} />
+					<SidebarFooter />
 				</aside>
 				<main className={cx("od-main", Boolean(rightRail) && "has-right-rail")}>
 					{children}

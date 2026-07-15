@@ -1,5 +1,5 @@
-import { InboxPage } from "@/components/dashboard/core-pages";
+import { redirect } from "next/navigation";
 
 export default function Page() {
-	return <InboxPage filter="Archived" />;
+	redirect("/dashboard?filter=archived");
 }

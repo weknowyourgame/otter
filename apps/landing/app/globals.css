@@ -7,6 +7,12 @@
 		ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
 }
 
+@font-face {
+	font-family: "Otto Landing Stout";
+	src: url("/marketing/F37Stout-Regular.woff2") format("woff2");
+	font-display: swap;
+}
+
 /* Landing identity: change these tokens to retheme every marketing route. */
 :root {
 	--font-landing-display:
@@ -22,6 +28,10 @@
 	--landing-accent: #d7ff64;
 	--landing-accent-ink: #101500;
 	--landing-accent-soft: rgba(215, 255, 100, 0.12);
+	--landing-experiment-display:
+		"Otto Landing Stout", var(--font-landing-display);
+	--landing-experiment-warm: #ff8a5c;
+	--landing-experiment-cool: #b6f7ff;
 }
 
 html {
@@ -525,11 +535,88 @@ video {
 	}
 }
 
+/* Landing visual refresh below the hero only. Keep the Framer hero/nav intact. */
+#main [data-framer-name="Video"],
+#main [data-framer-name="Features"],
+#main [data-framer-name="Main Features"],
+#main [data-framer-name="Changelog"],
+#main [data-framer-name="CTA"] {
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 34%),
+		var(--landing-bg) !important;
+}
+
+#main [data-framer-name="Features"] h2,
+#main [data-framer-name="Main Features"] h2,
+#main [data-framer-name="Changelog"] h2,
+#main [data-framer-name="CTA"] h2,
+#main [data-framer-name="Footer"] h2 {
+	font-family: var(--landing-experiment-display) !important;
+	font-weight: 400 !important;
+	letter-spacing: 0 !important;
+	line-height: 0.96 !important;
+	text-transform: uppercase;
+	text-wrap: balance;
+}
+
+#main [data-framer-name="Features"] h3,
+#main [data-framer-name="Main Features"] h3,
+#main [data-framer-name="Changelog"] h3,
+#main [data-framer-name="CTA"] h3 {
+	letter-spacing: 0 !important;
+	line-height: 1.05 !important;
+	text-wrap: balance;
+}
+
+#main [data-framer-name="Card"],
+#main [data-framer-name="Image Container"],
+#main [data-framer-name="Video Player"],
+#main [data-framer-name="Logo Grid"] {
+	border-color: rgba(215, 255, 100, 0.16) !important;
+	background:
+		linear-gradient(180deg, rgba(255, 255, 255, 0.07), transparent),
+		rgba(12, 16, 11, 0.78) !important;
+	box-shadow:
+		0 20px 70px rgba(0, 0, 0, 0.32),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+}
+
+#main [data-framer-name="Card"]:hover,
+#main [data-framer-name="Image Container"]:hover,
+#main [data-framer-name="Video Player"]:hover {
+	border-color: rgba(215, 255, 100, 0.34) !important;
+	box-shadow:
+		0 28px 90px rgba(0, 0, 0, 0.42),
+		0 0 0 1px rgba(215, 255, 100, 0.12),
+		inset 0 1px 0 rgba(255, 255, 255, 0.1) !important;
+}
+
+#main [data-framer-name="Pattern Spacer"] {
+	border-color: rgba(215, 255, 100, 0.13) !important;
+	opacity: 0.78;
+}
+
+#main [data-framer-name="Meteor - Frame"] {
+	filter: hue-rotate(42deg) saturate(1.35);
+}
+
+#main [data-framer-name="Footer"],
+#main [data-framer-name="Footer Container"] {
+	background: #030403 !important;
+	border-color: rgba(215, 255, 100, 0.12) !important;
+}
+
+#main [data-framer-name="Buy Button"] {
+	display: none !important;
+}
+
 /* Cossistant-inspired support surfaces, fitted into the existing Otto export. */
 .mk-landing-insert {
 	width: 100%;
 	padding-top: 0;
-	background: var(--landing-bg);
+	background:
+		linear-gradient(180deg, rgba(215, 255, 100, 0.055), transparent 18%),
+		var(--landing-bg);
 }
 
 .mk-page.mk-landing-insert {
@@ -545,7 +632,13 @@ video {
 }
 
 .mk-landing-insert .mk-install {
-	border-top: 1px dashed var(--mk-border);
+	border-top: 1px solid rgba(215, 255, 100, 0.18);
+	background:
+		linear-gradient(135deg, rgba(215, 255, 100, 0.065), transparent 38%),
+		rgba(9, 12, 8, 0.84);
+	box-shadow:
+		0 22px 80px rgba(0, 0, 0, 0.34),
+		inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .mk-markdown .mk-table-wrap {
@@ -629,6 +722,7 @@ video {
 	--mk-muted: var(--landing-muted);
 	--mk-accent: var(--landing-accent);
 	min-height: 100vh;
+	overflow-x: clip;
 	background: var(--mk-bg);
 	color: var(--mk-text);
 	font-family: var(--font-landing-body);
@@ -928,6 +1022,7 @@ video {
 .mk-install {
 	display: grid;
 	grid-template-columns: 1fr 1fr;
+	min-width: 0;
 	min-height: 820px;
 	border-bottom: 1px dashed var(--mk-border);
 }
@@ -992,6 +1087,9 @@ video {
 	left: 50%;
 	z-index: 6;
 	width: min(610px, calc(100% - 80px));
+	max-width: calc(100% - 56px);
+	box-sizing: border-box;
+	overflow-x: auto;
 	margin: 0;
 	padding: 28px;
 	transform: translate(-50%, -50%);
@@ -1000,6 +1098,12 @@ video {
 	color: #d9d9d9;
 	font-size: 14px;
 	line-height: 1.8;
+	white-space: pre;
+}
+
+.mk-preview-code code {
+	display: block;
+	min-width: max-content;
 }
 
 .mk-install-copy {
@@ -1007,20 +1111,23 @@ video {
 	flex-direction: column;
 	justify-content: center;
 	align-items: flex-start;
+	min-width: 0;
 	padding: 60px 44px;
 }
 
-.mk-install-copy h2,
-.mk-benefits-heading h2,
-.mk-final-cta h2,
-.mk-faqs h2,
-.mk-changelog-list h2 {
+#main .mk-install-copy h2,
+#main .mk-benefits-heading h2,
+#main .mk-final-cta h2,
+#main .mk-faqs h2,
+#main .mk-changelog-list h2 {
 	margin: 22px 0 0;
-	font-family: var(--font-landing-display);
+	font-family: var(--landing-experiment-display) !important;
 	font-size: clamp(38px, 4vw, 54px);
-	font-weight: 400;
-	line-height: 1.13;
-	letter-spacing: 0;
+	font-weight: 400 !important;
+	line-height: 1.02 !important;
+	letter-spacing: 0 !important;
+	text-transform: uppercase;
+	text-wrap: balance;
 }
 
 .mk-install-description {
@@ -1040,7 +1147,9 @@ video {
 }
 
 .mk-command-box {
+	min-width: 0;
 	width: 100%;
+	overflow: hidden;
 	margin-top: 18px;
 	border: 1px dashed #2c2c2c;
 	background: #0b0b0b;
@@ -1062,10 +1171,13 @@ video {
 
 .mk-command-box > code {
 	display: block;
+	max-width: 100%;
+	overflow-x: auto;
 	padding: 22px 20px;
 	border-top: 1px dashed #222;
 	color: #dedede;
 	font-family: ui-monospace, monospace;
+	white-space: nowrap;
 }
 
 .mk-install-actions .mk-button:first-child {
@@ -1286,14 +1398,15 @@ video {
 }
 
 .mk-prompt-scroll {
-	width: 580px;
+	width: min(580px, 100%);
+	max-width: 100%;
 	animation: mk-prompt-scroll 8s ease-in-out infinite alternate;
 }
 
 .mk-prompt-scroll p {
 	margin: 0 0 7px;
 	color: #7d7d7d;
-	white-space: nowrap;
+	white-space: normal;
 }
 
 .mk-prompt-scroll .mk-prompt-heading {
@@ -2080,6 +2193,8 @@ video {
 }
 .mk-markdown pre {
 	position: relative;
+	max-width: 100%;
+	box-sizing: border-box;
 	overflow-x: auto;
 	margin: 24px 0;
 	padding: 48px 18px 20px;
@@ -2088,6 +2203,11 @@ video {
 	color: #d8d8d8;
 	font-size: 13px;
 	line-height: 1.75;
+}
+
+.mk-markdown pre code {
+	display: block;
+	min-width: max-content;
 }
 .mk-markdown pre::before {
 	position: absolute;

@@ -3,6 +3,7 @@
 import { ArrowRight, Bot, Globe2, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import { OtterMascot } from "@/components/marks";
 import { Button, cx, EmptyState, PageTitle } from "./ui";
 import { WorkspaceShell } from "./workspace-shell";
 
@@ -15,13 +16,49 @@ const metrics = [
 	["Unique visitors", "184", ""],
 ] as const;
 
-export function InboxPage({ filter = "Inbox" }: { filter?: string }) {
+const inboxFilters = [
+	{
+		id: "inbox",
+		label: "Inbox",
+		count: 0,
+		title: "Welcome to your inbox",
+		description: "New conversations will arrive here in real time.",
+	},
+	{
+		id: "resolved",
+		label: "Resolved",
+		count: 0,
+		title: "No resolved conversations",
+		description: "Closed conversations will stay here for quick review.",
+	},
+	{
+		id: "archived",
+		label: "Archived",
+		count: 0,
+		title: "Nothing archived",
+		description: "Conversations you archive will stay out of the active queue.",
+	},
+	{
+		id: "spam",
+		label: "Spam",
+		count: 0,
+		title: "No spam conversations",
+		description: "Filtered or reported conversations will appear here.",
+	},
+] as const;
+
+export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 	const [range, setRange] = useState("7d");
+	const [query, setQuery] = useState("");
+	const activeFilter =
+		inboxFilters.find((item) => item.id === filter.toLowerCase()) ??
+		inboxFilters[0];
+
 	return (
 		<WorkspaceShell mode="inbox">
 			<div className="od-inbox-page">
 				<div className="od-inbox-head">
-					<PageTitle>{filter}</PageTitle>
+					<PageTitle>Inbox</PageTitle>
 					<fieldset className="od-range-control" aria-label="Date range">
 						<Globe2 size={15} />
 						{["7d", "14d", "30d"].map((item) => (
@@ -47,31 +84,47 @@ export function InboxPage({ filter = "Inbox" }: { filter?: string }) {
 						</div>
 					))}
 				</div>
-				<EmptyState
-					action={
-						<div className="od-empty-links">
-							<Link href="/websites/create">Read setup guide</Link>
-							<Link href="/docs">What are visitors?</Link>
-							<Link href="/docs">Learn about conversations</Link>
-						</div>
-					}
-					description={
-						filter === "Inbox"
-							? "New conversations will arrive here in real time."
-							: `No conversations in ${filter.toLowerCase()}.`
-					}
-					icon={
-						<span className="od-face-mark">
-							<i />
-							<i />
-						</span>
-					}
-					title={
-						filter === "Inbox"
-							? "Welcome to your inbox"
-							: `Nothing in ${filter.toLowerCase()}`
-					}
-				/>
+				<section className="od-inbox-panel" aria-label="Conversation inbox">
+					<div className="od-inbox-tabs" role="tablist">
+						{inboxFilters.map((item) => (
+							<Link
+								aria-selected={activeFilter.id === item.id}
+								className={cx(
+									"od-inbox-tab",
+									activeFilter.id === item.id && "is-active",
+								)}
+								href={`/dashboard?filter=${item.id}`}
+								key={item.id}
+								role="tab"
+							>
+								<span>{item.label}</span>
+								<strong>{item.count}</strong>
+							</Link>
+						))}
+					</div>
+					<div className="od-inbox-toolbar">
+						<Search size={15} />
+						<input
+							aria-label={`Search ${activeFilter.label.toLowerCase()} conversations`}
+							onChange={(event) => setQuery(event.target.value)}
+							placeholder={`Search ${activeFilter.label.toLowerCase()} conversations`}
+							value={query}
+						/>
+						<span>{activeFilter.count} conversations</span>
+					</div>
+					<EmptyState
+						action={
+							<div className="od-empty-links">
+								<Link href="/websites/create">Read setup guide</Link>
+								<Link href="/docs">What are visitors?</Link>
+								<Link href="/docs">Learn about conversations</Link>
+							</div>
+						}
+						description={activeFilter.description}
+						icon={<OtterMascot className="od-otter-mascot" />}
+						title={activeFilter.title}
+					/>
+				</section>
 			</div>
 		</WorkspaceShell>
 	);
@@ -113,7 +166,7 @@ export function ContactsPage() {
 		[query],
 	);
 	return (
-		<WorkspaceShell mode="inbox">
+		<WorkspaceShell mode="contacts">
 			<div className="od-content-page od-content-page--wide">
 				<PageTitle
 					action={
