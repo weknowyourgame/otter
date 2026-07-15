@@ -2,12 +2,7 @@ import { Hono } from "hono";
 import { createBunWebSocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
-import {
-	type EngineConfig,
-	listSessions,
-	runStep,
-	type StepRequest,
-} from "otto-core";
+import { type EngineConfig, listSessions, runStep } from "otto-core";
 import {
 	createTenantForUser,
 	getDoc,
@@ -22,8 +17,6 @@ import {
 import { createWebCrawlTriggers } from "otto-jobs";
 import { createRedisConnection, getBullConnectionOptions } from "otto-redis";
 import {
-	type ApiKeyMode,
-	type ApiKeyType,
 	createApiKey,
 	listTenantApiKeys,
 	markApiKeyUsed,
@@ -33,6 +26,13 @@ import {
 	validateApiKey,
 } from "./api-keys.js";
 import { type AuthSession, auth, dashboardOrigins } from "./auth.js";
+import {
+	createApiKeyBodySchema,
+	createDocBodySchema,
+	pauseSessionBodySchema,
+	replaceOriginsBodySchema,
+	stepRequestBodySchema,
+} from "./schemas.js";
 import { createRedisPauseStore, DEFAULT_PAUSE_MINUTES } from "./safety.js";
 import { handleSocketMessage } from "./ws.js";
 
@@ -200,26 +200,22 @@ app.get("/api/account/keys", requireDashboard, async (c) => {
 
 app.post("/api/account/keys", requireDashboard, async (c) => {
 	const dashboard = c.get("dashboard");
-	let body: { name?: string; type?: ApiKeyType; mode?: ApiKeyMode };
+	let rawBody: unknown;
 	try {
-		body = await c.req.json();
+		rawBody = await c.req.json();
 	} catch {
 		return c.json({ error: "invalid_json" }, 400);
 	}
-	const name = body.name?.trim();
-	if (!name || name.length > 80) return c.json({ error: "invalid_name" }, 400);
-	if (!body.type || !["public", "secret"].includes(body.type)) {
-		return c.json({ error: "invalid_key_type" }, 400);
-	}
-	if (!body.mode || !["test", "live"].includes(body.mode)) {
-		return c.json({ error: "invalid_key_mode" }, 400);
+	const parsed = createApiKeyBodySchema.safeParse(rawBody);
+	if (!parsed.success) {
+		return c.json({ error: "invalid_body", detail: parsed.error.issues }, 400);
 	}
 	const created = await createApiKey({
 		tenantId: dashboard.tenantId,
 		userId: dashboard.session.user.id,
-		name,
-		type: body.type,
-		mode: body.mode,
+		name: parsed.data.name,
+		type: parsed.data.type,
+		mode: parsed.data.mode,
 	});
 	const keys = await listTenantApiKeys(dashboard.tenantId);
 	return c.json(
@@ -246,18 +242,19 @@ app.get("/api/account/origins", requireDashboard, async (c) => {
 });
 
 app.put("/api/account/origins", requireDashboard, async (c) => {
-	let body: { origins?: unknown };
+	let rawBody: unknown;
 	try {
-		body = await c.req.json();
+		rawBody = await c.req.json();
 	} catch {
 		return c.json({ error: "invalid_json" }, 400);
 	}
-	if (!Array.isArray(body.origins) || body.origins.length > 20) {
-		return c.json({ error: "invalid_origins" }, 400);
+	const parsed = replaceOriginsBodySchema.safeParse(rawBody);
+	if (!parsed.success) {
+		return c.json({ error: "invalid_origins", detail: parsed.error.issues }, 400);
 	}
 	try {
 		const origins = [
-			...new Set(body.origins.map((origin) => normalizeOrigin(String(origin)))),
+			...new Set(parsed.data.origins.map((origin) => normalizeOrigin(origin))),
 		];
 		return c.json({
 			origins: await replaceAllowedOrigins(c.get("dashboard").tenantId, origins),
@@ -274,24 +271,21 @@ app.use("/step", requireAgentKey);
 app.use("/ws", requireAgentKey);
 
 app.post("/step", async (c) => {
-	let body: StepRequest;
+	let rawBody: unknown;
 	try {
-		body = await c.req.json();
+		rawBody = await c.req.json();
 	} catch {
 		return c.json({ error: "invalid_json" }, 400);
 	}
-	if (
-		!body?.snapshot ||
-		typeof body.snapshot.path !== "string" ||
-		!Array.isArray(body.snapshot.elements)
-	) {
-		return c.json({ error: "missing_snapshot" }, 400);
-	}
-	if (typeof body.message === "string" && body.message.length > 4000) {
-		body.message = body.message.slice(0, 4000);
+	// Rejects an over-length message with 400 instead of the old silent
+	// truncate-and-continue — a validation layer that quietly mutates input
+	// defeats the point of having one.
+	const parsed = stepRequestBodySchema.safeParse(rawBody);
+	if (!parsed.success) {
+		return c.json({ error: "invalid_body", detail: parsed.error.issues }, 400);
 	}
 	try {
-		return c.json(await runStep(body, engineConfigFor(c.get("agentAuth"))));
+		return c.json(await runStep(parsed.data, engineConfigFor(c.get("agentAuth"))));
 	} catch (error) {
 		if (error instanceof Error && error.message === "session_not_found") {
 			return c.json({ error: "session_not_found" }, 404);
@@ -310,15 +304,18 @@ app.post("/sessions/:id/pause", requireDashboard, async (c) => {
 	if (!sessionRow || sessionRow.tenantId !== dashboard.tenantId) {
 		return c.json({ error: "not_found" }, 404);
 	}
-	let body: { durationMinutes?: number } = {};
+	let durationMinutes = DEFAULT_PAUSE_MINUTES;
 	try {
-		body = await c.req.json();
+		const rawBody = await c.req.json();
+		const parsed = pauseSessionBodySchema.safeParse(rawBody);
+		if (!parsed.success) {
+			return c.json({ error: "invalid_body", detail: parsed.error.issues }, 400);
+		}
+		if (parsed.data.durationMinutes !== undefined) durationMinutes = parsed.data.durationMinutes;
 	} catch {
 		// No body means the default duration.
 	}
-	const durationMs =
-		Math.max(1, Math.min(1440, body.durationMinutes ?? DEFAULT_PAUSE_MINUTES)) *
-		60_000;
+	const durationMs = Math.max(1, Math.min(1440, durationMinutes)) * 60_000;
 	try {
 		await pauseStore.pause(sessionRow.id, durationMs);
 	} catch (error) {
@@ -358,19 +355,17 @@ app.get("/docs/:id", requireDashboard, async (c) => {
 });
 
 app.post("/docs", requireDashboard, async (c) => {
-	let body: { url?: string };
+	let rawBody: unknown;
 	try {
-		body = await c.req.json();
+		rawBody = await c.req.json();
 	} catch {
 		return c.json({ error: "invalid_json" }, 400);
 	}
-	const url = body.url?.trim();
-	if (!url) return c.json({ error: "missing_url" }, 400);
-	try {
-		new URL(url);
-	} catch {
-		return c.json({ error: "invalid_url" }, 400);
+	const parsed = createDocBodySchema.safeParse(rawBody);
+	if (!parsed.success) {
+		return c.json({ error: "invalid_url", detail: parsed.error.issues }, 400);
 	}
+	const url = parsed.data.url;
 	const now = Date.now();
 	const doc = await insertDoc({
 		id: crypto.randomUUID(),

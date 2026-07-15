@@ -10,34 +10,8 @@
 // per-session viewer). Add that layer when there's an actual second
 // subscriber to fan out to.
 
-import { type EngineConfig, runStep, type StepRequest } from "otto-core";
-
-interface ClientStepMessage {
-	type: "step";
-	requestId: string;
-	sessionId?: string;
-	message?: string;
-	snapshot: StepRequest["snapshot"];
-	lastAction?: StepRequest["lastAction"];
-	/** Was already silently dropped here too — same gap fixed for the HTTP route in Phase 9. */
-	user?: StepRequest["user"];
-}
-
-type ClientMessage = ClientStepMessage;
-
-const MAX_MESSAGE_TEXT_LENGTH = 4000;
-
-function isClientStepMessage(value: unknown): value is ClientStepMessage {
-	if (!value || typeof value !== "object") return false;
-	const v = value as Record<string, unknown>;
-	return (
-		v.type === "step" &&
-		typeof v.requestId === "string" &&
-		!!v.snapshot &&
-		typeof (v.snapshot as Record<string, unknown>).path === "string" &&
-		Array.isArray((v.snapshot as Record<string, unknown>).elements)
-	);
-}
+import { type EngineConfig, runStep } from "otto-core";
+import { wsStepMessageSchema } from "./schemas.js";
 
 export async function handleSocketMessage(raw: string, engineConfig: EngineConfig): Promise<string> {
 	let parsed: unknown;
@@ -47,28 +21,26 @@ export async function handleSocketMessage(raw: string, engineConfig: EngineConfi
 		return JSON.stringify({ type: "error", error: "invalid_json" });
 	}
 
-	if (!isClientStepMessage(parsed)) {
-		return JSON.stringify({ type: "error", error: "invalid_message" });
+	const result = wsStepMessageSchema.safeParse(parsed);
+	if (!result.success) {
+		return JSON.stringify({ type: "error", error: "invalid_message", detail: result.error.issues });
 	}
-
-	if (typeof parsed.message === "string" && parsed.message.length > MAX_MESSAGE_TEXT_LENGTH) {
-		parsed.message = parsed.message.slice(0, MAX_MESSAGE_TEXT_LENGTH);
-	}
+	const message = result.data;
 
 	try {
-		const result = await runStep(
+		const stepResult = await runStep(
 			{
-				sessionId: parsed.sessionId,
-				message: parsed.message,
-				snapshot: parsed.snapshot,
-				lastAction: parsed.lastAction,
-				user: parsed.user,
+				sessionId: message.sessionId,
+				message: message.message,
+				snapshot: message.snapshot,
+				lastAction: message.lastAction,
+				user: message.user,
 			},
 			engineConfig,
 		);
-		return JSON.stringify({ type: "step_result", requestId: parsed.requestId, result });
+		return JSON.stringify({ type: "step_result", requestId: message.requestId, result: stepResult });
 	} catch (err) {
 		const reason = err instanceof Error ? err.message : "unknown";
-		return JSON.stringify({ type: "error", requestId: parsed.requestId, error: reason });
+		return JSON.stringify({ type: "error", requestId: message.requestId, error: reason });
 	}
 }

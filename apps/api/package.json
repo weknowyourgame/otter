@@ -14,7 +14,8 @@
 		"otto-core": "workspace:*",
 		"otto-db": "workspace:*",
 		"otto-jobs": "workspace:*",
-		"otto-redis": "workspace:*"
+		"otto-redis": "workspace:*",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.2.11",
