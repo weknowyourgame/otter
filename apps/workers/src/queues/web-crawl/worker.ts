@@ -57,21 +57,21 @@ export async function processWebCrawlJob(
 	const { docId, url } = data;
 
 	if (!firecrawl.isConfigured()) {
-		updateDocStatus(docId, { status: "failed", errorMessage: "Firecrawl API is not configured", updatedAt: Date.now() });
+		await updateDocStatus(docId, { status: "failed", errorMessage: "Firecrawl API is not configured", updatedAt: Date.now() });
 		throw new Error("Firecrawl API is not configured");
 	}
 
-	updateDocStatus(docId, { status: "crawling", updatedAt: Date.now() });
+	await updateDocStatus(docId, { status: "crawling", updatedAt: Date.now() });
 
 	const result = await firecrawl.scrapeSinglePage(url);
 	if (!result.success) {
-		updateDocStatus(docId, { status: "failed", errorMessage: result.error, updatedAt: Date.now() });
+		await updateDocStatus(docId, { status: "failed", errorMessage: result.error, updatedAt: Date.now() });
 		throw new Error(result.error);
 	}
 
 	const chunkTexts = chunkMarkdown(result.markdown);
 	const now = Date.now();
-	const insertedChunks = replaceChunksForDoc(
+	const insertedChunks = await replaceChunksForDoc(
 		docId,
 		chunkTexts.map((content, i) => ({
 			id: `${docId}:${i}`,
@@ -91,7 +91,7 @@ export async function processWebCrawlJob(
 		for (const chunk of insertedChunks) {
 			try {
 				const embedding = await requestEmbedding(chunk.content, openRouterApiKey);
-				setChunkEmbedding(chunk.id, JSON.stringify(embedding));
+				await setChunkEmbedding(chunk.id, JSON.stringify(embedding));
 				embedded++;
 			} catch (error) {
 				console.error(`[worker:web-crawl] Failed to embed chunk ${chunk.id}`, error);
@@ -102,6 +102,6 @@ export async function processWebCrawlJob(
 		console.warn(`[worker:web-crawl] OPENROUTER_API_KEY not set — doc ${docId} stored but not searchable yet`);
 	}
 
-	updateDocStatus(docId, { status: "ready", title: result.title, errorMessage: null, updatedAt: Date.now() });
+	await updateDocStatus(docId, { status: "ready", title: result.title, errorMessage: null, updatedAt: Date.now() });
 	console.log(`[worker:web-crawl] Ingested ${url} -> ${chunkTexts.length} chunks (doc ${docId})`);
 }

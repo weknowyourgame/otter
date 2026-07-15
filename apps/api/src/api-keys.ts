@@ -1,3 +1,4 @@
+import { statusCodes } from "better-auth";
 import { createHmac, randomBytes } from "node:crypto";
 import {
 	type ApiKeyRow,
@@ -16,11 +17,8 @@ const DEFAULT_DEV_SECRET = "otto-local-api-key-secret-change-before-production";
 
 function hashingSecret(): string {
 	const secret = process.env.OTTO_API_KEY_SECRET?.trim();
-	if (secret) return secret;
-	if (process.env.NODE_ENV === "production") {
-		throw new Error("OTTO_API_KEY_SECRET is required in production");
-	}
-	return DEFAULT_DEV_SECRET;
+  if (!secret) throw Error("Secret not found")
+  return secret;
 }
 
 export function generateApiKey(type: ApiKeyType, mode: ApiKeyMode): string {
@@ -56,16 +54,16 @@ export function normalizeOrigin(input: string): string {
 	return url.origin;
 }
 
-export function createApiKey(input: {
+export async function createApiKey(input: {
 	tenantId: string;
 	userId: string;
 	name: string;
 	type: ApiKeyType;
 	mode: ApiKeyMode;
-}): { key: ApiKeyRow; rawKey: string } {
+}): Promise<{ key: ApiKeyRow; rawKey: string }> {
 	const rawKey = generateApiKey(input.type, input.mode);
 	const prefix = rawKey.slice(0, rawKey.indexOf("_", 3));
-	const key = insertApiKey({
+	const key = await insertApiKey({
 		id: crypto.randomUUID(),
 		tenantId: input.tenantId,
 		createdBy: input.userId,
@@ -92,11 +90,12 @@ export function serializeApiKey(key: ApiKeyRow) {
 	};
 }
 
-export function listTenantApiKeys(tenantId: string) {
-	return listApiKeysForTenant(tenantId).map(serializeApiKey);
+export async function listTenantApiKeys(tenantId: string) {
+	const keys = await listApiKeysForTenant(tenantId);
+	return keys.map(serializeApiKey);
 }
 
-export function revokeTenantApiKey(id: string, tenantId: string): boolean {
+export async function revokeTenantApiKey(id: string, tenantId: string): Promise<boolean> {
 	return revokeApiKey(id, tenantId);
 }
 
@@ -105,13 +104,13 @@ export type ValidatedApiKey = {
 	origins: string[];
 };
 
-export function validateApiKey(rawKey: string): ValidatedApiKey | undefined {
+export async function validateApiKey(rawKey: string): Promise<ValidatedApiKey | undefined> {
 	if (!isValidApiKeyFormat(rawKey)) return undefined;
-	const key = getActiveApiKeyByHash(hashApiKey(rawKey));
+	const key = await getActiveApiKeyByHash(hashApiKey(rawKey));
 	if (!key) return undefined;
-	return { key, origins: listAllowedOrigins(key.tenantId) };
+	return { key, origins: await listAllowedOrigins(key.tenantId) };
 }
 
-export function markApiKeyUsed(id: string): void {
-	touchApiKey(id);
+export async function markApiKeyUsed(id: string): Promise<void> {
+	await touchApiKey(id);
 }

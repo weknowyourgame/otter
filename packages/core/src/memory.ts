@@ -16,11 +16,11 @@ function newMemoryId(): string {
 	return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export function rememberFact(
+export async function rememberFact(
 	userKey: string,
 	content: string,
 	tenantId?: string,
-): MemoryRow {
+): Promise<MemoryRow> {
 	return insertMemory({
 		id: newMemoryId(),
 		tenantId,
@@ -31,22 +31,21 @@ export function rememberFact(
 }
 
 /** Returns false if the memory didn't exist (already forgotten, or never belonged to this user). */
-export function forgetFact(
+export async function forgetFact(
 	userKey: string,
 	memoryId: string,
 	tenantId?: string,
-): boolean {
-	const owned = listMemoriesForUser(userKey, 100, tenantId).some(
-		(m) => m.id === memoryId,
-	);
+): Promise<boolean> {
+	const facts = await listMemoriesForUser(userKey, 100, tenantId);
+	const owned = facts.some((m) => m.id === memoryId);
 	if (!owned) return false;
 	return deleteMemory(memoryId, tenantId);
 }
 
-export function loadKnownFacts(
+export async function loadKnownFacts(
 	userKey: string,
 	tenantId?: string,
-): MemoryRow[] {
+): Promise<MemoryRow[]> {
 	return listMemoriesForUser(userKey, 20, tenantId);
 }
 

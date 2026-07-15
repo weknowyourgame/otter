@@ -92,12 +92,12 @@ const requireDashboard = createMiddleware<AppEnv>(async (c, next) => {
 	const session = await auth.api.getSession({ headers: c.req.raw.headers });
 	if (!session) return c.json({ error: "unauthorized" }, 401);
 	const access =
-		getTenantForUser(session.user.id) ??
-		createTenantForUser({
+		(await getTenantForUser(session.user.id)) ??
+		(await createTenantForUser({
 			userId: session.user.id,
 			name: defaultTenantName(session.user.name),
 			slug: defaultTenantSlug(session.user.name, session.user.id),
-		});
+		}));
 	c.set("dashboard", {
 		session,
 		tenantId: access.tenant.id,
@@ -123,7 +123,7 @@ function extractApiKey(request: Request): string | undefined {
 
 const requireAgentKey = createMiddleware<AppEnv>(async (c, next) => {
 	const rawKey = extractApiKey(c.req.raw);
-	const agentAuth = rawKey ? validateApiKey(rawKey) : undefined;
+	const agentAuth = rawKey ? await validateApiKey(rawKey) : undefined;
 	if (!agentAuth) return c.json({ error: "invalid_api_key" }, 401);
 
 	const originHeader = c.req.header("origin");
@@ -157,7 +157,7 @@ const requireAgentKey = createMiddleware<AppEnv>(async (c, next) => {
 			c.header(name, value);
 		}
 	}
-	markApiKeyUsed(agentAuth.key.id);
+	await markApiKeyUsed(agentAuth.key.id);
 });
 
 function agentCorsHeaders(origin: string): Record<string, string> {
@@ -193,9 +193,9 @@ app.get("/api/account", requireDashboard, (c) => {
 	});
 });
 
-app.get("/api/account/keys", requireDashboard, (c) => {
+app.get("/api/account/keys", requireDashboard, async (c) => {
 	const { tenantId } = c.get("dashboard");
-	return c.json({ keys: listTenantApiKeys(tenantId) });
+	return c.json({ keys: await listTenantApiKeys(tenantId) });
 });
 
 app.post("/api/account/keys", requireDashboard, async (c) => {
@@ -214,19 +214,18 @@ app.post("/api/account/keys", requireDashboard, async (c) => {
 	if (!body.mode || !["test", "live"].includes(body.mode)) {
 		return c.json({ error: "invalid_key_mode" }, 400);
 	}
-	const created = createApiKey({
+	const created = await createApiKey({
 		tenantId: dashboard.tenantId,
 		userId: dashboard.session.user.id,
 		name,
 		type: body.type,
 		mode: body.mode,
 	});
+	const keys = await listTenantApiKeys(dashboard.tenantId);
 	return c.json(
 		{
 			key: {
-				...listTenantApiKeys(dashboard.tenantId).find(
-					(key) => key.id === created.key.id,
-				),
+				...keys.find((key) => key.id === created.key.id),
 				rawKey: created.rawKey,
 			},
 		},
@@ -234,16 +233,16 @@ app.post("/api/account/keys", requireDashboard, async (c) => {
 	);
 });
 
-app.delete("/api/account/keys/:id", requireDashboard, (c) => {
+app.delete("/api/account/keys/:id", requireDashboard, async (c) => {
 	const { tenantId } = c.get("dashboard");
-	if (!revokeTenantApiKey(c.req.param("id"), tenantId)) {
+	if (!(await revokeTenantApiKey(c.req.param("id"), tenantId))) {
 		return c.json({ error: "not_found" }, 404);
 	}
 	return c.body(null, 204);
 });
 
-app.get("/api/account/origins", requireDashboard, (c) => {
-	return c.json({ origins: listAllowedOrigins(c.get("dashboard").tenantId) });
+app.get("/api/account/origins", requireDashboard, async (c) => {
+	return c.json({ origins: await listAllowedOrigins(c.get("dashboard").tenantId) });
 });
 
 app.put("/api/account/origins", requireDashboard, async (c) => {
@@ -261,7 +260,7 @@ app.put("/api/account/origins", requireDashboard, async (c) => {
 			...new Set(body.origins.map((origin) => normalizeOrigin(String(origin)))),
 		];
 		return c.json({
-			origins: replaceAllowedOrigins(c.get("dashboard").tenantId, origins),
+			origins: await replaceAllowedOrigins(c.get("dashboard").tenantId, origins),
 		});
 	} catch (error) {
 		return c.json(
@@ -301,13 +300,13 @@ app.post("/step", async (c) => {
 	}
 });
 
-app.get("/sessions", requireDashboard, (c) => {
-	return c.json({ sessions: listSessions(50, c.get("dashboard").tenantId) });
+app.get("/sessions", requireDashboard, async (c) => {
+	return c.json({ sessions: await listSessions(50, c.get("dashboard").tenantId) });
 });
 
 app.post("/sessions/:id/pause", requireDashboard, async (c) => {
 	const dashboard = c.get("dashboard");
-	const sessionRow = getSession(c.req.param("id"));
+	const sessionRow = await getSession(c.req.param("id"));
 	if (!sessionRow || sessionRow.tenantId !== dashboard.tenantId) {
 		return c.json({ error: "not_found" }, 404);
 	}
@@ -335,7 +334,7 @@ app.post("/sessions/:id/pause", requireDashboard, async (c) => {
 
 app.post("/sessions/:id/resume", requireDashboard, async (c) => {
 	const dashboard = c.get("dashboard");
-	const sessionRow = getSession(c.req.param("id"));
+	const sessionRow = await getSession(c.req.param("id"));
 	if (!sessionRow || sessionRow.tenantId !== dashboard.tenantId) {
 		return c.json({ error: "not_found" }, 404);
 	}
@@ -348,14 +347,14 @@ app.post("/sessions/:id/resume", requireDashboard, async (c) => {
 	return c.json({ sessionId: sessionRow.id, paused: false });
 });
 
-app.get("/docs", requireDashboard, (c) => {
-	return c.json({ docs: listDocs(100, c.get("dashboard").tenantId) });
+app.get("/docs", requireDashboard, async (c) => {
+	return c.json({ docs: await listDocs(100, c.get("dashboard").tenantId) });
 });
 
-app.get("/docs/:id", requireDashboard, (c) => {
-	const doc = getDoc(c.req.param("id"), c.get("dashboard").tenantId);
+app.get("/docs/:id", requireDashboard, async (c) => {
+	const doc = await getDoc(c.req.param("id"), c.get("dashboard").tenantId);
 	if (!doc) return c.json({ error: "not_found" }, 404);
-	return c.json({ doc, chunks: listChunksForDoc(doc.id) });
+	return c.json({ doc, chunks: await listChunksForDoc(doc.id) });
 });
 
 app.post("/docs", requireDashboard, async (c) => {
@@ -373,7 +372,7 @@ app.post("/docs", requireDashboard, async (c) => {
 		return c.json({ error: "invalid_url" }, 400);
 	}
 	const now = Date.now();
-	const doc = insertDoc({
+	const doc = await insertDoc({
 		id: crypto.randomUUID(),
 		tenantId: c.get("dashboard").tenantId,
 		url,

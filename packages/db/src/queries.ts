@@ -11,52 +11,49 @@ import {
 	sessions,
 } from "./schema.js";
 
-/** Sync — bun:sqlite (and drizzle's bun-sqlite driver) are synchronous. */
-export function getSession(id: string): SessionRow | undefined {
-	return getDb().select().from(sessions).where(eq(sessions.id, id)).get();
+/** Async now — postgres (drizzle-orm/bun-sql) has no synchronous driver, unlike bun:sqlite. */
+export async function getSession(id: string): Promise<SessionRow | undefined> {
+	const db = await getDb();
+	const rows = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+	return rows[0];
 }
 
-export function listSessions(limit: number, tenantId?: string): SessionRow[] {
-	const query = getDb().select().from(sessions);
+export async function listSessions(limit: number, tenantId?: string): Promise<SessionRow[]> {
+	const db = await getDb();
+	const query = db.select().from(sessions);
 	return (tenantId ? query.where(eq(sessions.tenantId, tenantId)) : query)
 		.orderBy(desc(sessions.updatedAt))
-		.limit(limit)
-		.all();
+		.limit(limit);
 }
 
-export function getDoc(id: string, tenantId?: string): DocRow | undefined {
-	return getDb()
+export async function getDoc(id: string, tenantId?: string): Promise<DocRow | undefined> {
+	const db = await getDb();
+	const rows = await db
 		.select()
 		.from(docs)
-		.where(
-			tenantId
-				? and(eq(docs.id, id), eq(docs.tenantId, tenantId))
-				: eq(docs.id, id),
-		)
-		.get();
+		.where(tenantId ? and(eq(docs.id, id), eq(docs.tenantId, tenantId)) : eq(docs.id, id))
+		.limit(1);
+	return rows[0];
 }
 
-export function listDocs(limit = 100, tenantId?: string): DocRow[] {
-	const query = getDb().select().from(docs);
+export async function listDocs(limit = 100, tenantId?: string): Promise<DocRow[]> {
+	const db = await getDb();
+	const query = db.select().from(docs);
 	return (tenantId ? query.where(eq(docs.tenantId, tenantId)) : query)
 		.orderBy(desc(docs.createdAt))
-		.limit(limit)
-		.all();
+		.limit(limit);
 }
 
-export function listChunksForDoc(docId: string): ChunkRow[] {
-	return getDb()
-		.select()
-		.from(chunks)
-		.where(eq(chunks.docId, docId))
-		.orderBy(asc(chunks.createdAt))
-		.all();
+export async function listChunksForDoc(docId: string): Promise<ChunkRow[]> {
+	const db = await getDb();
+	return db.select().from(chunks).where(eq(chunks.docId, docId)).orderBy(asc(chunks.createdAt));
 }
 
 /** All chunks across all docs — Phase 8's embedding step and retrieval will page through this. */
-export function listAllChunks(tenantId?: string): ChunkRow[] {
-	if (!tenantId) return getDb().select().from(chunks).all();
-	return getDb()
+export async function listAllChunks(tenantId?: string): Promise<ChunkRow[]> {
+	const db = await getDb();
+	if (!tenantId) return db.select().from(chunks);
+	return db
 		.select({
 			id: chunks.id,
 			docId: chunks.docId,
@@ -66,25 +63,16 @@ export function listAllChunks(tenantId?: string): ChunkRow[] {
 		})
 		.from(chunks)
 		.innerJoin(docs, eq(chunks.docId, docs.id))
-		.where(eq(docs.tenantId, tenantId))
-		.all();
+		.where(eq(docs.tenantId, tenantId));
 }
 
 /** Most recent facts for a user, newest first — injected once at session start. */
-export function listMemoriesForUser(
-	userKey: string,
-	limit = 20,
-	tenantId?: string,
-): MemoryRow[] {
-	return getDb()
+export async function listMemoriesForUser(userKey: string, limit = 20, tenantId?: string): Promise<MemoryRow[]> {
+	const db = await getDb();
+	return db
 		.select()
 		.from(memories)
-		.where(
-			tenantId
-				? and(eq(memories.userKey, userKey), eq(memories.tenantId, tenantId))
-				: eq(memories.userKey, userKey),
-		)
+		.where(tenantId ? and(eq(memories.userKey, userKey), eq(memories.tenantId, tenantId)) : eq(memories.userKey, userKey))
 		.orderBy(desc(memories.createdAt))
-		.limit(limit)
-		.all();
+		.limit(limit);
 }

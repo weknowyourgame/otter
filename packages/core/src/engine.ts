@@ -48,10 +48,11 @@ interface Session {
 }
 
 /**
- * Sessions now live in otto-db (SQLite via bun:sqlite) instead of an
- * in-memory Map, so they survive a server restart. otto-db's driver is
- * synchronous, so runStep/listSessions keep their original sync/async
- * shape — no caller (apps/web's API routes) needs to change.
+ * Sessions live in otto-db (Postgres via Bun's native SQL client) instead
+ * of an in-memory Map, so they survive a server restart. otto-db's driver
+ * is async (unlike the bun:sqlite driver this used before migrating off
+ * SQLite), so runStep/listSessions are both async now — listSessions
+ * becoming async is a real breaking change to callers of this package.
  */
 function fromRow(row: SessionRow): Session {
 	return {
@@ -91,8 +92,8 @@ function toRow(session: Session): Parameters<typeof upsertSession>[0] {
 	};
 }
 
-function sweep(): void {
-	deleteExpiredSessions(Date.now() - SESSION_TTL_MS);
+async function sweep(): Promise<void> {
+	await deleteExpiredSessions(Date.now() - SESSION_TTL_MS);
 }
 
 function newId(): string {
@@ -120,7 +121,7 @@ export async function runStep(
 	req: StepRequest,
 	config: EngineConfig = {},
 ): Promise<StepResponse> {
-	sweep();
+	await sweep();
 
 	// Checked before touching session state at all — an in-flight session
 	// someone paused from the dashboard shouldn't advance even one more step.
@@ -149,7 +150,7 @@ export async function runStep(
 	const userKey = req.user?.email?.trim() || undefined;
 
 	let session = req.sessionId
-		? maybeFromRow(getSessionRow(req.sessionId))
+		? maybeFromRow(await getSessionRow(req.sessionId))
 		: undefined;
 	if (session && config.tenantId && session.tenantId !== config.tenantId) {
 		throw new Error("session_not_found");
@@ -159,7 +160,7 @@ export async function runStep(
 			{ role: "system", content: buildSystemPrompt(Boolean(userKey)) },
 		];
 		if (userKey) {
-			const facts = loadKnownFacts(userKey, config.tenantId);
+			const facts = await loadKnownFacts(userKey, config.tenantId);
 			if (facts.length > 0) {
 				history.push({
 					role: "system",
@@ -198,7 +199,7 @@ export async function runStep(
 				"I hit my step limit for one task — that usually means I'm going in circles. Mind rephrasing or narrowing it down?",
 		};
 		record(session, "result", action.reason);
-		upsertSession(toRow(session));
+		await upsertSession(toRow(session));
 		return { sessionId: session.id, action, source: session.source };
 	}
 
@@ -217,7 +218,7 @@ export async function runStep(
 		session.state = "failed";
 		record(session, "result", response.action.reason);
 	}
-	upsertSession(toRow(session));
+	await upsertSession(toRow(session));
 	return response;
 }
 
@@ -308,7 +309,7 @@ async function aiStep(
 
 			if (step.kind === "remember") {
 				// userKey is guaranteed here — the tool is only offered when it's set.
-				const memory = rememberFact(
+				const memory = await rememberFact(
 					userKey as string,
 					step.content,
 					session.tenantId,
@@ -322,7 +323,7 @@ async function aiStep(
 			}
 
 			// step.kind === "forget"
-			const deleted = forgetFact(
+			const deleted = await forgetFact(
 				userKey as string,
 				step.memoryId,
 				session.tenantId,
@@ -370,10 +371,11 @@ function localStep(session: Session, req: StepRequest): StepResponse {
 	return { sessionId: session.id, action, status, source: "local" };
 }
 
-/** Recent sessions, newest first — powers the dashboard. */
-export function listSessions(limit = 50, tenantId?: string): SessionSummary[] {
-	sweep();
-	return listSessionRows(limit, tenantId).map(
+/** Recent sessions, newest first — powers the dashboard. Async now (was sync under bun:sqlite) — every caller needs an await added. */
+export async function listSessions(limit = 50, tenantId?: string): Promise<SessionSummary[]> {
+	await sweep();
+	const rows = await listSessionRows(limit, tenantId);
+	return rows.map(
 		({ id, createdAt, updatedAt, title, steps, source, state, events }) => ({
 			id,
 			createdAt,

@@ -14,7 +14,7 @@ packages/
   core/   otto-core — the brain. runStep() takes {message?, snapshot,
           lastAction?} and returns exactly one next action via LLM
           tool-calling (OpenRouter), with a keyless local fallback
-          planner. Tenant-scoped SQLite sessions power the dashboard feed.
+          planner. Tenant-scoped Postgres sessions power the dashboard feed.
   sdk/    otto-sdk — the eyes and hands. Vanilla TS in one shadow root:
           DOM serializer (ref-stamped elements), executor (animated
           cursor + target ring, char-by-char typing, DOM-settle waits),
@@ -29,6 +29,10 @@ apps/
 
 ## Quick start
 
+Needs a running Postgres instance — `createdb otto` (or point `DATABASE_URL`
+at any Postgres) before starting the API. otto-db creates its own tables on
+first connect; there's no separate migration step.
+
 ```bash
 bun install
 bun run build
@@ -41,6 +45,7 @@ under **Settings -> Developers**. Register the exact origin that embeds Otto.
 ### API environment (`apps/api/.env`)
 
 ```bash
+DATABASE_URL=postgres://localhost:5432/otto
 BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
 OTTO_API_KEY_SECRET=replace-with-a-different-32-character-secret
@@ -107,7 +112,7 @@ init({
 
 ## Status
 
-- Sessions, knowledge, and memory persist in SQLite and are tenant-scoped.
+- Sessions, knowledge, and memory persist in Postgres and are tenant-scoped.
 - Dashboard access uses Better Auth. Developer settings issue revocable,
   hashed tenant API keys and register exact browser origins.
 - Agent HTTP and WebSocket requests require a valid key. CORS echoes only a

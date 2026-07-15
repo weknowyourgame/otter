@@ -16,22 +16,20 @@ export type TenantAccess = {
 	role: "owner" | "member";
 };
 
-export function getTenantForUser(userId: string): TenantAccess | undefined {
-	const row = getDb()
+export async function getTenantForUser(userId: string): Promise<TenantAccess | undefined> {
+	const db = await getDb();
+	const rows = await db
 		.select({ tenant: tenants, role: tenantMembers.role })
 		.from(tenantMembers)
 		.innerJoin(tenants, eq(tenantMembers.tenantId, tenants.id))
 		.where(eq(tenantMembers.userId, userId))
-		.get();
+		.limit(1);
+	const row = rows[0];
 	return row ? { tenant: row.tenant, role: row.role } : undefined;
 }
 
-export function createTenantForUser(input: {
-	userId: string;
-	name: string;
-	slug: string;
-}): TenantAccess {
-	const existing = getTenantForUser(input.userId);
+export async function createTenantForUser(input: { userId: string; name: string; slug: string }): Promise<TenantAccess> {
+	const existing = await getTenantForUser(input.userId);
 	if (existing) return existing;
 
 	const now = Date.now();
@@ -41,80 +39,71 @@ export function createTenantForUser(input: {
 		slug: input.slug,
 		createdAt: now,
 	};
-	getDb().transaction((tx) => {
-		tx.insert(tenants).values(tenant).run();
-		tx.insert(tenantMembers)
-			.values({
-				id: crypto.randomUUID(),
-				tenantId: tenant.id,
-				userId: input.userId,
-				role: "owner",
-				createdAt: now,
-			})
-			.run();
+	const db = await getDb();
+	await db.transaction(async (tx) => {
+		await tx.insert(tenants).values(tenant);
+		await tx.insert(tenantMembers).values({
+			id: crypto.randomUUID(),
+			tenantId: tenant.id,
+			userId: input.userId,
+			role: "owner",
+			createdAt: now,
+		});
 	});
 	return { tenant, role: "owner" };
 }
 
-export function insertApiKey(row: NewApiKeyRow): ApiKeyRow {
-	return getDb().insert(apiKeys).values(row).returning().get();
+export async function insertApiKey(row: NewApiKeyRow): Promise<ApiKeyRow> {
+	const db = await getDb();
+	const rows = await db.insert(apiKeys).values(row).returning();
+	return rows[0] as ApiKeyRow;
 }
 
-export function listApiKeysForTenant(tenantId: string): ApiKeyRow[] {
-	return getDb()
+export async function listApiKeysForTenant(tenantId: string): Promise<ApiKeyRow[]> {
+	const db = await getDb();
+	return db
 		.select()
 		.from(apiKeys)
 		.where(and(eq(apiKeys.tenantId, tenantId), isNull(apiKeys.revokedAt)))
-		.orderBy(asc(apiKeys.createdAt))
-		.all();
+		.orderBy(asc(apiKeys.createdAt));
 }
 
-export function getActiveApiKeyByHash(keyHash: string): ApiKeyRow | undefined {
-	return getDb()
+export async function getActiveApiKeyByHash(keyHash: string): Promise<ApiKeyRow | undefined> {
+	const db = await getDb();
+	const rows = await db
 		.select()
 		.from(apiKeys)
 		.where(and(eq(apiKeys.keyHash, keyHash), isNull(apiKeys.revokedAt)))
-		.get();
+		.limit(1);
+	return rows[0];
 }
 
-export function revokeApiKey(id: string, tenantId: string): boolean {
-	const rows = getDb()
+export async function revokeApiKey(id: string, tenantId: string): Promise<boolean> {
+	const db = await getDb();
+	const rows = await db
 		.update(apiKeys)
 		.set({ revokedAt: Date.now() })
-		.where(
-			and(
-				eq(apiKeys.id, id),
-				eq(apiKeys.tenantId, tenantId),
-				isNull(apiKeys.revokedAt),
-			),
-		)
-		.returning({ id: apiKeys.id })
-		.all();
+		.where(and(eq(apiKeys.id, id), eq(apiKeys.tenantId, tenantId), isNull(apiKeys.revokedAt)))
+		.returning({ id: apiKeys.id });
 	return rows.length > 0;
 }
 
-export function touchApiKey(id: string): void {
-	getDb()
-		.update(apiKeys)
-		.set({ lastUsedAt: Date.now() })
-		.where(eq(apiKeys.id, id))
-		.run();
+export async function touchApiKey(id: string): Promise<void> {
+	const db = await getDb();
+	await db.update(apiKeys).set({ lastUsedAt: Date.now() }).where(eq(apiKeys.id, id));
 }
 
-export function listAllowedOrigins(tenantId: string): string[] {
-	return getDb()
+export async function listAllowedOrigins(tenantId: string): Promise<string[]> {
+	const db = await getDb();
+	const rows = await db
 		.select({ origin: allowedOrigins.origin })
 		.from(allowedOrigins)
 		.where(eq(allowedOrigins.tenantId, tenantId))
-		.orderBy(asc(allowedOrigins.origin))
-		.all()
-		.map((row) => row.origin);
+		.orderBy(asc(allowedOrigins.origin));
+	return rows.map((row) => row.origin);
 }
 
-export function replaceAllowedOrigins(
-	tenantId: string,
-	origins: string[],
-): string[] {
+export async function replaceAllowedOrigins(tenantId: string, origins: string[]): Promise<string[]> {
 	const now = Date.now();
 	const rows: NewAllowedOriginRow[] = origins.map((origin) => ({
 		id: crypto.randomUUID(),
@@ -122,11 +111,10 @@ export function replaceAllowedOrigins(
 		origin,
 		createdAt: now,
 	}));
-	getDb().transaction((tx) => {
-		tx.delete(allowedOrigins)
-			.where(eq(allowedOrigins.tenantId, tenantId))
-			.run();
-		if (rows.length > 0) tx.insert(allowedOrigins).values(rows).run();
+	const db = await getDb();
+	await db.transaction(async (tx) => {
+		await tx.delete(allowedOrigins).where(eq(allowedOrigins.tenantId, tenantId));
+		if (rows.length > 0) await tx.insert(allowedOrigins).values(rows);
 	});
 	return origins;
 }

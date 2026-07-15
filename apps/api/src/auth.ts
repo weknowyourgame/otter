@@ -9,15 +9,10 @@ import {
 	verification,
 } from "otto-db";
 
-const DEFAULT_DEV_SECRET = "otto-local-auth-secret-change-before-production";
-
 function configuredSecret(): string {
 	const secret = process.env.BETTER_AUTH_SECRET?.trim();
-	if (secret) return secret;
-	if (process.env.NODE_ENV === "production") {
-		throw new Error("BETTER_AUTH_SECRET is required in production");
-	}
-	return DEFAULT_DEV_SECRET;
+	if (!secret) throw Error("Secret not found");
+	return secret;
 }
 
 export function dashboardOrigins(): string[] {
@@ -38,12 +33,18 @@ function tenantSlug(name: string, userId: string): string {
 	return `${base || "workspace"}-${userId.slice(0, 8)}`;
 }
 
+// Top-level await: getDb() is async under the Postgres driver (was
+// synchronous under bun:sqlite), and better-auth's drizzleAdapter needs the
+// live db instance up front, not a Promise of one. Bun's runtime supports
+// top-level await natively regardless of the tsconfig module target.
+const db = await getDb();
+
 export const auth = betterAuth({
 	baseURL: process.env.BETTER_AUTH_URL?.trim() || "http://localhost:8787",
 	secret: configuredSecret(),
 	basePath: "/api/auth",
-	database: drizzleAdapter(getDb(), {
-		provider: "sqlite",
+	database: drizzleAdapter(db, {
+		provider: "pg",
 		schema: {
 			user,
 			session: authSession,
@@ -55,7 +56,7 @@ export const auth = betterAuth({
 		user: {
 			create: {
 				after: async (createdUser) => {
-					createTenantForUser({
+					await createTenantForUser({
 						userId: createdUser.id,
 						name: `${createdUser.name || "Otto"}'s workspace`,
 						slug: tenantSlug(createdUser.name || "workspace", createdUser.id),

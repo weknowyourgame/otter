@@ -48,7 +48,7 @@ export async function searchKnowledgeBase(
 	apiKey: string,
 	tenantId?: string,
 ): Promise<KnowledgeSearchResult> {
-	const rows = listAllChunks(tenantId).filter((row) => row.embedding);
+	const rows = (await listAllChunks(tenantId)).filter((row) => row.embedding);
 	if (rows.length === 0) return { matches: [], gap: true };
 
 	const queryEmbedding = await requestEmbedding(query, apiKey);
