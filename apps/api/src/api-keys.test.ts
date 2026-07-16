@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import {
+	extractApiKey,
 	generateApiKey,
 	hashApiKey,
 	isValidApiKeyFormat,
@@ -27,5 +28,45 @@ describe("api key primitives", () => {
 		expect(normalizeOrigin("localhost:3001")).toBe("http://localhost:3001");
 		expect(() => normalizeOrigin("https://example.com/docs")).toThrow();
 		expect(() => normalizeOrigin("*.example.com")).toThrow();
+	});
+});
+
+describe("extractApiKey", () => {
+	it("reads a key from the query string, header, or bearer token", () => {
+		expect(
+			extractApiKey(new Request("https://api.otto.so/step?key=pk_test_a")),
+		).toBe("pk_test_a");
+		expect(
+			extractApiKey(
+				new Request("https://api.otto.so/step", {
+					headers: { "x-otto-key": "pk_test_b" },
+				}),
+			),
+		).toBe("pk_test_b");
+		expect(
+			extractApiKey(
+				new Request("https://api.otto.so/step", {
+					headers: { authorization: "Bearer pk_test_c" },
+				}),
+			),
+		).toBe("pk_test_c");
+	});
+
+	it("returns undefined when no key is presented", () => {
+		expect(extractApiKey(new Request("https://api.otto.so/step"))).toBeUndefined();
+	});
+
+	it("rejects requests presenting conflicting keys across multiple channels", () => {
+		const request = new Request("https://api.otto.so/step?key=pk_test_a", {
+			headers: { "x-otto-key": "pk_test_different" },
+		});
+		expect(extractApiKey(request)).toBeUndefined();
+	});
+
+	it("allows the same key repeated across channels", () => {
+		const request = new Request("https://api.otto.so/step?key=pk_test_a", {
+			headers: { "x-otto-key": "pk_test_a" },
+		});
+		expect(extractApiKey(request)).toBe("pk_test_a");
 	});
 });

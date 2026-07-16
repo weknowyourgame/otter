@@ -2,46 +2,72 @@
 
 import { ArrowRight, Bot, Globe2, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { OtterMascot } from "@/components/marks";
 import { Button, cx, EmptyState, PageTitle } from "./ui";
 import { WorkspaceShell } from "./workspace-shell";
 
-const metrics = [
-	["Live visitors", "3", "live"],
-	["Median response time", "18s", ""],
-	["Median time to resolution", "2m 41s", ""],
-	["Handled by AI", "84%", ""],
-	["Satisfaction index", "96 /100", "positive"],
-	["Unique visitors", "184", ""],
-] as const;
+type DashboardSession = {
+	id: string;
+	title: string;
+	state: "active" | "done" | "failed";
+	source: "ai" | "local";
+	steps: number;
+	createdAt: number;
+	updatedAt: number;
+};
 
-const inboxFilters = [
+function useSessions(): DashboardSession[] | null {
+	const [sessions, setSessions] = useState<DashboardSession[] | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/sessions")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { sessions?: DashboardSession[] } | null) => {
+				if (active) setSessions(body?.sessions ?? []);
+			})
+			.catch(() => {
+				if (active) setSessions([]);
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return sessions;
+}
+
+function relativeTime(timestamp: number): string {
+	const diffMs = Date.now() - timestamp;
+	const minutes = Math.round(diffMs / 60_000);
+	if (minutes < 1) return "just now";
+	if (minutes < 60) return `${minutes}m ago`;
+	const hours = Math.round(minutes / 60);
+	if (hours < 24) return `${hours}h ago`;
+	return `${Math.round(hours / 24)}d ago`;
+}
+
+const inboxFilterMeta = [
 	{
 		id: "inbox",
 		label: "Inbox",
-		count: 0,
 		title: "Welcome to your inbox",
 		description: "New conversations will arrive here in real time.",
 	},
 	{
 		id: "resolved",
 		label: "Resolved",
-		count: 0,
 		title: "No resolved conversations",
 		description: "Closed conversations will stay here for quick review.",
 	},
 	{
 		id: "archived",
 		label: "Archived",
-		count: 0,
 		title: "Nothing archived",
 		description: "Conversations you archive will stay out of the active queue.",
 	},
 	{
 		id: "spam",
 		label: "Spam",
-		count: 0,
 		title: "No spam conversations",
 		description: "Filtered or reported conversations will appear here.",
 	},
@@ -50,9 +76,55 @@ const inboxFilters = [
 export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 	const [range, setRange] = useState("7d");
 	const [query, setQuery] = useState("");
+	const sessions = useSessions();
+
+	const counts = {
+		inbox: sessions?.filter((s) => s.state === "active").length ?? 0,
+		resolved: sessions?.filter((s) => s.state === "done").length ?? 0,
+		archived: 0,
+		spam: 0,
+	};
+
+	const inboxFilters = inboxFilterMeta.map((item) => ({
+		...item,
+		count: counts[item.id as keyof typeof counts],
+	}));
+
 	const activeFilter =
 		inboxFilters.find((item) => item.id === filter.toLowerCase()) ??
 		inboxFilters[0];
+
+	const filteredSessions = useMemo(() => {
+		if (!sessions) return [];
+		if (activeFilter.id === "inbox")
+			return sessions.filter((s) => s.state === "active");
+		if (activeFilter.id === "resolved")
+			return sessions.filter((s) => s.state === "done");
+		return [];
+	}, [sessions, activeFilter.id]);
+
+	const searchedSessions = useMemo(
+		() =>
+			filteredSessions.filter((s) =>
+				s.title.toLowerCase().includes(query.toLowerCase()),
+			),
+		[filteredSessions, query],
+	);
+
+	const liveCount = counts.inbox;
+	const aiHandledPct =
+		sessions && sessions.length > 0
+			? Math.round(
+					(sessions.filter((s) => s.source === "ai").length / sessions.length) *
+						100,
+				)
+			: 0;
+
+	const metrics = [
+		["Live visitors", String(liveCount), liveCount > 0 ? "live" : ""],
+		["Conversations", String(sessions?.length ?? 0), ""],
+		["Handled by AI", `${aiHandledPct}%`, ""],
+	] as const;
 
 	return (
 		<WorkspaceShell mode="inbox">
@@ -77,7 +149,7 @@ export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 					{metrics.map(([label, value, tone]) => (
 						<div className="od-metric" key={label}>
 							<span>{label}</span>
-							<strong className={cx(tone === "positive" && "is-positive")}>
+							<strong>
 								{tone === "live" ? <i /> : null}
 								{value}
 							</strong>
@@ -112,18 +184,49 @@ export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 						/>
 						<span>{activeFilter.count} conversations</span>
 					</div>
-					<EmptyState
-						action={
-							<div className="od-empty-links">
-								<Link href="/websites/create">Read setup guide</Link>
-								<Link href="/docs">What are visitors?</Link>
-								<Link href="/docs">Learn about conversations</Link>
-							</div>
-						}
-						description={activeFilter.description}
-						icon={<OtterMascot className="od-otter-mascot" />}
-						title={activeFilter.title}
-					/>
+					{searchedSessions.length > 0 ? (
+						<div className="od-table-wrap od-table-wrap--flush">
+							<table className="od-table">
+								<thead>
+									<tr>
+										<th>Conversation</th>
+										<th>Handled by</th>
+										<th>Steps</th>
+										<th>Updated</th>
+									</tr>
+								</thead>
+								<tbody>
+									{searchedSessions.map((session) => (
+										<tr key={session.id}>
+											<td>
+												<strong>{session.title}</strong>
+											</td>
+											<td>
+												<span className="od-badge">
+													{session.source === "ai" ? "AI" : "Local"}
+												</span>
+											</td>
+											<td>{session.steps}</td>
+											<td>{relativeTime(session.updatedAt)}</td>
+										</tr>
+									))}
+								</tbody>
+							</table>
+						</div>
+					) : (
+						<EmptyState
+							action={
+								<div className="od-empty-links">
+									<Link href="/websites/create">Read setup guide</Link>
+									<Link href="/docs">What are visitors?</Link>
+									<Link href="/docs">Learn about conversations</Link>
+								</div>
+							}
+							description={activeFilter.description}
+							icon={<OtterMascot className="od-otter-mascot" />}
+							title={activeFilter.title}
+						/>
+					)}
 				</section>
 			</div>
 		</WorkspaceShell>
@@ -249,7 +352,25 @@ const websites = [
 	},
 ];
 
+function useTenantName(): string | null {
+	const [tenantName, setTenantName] = useState<string | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { tenantName?: string } | null) => {
+				if (active && body?.tenantName) setTenantName(body.tenantName);
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return tenantName;
+}
+
 export function OrganizationPage() {
+	const tenantName = useTenantName();
 	return (
 		<WorkspaceShell mode="org">
 			<div className="od-content-page od-content-page--wide">
@@ -263,13 +384,12 @@ export function OrganizationPage() {
 						</Link>
 					}
 				>
-					Otto Labs
+					{tenantName ?? "Loading…"}
 				</PageTitle>
 				<div className="od-org-summary">
 					<div>
 						<span>Organization</span>
-						<strong>Otto Labs</strong>
-						<small>2 websites · 3 teammates</small>
+						<strong>{tenantName ?? "Loading…"}</strong>
 					</div>
 					<div className="od-org-summary__mark">
 						<Users size={22} />

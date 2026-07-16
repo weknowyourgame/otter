@@ -77,12 +77,21 @@ function tool(
 	};
 }
 
+export type LLMUsage = {
+	promptTokens: number;
+	completionTokens: number;
+	totalTokens: number;
+};
+
 /** The raw assistant message, to append to history verbatim, in all variants. */
-export type LLMStep =
+export type LLMStep = {
+	usage?: LLMUsage;
+} & (
 	| { kind: "action"; action: AgentAction; status?: string; assistantMessage: ChatMessage }
 	| { kind: "search"; query: string; toolCallId: string; assistantMessage: ChatMessage }
 	| { kind: "remember"; content: string; toolCallId: string; assistantMessage: ChatMessage }
-	| { kind: "forget"; memoryId: string; toolCallId: string; assistantMessage: ChatMessage };
+	| { kind: "forget"; memoryId: string; toolCallId: string; assistantMessage: ChatMessage }
+);
 
 export async function requestNextAction(
 	messages: ChatMessage[],
@@ -124,10 +133,23 @@ export async function requestNextAction(
 				tool_calls?: Array<{ id: string; type: "function"; function: { name: string; arguments: string } }>;
 			};
 		}>;
+		usage?: {
+			prompt_tokens?: number;
+			completion_tokens?: number;
+			total_tokens?: number;
+		};
 	};
 
 	const msg = body.choices?.[0]?.message;
 	if (!msg) throw new Error("openrouter_empty_response");
+
+	const usage: LLMUsage | undefined = body.usage
+		? {
+				promptTokens: body.usage.prompt_tokens ?? 0,
+				completionTokens: body.usage.completion_tokens ?? 0,
+				totalTokens: body.usage.total_tokens ?? 0,
+			}
+		: undefined;
 
 	const assistantMessage: ChatMessage = {
 		role: "assistant",
@@ -139,7 +161,7 @@ export async function requestNextAction(
 	if (!call) {
 		// Model answered in prose — treat it as say() so the loop still behaves.
 		const text = (msg.content ?? "").trim() || "I'm not sure how to proceed — could you rephrase?";
-		return { kind: "action", action: { type: "say", text }, assistantMessage };
+		return { kind: "action", action: { type: "say", text }, assistantMessage, usage };
 	}
 
 	let args: Record<string, unknown> = {};
@@ -150,18 +172,18 @@ export async function requestNextAction(
 	}
 
 	if (call.function.name === "search_knowledge_base") {
-		return { kind: "search", query: String(args.query ?? ""), toolCallId: call.id, assistantMessage };
+		return { kind: "search", query: String(args.query ?? ""), toolCallId: call.id, assistantMessage, usage };
 	}
 	if (call.function.name === "remember") {
-		return { kind: "remember", content: String(args.content ?? ""), toolCallId: call.id, assistantMessage };
+		return { kind: "remember", content: String(args.content ?? ""), toolCallId: call.id, assistantMessage, usage };
 	}
 	if (call.function.name === "forget") {
-		return { kind: "forget", memoryId: String(args.memory_id ?? ""), toolCallId: call.id, assistantMessage };
+		return { kind: "forget", memoryId: String(args.memory_id ?? ""), toolCallId: call.id, assistantMessage, usage };
 	}
 
 	const status = typeof args.status === "string" ? args.status : undefined;
 	const action = toAction(call.function.name, args);
-	return { kind: "action", action, status, assistantMessage };
+	return { kind: "action", action, status, assistantMessage, usage };
 }
 
 function toAction(name: string, args: Record<string, unknown>): AgentAction {

@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { Bricolage_Grotesque, Manrope } from "next/font/google";
+import { Manrope } from "next/font/google";
 import "./globals.css";
-
-const landingDisplay = Bricolage_Grotesque({
-	subsets: ["latin"],
-	variable: "--font-landing-display-face",
-	display: "swap",
-});
 
 const landingBody = Manrope({
 	subsets: ["latin"],
@@ -26,10 +20,7 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html
-			lang="en"
-			className={`${landingDisplay.variable} ${landingBody.variable}`}
-		>
+		<html lang="en" className={landingBody.variable}>
 			<body>{children}</body>
 		</html>
 	);

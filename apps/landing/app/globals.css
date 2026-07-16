@@ -9,9 +9,8 @@
 
 /* Landing identity: change these tokens to retheme every marketing route. */
 :root {
-	--font-landing-display:
-		var(--font-landing-display-face), "Arial Narrow", sans-serif;
 	--font-landing-body: var(--font-landing-body-face), system-ui, sans-serif;
+	--font-landing-display: var(--font-landing-body);
 	--landing-bg: #000;
 	--landing-panel: #080908;
 	--landing-panel-raised: #0f110e;
@@ -37,15 +36,27 @@ html body {
 	text-rendering: optimizeLegibility;
 }
 
-#main h1,
-#main h2,
-#main h3 {
-	font-family: var(--font-landing-display) !important;
-}
-
-#main p,
-#main a,
-#main button {
+#main,
+#main
+	:where(
+		h1,
+		h2,
+		h3,
+		h4,
+		h5,
+		h6,
+		p,
+		a,
+		button,
+		span,
+		small,
+		strong,
+		em,
+		li,
+		label,
+		input,
+		textarea
+	) {
 	font-family: var(--font-landing-body) !important;
 }
 
@@ -701,6 +712,16 @@ video {
 
 .mk-mark-animated .mk-mark-eyes {
 	animation: mk-blink 4.4s infinite;
+}
+
+.mk-mascot-eye-closed {
+	opacity: 0;
+	transform-box: fill-box;
+	transform-origin: center;
+}
+
+.mk-mark-animated .mk-mascot-eye-closed {
+	animation: mk-blink-closed 4.4s infinite;
 }
 
 .mk-desktop-nav {
@@ -2216,6 +2237,18 @@ video {
 	}
 	45% {
 		transform: scaleY(0.06);
+	}
+}
+
+@keyframes mk-blink-closed {
+	0%,
+	43%,
+	47%,
+	100% {
+		opacity: 0;
+	}
+	45% {
+		opacity: 1;
 	}
 }
 

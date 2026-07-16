@@ -13,16 +13,21 @@
 		}
 	},
 	"files": [
-		"dist"
+		"dist",
+		"drizzle"
 	],
 	"scripts": {
-		"build": "tsc -p tsconfig.json --outDir dist"
+		"build": "tsc -p tsconfig.json --outDir dist",
+		"reset": "bun run scripts/reset.ts",
+		"db:generate": "drizzle-kit generate",
+		"db:baseline": "bun run scripts/baseline-migrations.ts"
 	},
 	"dependencies": {
 		"drizzle-orm": "0.45.2"
 	},
 	"devDependencies": {
 		"@types/bun": "^1.2.11",
+		"drizzle-kit": "^0.31.10",
 		"typescript": "^5.6.3"
 	}
 }

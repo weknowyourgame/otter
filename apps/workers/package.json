@@ -6,7 +6,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "bun run --hot src/index.ts",
-		"start": "bun run src/index.ts"
+		"start": "bun run src/index.ts",
+		"test": "bun test"
 	},
 	"dependencies": {
 		"bullmq": "^5.34.4",

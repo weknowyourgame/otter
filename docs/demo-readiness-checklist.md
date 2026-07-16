@@ -1,59 +1,96 @@
 # Demo readiness checklist
 
-What's left before showing Otto to a client. Investigated by reading the codebase and current `.env`/`.env.example` files — no changes made. Each item has a prompt you can hand to an agent to fix it.
+Full pass across backend (`apps/api`, `apps/workers`, `packages/*`) and frontend (`apps/web` dashboard + `/demo`). No changes made beyond what's marked done. Each open item has a prompt you can hand to an agent to fix it.
 
-## Blockers — demo won't work at all without these
+## Done
 
-### 1. Missing `NEXT_PUBLIC_OTTO_PUBLIC_KEY`
+### ✅ `NEXT_PUBLIC_OTTO_PUBLIC_KEY` was missing
+Created a demo dashboard user (`demo@cordant.io`), issued a public test key, restricted it to `http://localhost:3001`, added the key to `apps/web/.env.local`.
 
-`apps/web/.env.local` doesn't have it, and `otto-mount.tsx` sends `publicKey: undefined` without it. The widget will get `401 invalid_api_key` on every request — chat won't work at all on `/demo`.
+### ✅ `OPENROUTER_API_KEY` was empty in `apps/api/.env`
+Copied the working key from `apps/web/.env.local` into `apps/api/.env`, matched `AGENT_MODEL` to `claude-opus-4.7-fast`.
 
-**Prompt:**
-> Sign up a dashboard user, go to Settings → Developers, create a public test key, add `http://localhost:3001` to its allowed origins, and put the raw key into `apps/web/.env.local` as `NEXT_PUBLIC_OTTO_PUBLIC_KEY`.
+### ✅ No seed/reset script
+Added `packages/db/scripts/reset.ts` — truncates all otto-db tables (`sessions`, `docs`, `chunks`, `memories`, `api_keys`, `allowed_origins`, `tenant_members`, `tenants`, `account`, `session`, `verification`, `user`) via `TRUNCATE ... CASCADE`. Run with `bun run db:reset` (root script wired to `packages/db`'s `reset` script).
 
-### 2. `OPENROUTER_API_KEY` is empty in `apps/api/.env`
+### ✅ Dashboard was showing entirely fake, hardcoded data
+`core-pages.tsx` and `workspace-shell.tsx` now fetch real `GET /sessions` data: Live visitors, Conversations, Handled by AI, inbox filter counts, and the inbox conversation list are all real (zero for a fresh tenant, not fabricated numbers). Removed the fake Satisfaction Index/response-time tiles and the two fully-fabricated `TrainingSummary` lines (total size, "Last trained 4 minutes ago") since nothing backs them. Contacts/Organizations-page fake data intentionally left as-is — no contacts/multi-website concept exists in the backend, out of scope for a wiring pass.
 
-The key that matters is set in `apps/web/.env.local`, but that's dead now since `apps/web` just proxies to `apps/api`, and *apps/api's own* `.env` has it blank. Without it, Otto only runs the deterministic keyword fallback — no real reasoning, weaker demo.
+### ✅ Real identity leak fixed
+`settings-pages.tsx` now fetches `/api/account` and shows the actual logged-in user's name/email/role everywhere (General profile form, Team page). The fake "Maya Chen" teammate is gone.
 
-**Prompt:**
-> Copy the OpenRouter key from `apps/web/.env.local` into `apps/api/.env`'s `OPENROUTER_API_KEY` (and set `AGENT_MODEL` to match if you want the same model).
+### ✅ BYOK dead button
+Removed the entire BYOK section from Settings → Developers (no backend to back it — would need a new encrypted-key column + API route, decided not worth building for a feature that isn't confirmed as a launch requirement).
 
-## If you want the "answer questions from docs" pitch, not just "watch it click things"
+### ✅ Broken links / missing pages
+Built real `/docs`, `/pricing`, `/changelog` placeholder pages (honest "coming soon" content, not empty 404s). Fixed the `/price` → `/pricing` typo.
 
-### 3. `apps/workers` isn't started by `bun run dev:all`
+### ✅ Onboarding wizard now persists for real
+This grew into a full feature build (see `docs/production-readiness.md`'s Onboarding section for the complete list): new `agents` table for agent config (name, model, system prompt, tool budget, extended reasoning, tone/behaviour text, tool toggles) with the system prompt and tool-call budget now genuinely affecting the live `/step` agent loop (verified: a custom system prompt changes real model output). FAQ and Files pages persist into the real knowledge base (`docs`/`chunks`, chunked + embedded on save, immediately searchable). Web Sources page wired to the real single-page crawl backend. Org-creation flow now actually renames the auto-provisioned tenant via a new `PUT /api/account/organization` route, reflected in the sidebar org switcher. Website-create flow's final step now really creates both the test *and* live API keys and adds the domain to allowed origins, matching what its own success copy claims.
 
-`scripts/dev-all.ts` only spawns landing/web/api. Without the worker running, any URL fed into the knowledge base via `/docs` sits at `status: "pending"` forever.
+### ✅ Onboarding install instructions fixed
+`npm install @otto/sdk` → `npm install otto-sdk`, and the public key shown is a real one generated live during the flow (not the hardcoded `pk_test_otto_91a2` placeholder).
 
-**Prompt:**
-> Add a `workers` entry to `scripts/dev-all.ts`'s services array (same shape as `api`) so `bun run dev:all` also starts `apps/workers`.
+### ✅ Favicon + error/404 pages
+Added `apps/web/app/icon.svg` (Otto glyph on a brand-gradient badge), `error.tsx`, and `not-found.tsx`.
 
-### 4. No `FIRECRAWL_API_KEY` anywhere
+### ✅ Root build now covers the deployable apps
+Root `bun run build` now builds the shared packages plus both Next apps (`apps/web` and `apps/landing`), so a successful root build is no longer false confidence before deploy.
 
-`apps/workers` has no `.env` file at all yet, and the crawl job fails immediately without this key (paid, external).
-
-**Prompt:**
-> Create `apps/workers/.env` with `FIRECRAWL_API_KEY=`, `DATABASE_URL=postgres://localhost:5432/otto`, `REDIS_URL=redis://127.0.0.1:6379`, and `OPENROUTER_API_KEY=` (same key as apps/api, needed to embed chunks). Get a Firecrawl key from firecrawl.dev if you don't have one.
-
-## Lower priority / polish
-
-### 5. Postgres connection pool may still be exhausted
-
-Hit "too many clients" during testing and didn't restart Postgres to avoid killing anyone's live session.
-
-**Prompt:**
-> Run `brew services restart postgresql@18` before the demo if you see connection errors.
-
-### 6. No seed/reset script
-
-There's already a leftover tenant + rows in the `otto` DB from testing. Fine to demo with, but not a clean slate.
-
-**Prompt:**
-> Write a small script that truncates all otto-db tables (sessions, docs, chunks, memories, api_keys, allowed_origins, tenant_members, tenants, account, session, verification, user) for a clean demo reset.
-
-### 7. Origin lock-in
-
-The public key's allowed origins are exact-match (`http://localhost:3001`, not a wildcard). If you demo from a different port/host (e.g. ngrok, a deployed URL, or just a different port), the widget will get `403 origin_not_allowed` until you add that exact origin via Settings → Developers.
+**The first two "Done" items above (public key, OpenRouter key) still need a dev-server restart to take effect if you haven't already.**
 
 ---
 
-Items 1–2 are the only hard blockers for a basic "Otto acts on the page" demo. 3–4 only matter if you're also showing the Q&A/knowledge-base side.
+## Backend / infra — still open
+
+### 1. `apps/workers` isn't started by `bun run dev:all`
+`scripts/dev-all.ts` only spawns landing/web/api. Without the worker running, any URL fed into the knowledge base via `/docs` sits at `status: "pending"` forever.
+> **Prompt:** Add a `workers` entry to `scripts/dev-all.ts`'s services array (same shape as `api`) so `bun run dev:all` also starts `apps/workers`.
+
+### 2. No `FIRECRAWL_API_KEY` anywhere, no `apps/workers/.env` at all
+The crawl job fails immediately without this key (paid, external, get one at firecrawl.dev).
+> **Prompt:** Create `apps/workers/.env` with `FIRECRAWL_API_KEY=`, `DATABASE_URL=postgres://localhost:5432/otto`, `REDIS_URL=redis://127.0.0.1:6379`, and `OPENROUTER_API_KEY=` (same key as apps/api, needed to embed chunks).
+
+### 3. `BETTER_AUTH_SECRET` / `OTTO_API_KEY_SECRET` are still the literal `.env.example` placeholder text
+Works for a local demo (nothing validates randomness), but it means auth/API-key hashing currently runs on a known, non-random secret.
+> **Prompt:** Generate two random 32+ char secrets (`openssl rand -hex 32`) and replace the placeholder values in `apps/api/.env` for `BETTER_AUTH_SECRET` and `OTTO_API_KEY_SECRET`. Note: rotating these invalidates existing sessions/API keys, so do it before creating your real demo key, not after.
+
+### 5. Postgres connection pool may still be exhausted
+Hit "too many clients" during testing earlier.
+> **Prompt:** Run `brew services restart postgresql@18` before the demo if you see connection errors.
+
+### 6. Origin lock-in
+The public key's allowed origins are exact-match. Demoing from anywhere other than `http://localhost:3001` (ngrok, a deployed URL, a different port) needs that exact origin added via Settings → Developers first, or it's `403 origin_not_allowed`.
+
+---
+
+## Frontend dashboard — minor / only matters if clicked on
+
+### 8. Dead toggles, stuck permanently "on"
+`settings-pages.tsx:131-142` (Weekly digest, Automatic translation) and `agent-pages.tsx:477-489` (Discover linked pages, Automatic recrawling) — all `checked={true}` with `onChange={() => {}}`, visually frozen.
+
+### 9. No-op buttons in edge actions
+- `/demo/tickets/[id]` kebab menu — "Copy ticket link", "Merge into another ticket" do nothing.
+- `/demo/admin/users` — "View permissions" does nothing.
+- `/demo/admin/security` — "Save allowlist" does nothing.
+- `/demo/admin/danger-zone` — "Confirm transfer" / "Permanently delete" just close the confirmation panel with no actual effect (looks like it silently failed).
+> **Prompt for 8+9:** Low priority — these are edge actions a presenter is unlikely to click live. Fix opportunistically or just avoid clicking them during the demo.
+
+### 10. Stale/misleading comment in `app/layout.tsx`
+References a sibling `app/(marketing)/layout.tsx` that doesn't exist in the repo — leftover from planning, harmless but confusing to future editors. `components/marketing/*` (marketing-shell, benefits-section, install-section, docs-sidebar, markdown, support-widget, logo) is entirely orphaned dead code as a result.
+> **Prompt:** Delete the stale comment, and either wire up or delete the orphaned `components/marketing/*` directory.
+
+---
+
+## What's actually solid
+
+- **`/demo` (Cordant fake SaaS)** — the best-built part of the app. Real interactive state via localStorage, tickets/automation/admin all functional, credible to click through live. This is safe to demo.
+- **The dashboard itself** — now genuinely wired end to end: real user identity, real session/inbox data, real agent configuration (with live runtime effect), real FAQ/file/web-source knowledge ingestion, real org naming and API key/origin provisioning during onboarding.
+- **Settings → Developers** (API key + allowed-origins management) — genuinely wired to the real backend, works end to end.
+- **Login/signup** — works end to end via Better Auth, no mock logic.
+- **`next build` succeeds cleanly** — zero type errors, so this isn't a "dev-only" app.
+- **No secrets leaked to git** — `.env`/`.env.local` properly gitignored in both apps/api and apps/web.
+
+## Bottom line for "show this to a client ASAP"
+
+The dashboard's former two biggest credibility risks (fake live data, identity leak) are fixed and verified live, along with the onboarding wizard now persisting for real. What's left is backend items 1–2 (workers/Firecrawl, only needed if showing the answer/knowledge-base path) and the low-priority items 8–10. The `/demo` Cordant surface and the dashboard are both safe to show live now.

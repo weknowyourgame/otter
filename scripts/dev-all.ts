@@ -19,12 +19,19 @@ const services = [
 		port: process.env.API_PORT ?? "8787",
 		kind: "api",
 	},
+	{
+		name: "workers",
+		cwd: "apps/workers",
+		port: "",
+		kind: "worker",
+	},
 ] as const;
 
 console.log("Starting Otto development servers:\n");
 console.log(`  Landing:   http://localhost:${services[0].port}`);
 console.log(`  Dashboard: http://localhost:${services[1].port}/dashboard\n`);
 console.log(`  API:       http://localhost:${services[2].port}\n`);
+console.log("  Workers:   background job processor\n");
 
 const children = services.map((service) =>
 	Bun.spawn(

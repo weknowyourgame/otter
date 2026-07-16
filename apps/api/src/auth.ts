@@ -8,6 +8,11 @@ import {
 	user,
 	verification,
 } from "otto-db";
+import {
+	resetPasswordEmailHtml,
+	sendEmail,
+	verificationEmailHtml,
+} from "./email.js";
 
 function configuredSecret(): string {
 	const secret = process.env.BETTER_AUTH_SECRET?.trim();
@@ -68,6 +73,25 @@ export const auth = betterAuth({
 	emailAndPassword: {
 		enabled: true,
 		autoSignIn: true,
+		requireEmailVerification: true,
+		sendResetPassword: async ({ user: resetUser, url }) => {
+			await sendEmail({
+				to: resetUser.email,
+				subject: "Reset your Otto password",
+				html: resetPasswordEmailHtml(url),
+			});
+		},
+	},
+	emailVerification: {
+		sendOnSignUp: true,
+		autoSignInAfterVerification: true,
+		sendVerificationEmail: async ({ user: verifyUser, url }) => {
+			await sendEmail({
+				to: verifyUser.email,
+				subject: "Verify your Otto email",
+				html: verificationEmailHtml(url),
+			});
+		},
 	},
 	trustedOrigins: dashboardOrigins(),
 	advanced: {

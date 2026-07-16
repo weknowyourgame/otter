@@ -27,12 +27,18 @@ import {
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OttoGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 import { Button, cx, SegmentedMeter } from "./ui";
 
-export type WorkspaceMode = "inbox" | "settings" | "agent" | "org" | "contacts";
+export type WorkspaceMode =
+	| "inbox"
+	| "settings"
+	| "agent"
+	| "org"
+	| "contacts"
+	| "info";
 
 const SUPPORT_EMAIL = "support@otto.so";
 
@@ -69,7 +75,6 @@ const primaryItems: NavItem[] = [
 	{
 		label: "Inbox",
 		href: "/dashboard?filter=inbox",
-		count: "0",
 		icon: <Inbox size={16} />,
 		match: "inbox",
 	},
@@ -168,21 +173,63 @@ const orgItems: NavItem[] = [
 	},
 ];
 
+const MESSAGES_LIMIT = 200;
+const CONVERSATIONS_LIMIT = 20;
+
+function useTenantUsage(): { requests: number; conversations: number } | null {
+	const [usage, setUsage] = useState<{
+		requests: number;
+		conversations: number;
+	} | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account/usage")
+			.then((response) => (response.ok ? response.json() : null))
+			.then(
+				(
+					body: {
+						usage?: { requests: number; conversations: number };
+					} | null,
+				) => {
+					if (active && body?.usage) setUsage(body.usage);
+				},
+			)
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return usage;
+}
+
 function UsageCard() {
+	const usage = useTenantUsage();
+	const requests = usage?.requests ?? 0;
+	const conversations = usage?.conversations ?? 0;
 	return (
 		<div className="od-usage-card">
 			<Link href="/settings/plan">Upgrade to Pro</Link>
 			<p>Unlock more conversations, sources, and team seats.</p>
 			<div className="od-usage-card__row">
 				<span>Messages</span>
-				<span>42 / 200</span>
+				<span>
+					{requests} / {MESSAGES_LIMIT}
+				</span>
 			</div>
-			<SegmentedMeter filled={9} segments={34} />
+			<SegmentedMeter
+				filled={Math.round((requests / MESSAGES_LIMIT) * 34)}
+				segments={34}
+			/>
 			<div className="od-usage-card__row">
 				<span>Conversations</span>
-				<span>6 / 20</span>
+				<span>
+					{conversations} / {CONVERSATIONS_LIMIT}
+				</span>
 			</div>
-			<SegmentedMeter filled={10} segments={34} />
+			<SegmentedMeter
+				filled={Math.round((conversations / CONVERSATIONS_LIMIT) * 34)}
+				segments={34}
+			/>
 			<small>Rolling 30-day window</small>
 		</div>
 	);
@@ -193,9 +240,35 @@ async function signOut(): Promise<void> {
 	window.location.assign("/login");
 }
 
+function useInboxCount(): number {
+	const [count, setCount] = useState(0);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/sessions")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { sessions?: { state: string }[] } | null) => {
+				if (active && body?.sessions) {
+					setCount(
+						body.sessions.filter((session) => session.state === "active")
+							.length,
+					);
+				}
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return count;
+}
+
 function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	const pathname = usePathname();
 	const searchParams = useSearchParams();
+	const inboxCount = useInboxCount();
+	const primaryItemsWithCounts = primaryItems.map((item) =>
+		item.match === "inbox" ? { ...item, count: String(inboxCount) } : item,
+	);
 	const filterParam = searchParams.get("filter")?.toLowerCase();
 	const hasInboxFilter =
 		filterParam === "inbox" ||
@@ -284,7 +357,7 @@ function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	return (
 		<div className="od-sidebar__nav">
 			<nav className="od-nav-section" aria-label="App navigation">
-				{renderItems(primaryItems, isPrimaryActive)}
+				{renderItems(primaryItemsWithCounts, isPrimaryActive)}
 			</nav>
 			{secondaryItems.length > 0 ? (
 				<div className="od-nav-section od-nav-section--secondary">
@@ -298,7 +371,25 @@ function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	);
 }
 
+function useTenantName(): string | null {
+	const [tenantName, setTenantName] = useState<string | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { tenantName?: string } | null) => {
+				if (active && body?.tenantName) setTenantName(body.tenantName);
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return tenantName;
+}
+
 function SidebarFooter() {
+	const tenantName = useTenantName();
 	return (
 		<div className="od-sidebar__footer">
 			<UsageCard />
@@ -320,14 +411,13 @@ function SidebarFooter() {
 				<LogOut size={15} /> Sign out
 			</Button>
 			<Link
-				aria-label="Open Otto Labs organization"
+				aria-label={`Open ${tenantName ?? "your"} organization`}
 				className="od-org-switcher"
 				href="/org"
 			>
-				<span>O</span>
+				<span>{(tenantName ?? "O").slice(0, 1).toUpperCase()}</span>
 				<div>
-					<strong>Otto Labs</strong>
-					<small>otto.so</small>
+					<strong>{tenantName ?? "Loading…"}</strong>
 				</div>
 				<ChevronDown size={14} />
 			</Link>
@@ -480,11 +570,6 @@ export function TrainingSummary({
 				<strong>{files}</strong>
 			</div>
 			<hr />
-			<div className="od-training-summary__size">
-				<span>Total size</span>
-				<strong>1 KB / 1 MB</strong>
-			</div>
-			<SegmentedMeter filled={2} segments={28} />
 			<Button
 				disabled={!trained}
 				className="od-train-button"
@@ -492,7 +577,6 @@ export function TrainingSummary({
 			>
 				{trained ? "Train agent" : "Nothing new to train"}
 			</Button>
-			<small>Last trained 4 minutes ago</small>
 		</div>
 	);
 }

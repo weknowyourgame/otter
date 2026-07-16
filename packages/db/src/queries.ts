@@ -1,6 +1,8 @@
-import { and, asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, sum } from "drizzle-orm";
 import { getDb } from "./connection.js";
 import {
+	type AgentRow,
+	agents,
 	type ChunkRow,
 	chunks,
 	type DocRow,
@@ -9,16 +11,25 @@ import {
 	memories,
 	type SessionRow,
 	sessions,
+	tenantMembers,
+	usageEvents,
 } from "./schema.js";
 
 /** Async now — postgres (drizzle-orm/bun-sql) has no synchronous driver, unlike bun:sqlite. */
 export async function getSession(id: string): Promise<SessionRow | undefined> {
 	const db = await getDb();
-	const rows = await db.select().from(sessions).where(eq(sessions.id, id)).limit(1);
+	const rows = await db
+		.select()
+		.from(sessions)
+		.where(eq(sessions.id, id))
+		.limit(1);
 	return rows[0];
 }
 
-export async function listSessions(limit: number, tenantId?: string): Promise<SessionRow[]> {
+export async function listSessions(
+	limit: number,
+	tenantId?: string,
+): Promise<SessionRow[]> {
 	const db = await getDb();
 	const query = db.select().from(sessions);
 	return (tenantId ? query.where(eq(sessions.tenantId, tenantId)) : query)
@@ -26,17 +37,27 @@ export async function listSessions(limit: number, tenantId?: string): Promise<Se
 		.limit(limit);
 }
 
-export async function getDoc(id: string, tenantId?: string): Promise<DocRow | undefined> {
+export async function getDoc(
+	id: string,
+	tenantId?: string,
+): Promise<DocRow | undefined> {
 	const db = await getDb();
 	const rows = await db
 		.select()
 		.from(docs)
-		.where(tenantId ? and(eq(docs.id, id), eq(docs.tenantId, tenantId)) : eq(docs.id, id))
+		.where(
+			tenantId
+				? and(eq(docs.id, id), eq(docs.tenantId, tenantId))
+				: eq(docs.id, id),
+		)
 		.limit(1);
 	return rows[0];
 }
 
-export async function listDocs(limit = 100, tenantId?: string): Promise<DocRow[]> {
+export async function listDocs(
+	limit = 100,
+	tenantId?: string,
+): Promise<DocRow[]> {
 	const db = await getDb();
 	const query = db.select().from(docs);
 	return (tenantId ? query.where(eq(docs.tenantId, tenantId)) : query)
@@ -44,9 +65,27 @@ export async function listDocs(limit = 100, tenantId?: string): Promise<DocRow[]
 		.limit(limit);
 }
 
+export async function listDocsBySourceType(
+	sourceType: DocRow["sourceType"],
+	tenantId: string,
+	limit = 200,
+): Promise<DocRow[]> {
+	const db = await getDb();
+	return db
+		.select()
+		.from(docs)
+		.where(and(eq(docs.tenantId, tenantId), eq(docs.sourceType, sourceType)))
+		.orderBy(desc(docs.createdAt))
+		.limit(limit);
+}
+
 export async function listChunksForDoc(docId: string): Promise<ChunkRow[]> {
 	const db = await getDb();
-	return db.select().from(chunks).where(eq(chunks.docId, docId)).orderBy(asc(chunks.createdAt));
+	return db
+		.select()
+		.from(chunks)
+		.where(eq(chunks.docId, docId))
+		.orderBy(asc(chunks.createdAt));
 }
 
 /** All chunks across all docs — Phase 8's embedding step and retrieval will page through this. */
@@ -66,13 +105,73 @@ export async function listAllChunks(tenantId?: string): Promise<ChunkRow[]> {
 		.where(eq(docs.tenantId, tenantId));
 }
 
+export type TenantUsageSummary = {
+	requests: number;
+	totalTokens: number;
+	conversations: number;
+	teamMembers: number;
+};
+
+/** Rolling-window usage summary — powers the Plan & Usage page and the sidebar usage card. */
+export async function getTenantUsageSummary(
+	tenantId: string,
+	sinceMs: number,
+): Promise<TenantUsageSummary> {
+	const db = await getDb();
+	const [usageRow] = await db
+		.select({ requests: count(), totalTokens: sum(usageEvents.totalTokens) })
+		.from(usageEvents)
+		.where(
+			and(
+				eq(usageEvents.tenantId, tenantId),
+				gte(usageEvents.createdAt, sinceMs),
+			),
+		);
+	const [conversationsRow] = await db
+		.select({ conversations: count() })
+		.from(sessions)
+		.where(
+			and(eq(sessions.tenantId, tenantId), gte(sessions.createdAt, sinceMs)),
+		);
+	const [membersRow] = await db
+		.select({ teamMembers: count() })
+		.from(tenantMembers)
+		.where(eq(tenantMembers.tenantId, tenantId));
+	return {
+		requests: usageRow?.requests ?? 0,
+		totalTokens: Number(usageRow?.totalTokens ?? 0),
+		conversations: conversationsRow?.conversations ?? 0,
+		teamMembers: membersRow?.teamMembers ?? 0,
+	};
+}
+
+export async function getAgentByTenant(
+	tenantId: string,
+): Promise<AgentRow | undefined> {
+	const db = await getDb();
+	const rows = await db
+		.select()
+		.from(agents)
+		.where(eq(agents.tenantId, tenantId))
+		.limit(1);
+	return rows[0];
+}
+
 /** Most recent facts for a user, newest first — injected once at session start. */
-export async function listMemoriesForUser(userKey: string, limit = 20, tenantId?: string): Promise<MemoryRow[]> {
+export async function listMemoriesForUser(
+	userKey: string,
+	limit = 20,
+	tenantId?: string,
+): Promise<MemoryRow[]> {
 	const db = await getDb();
 	return db
 		.select()
 		.from(memories)
-		.where(tenantId ? and(eq(memories.userKey, userKey), eq(memories.tenantId, tenantId)) : eq(memories.userKey, userKey))
+		.where(
+			tenantId
+				? and(eq(memories.userKey, userKey), eq(memories.tenantId, tenantId))
+				: eq(memories.userKey, userKey),
+		)
 		.orderBy(desc(memories.createdAt))
 		.limit(limit);
 }

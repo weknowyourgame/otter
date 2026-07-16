@@ -2,6 +2,7 @@ import {
 	bigint,
 	boolean,
 	index,
+	integer,
 	pgTable,
 	text,
 	timestamp,
@@ -57,8 +58,12 @@ export const account = pgTable(
 		accessToken: text("access_token"),
 		refreshToken: text("refresh_token"),
 		idToken: text("id_token"),
-		accessTokenExpiresAt: timestamp("access_token_expires_at", { mode: "date" }),
-		refreshTokenExpiresAt: timestamp("refresh_token_expires_at", { mode: "date" }),
+		accessTokenExpiresAt: timestamp("access_token_expires_at", {
+			mode: "date",
+		}),
+		refreshTokenExpiresAt: timestamp("refresh_token_expires_at", {
+			mode: "date",
+		}),
 		scope: text("scope"),
 		password: text("password"),
 		createdAt: timestamp("created_at", { mode: "date" }).notNull(),
@@ -120,6 +125,41 @@ export const tenantMembers = pgTable(
 		index("tenant_member_user_idx").on(table.userId),
 	],
 );
+
+/**
+ * A pending invitation to join a tenant. Otto's dashboard assumes one
+ * tenant per user today (requireDashboard/getTenantForUser both take the
+ * first membership found) — accepting a second invite while already
+ * belonging to a tenant is rejected rather than silently creating an
+ * ambiguous multi-tenant state; revisit if a tenant switcher ever ships.
+ */
+export const tenantInvites = pgTable(
+	"tenant_invites",
+	{
+		id: text("id").primaryKey(),
+		tenantId: text("tenant_id")
+			.notNull()
+			.references(() => tenants.id, { onDelete: "cascade" }),
+		email: text("email").notNull(),
+		role: text("role", { enum: ["owner", "member"] })
+			.notNull()
+			.default("member"),
+		token: text("token").notNull(),
+		invitedBy: text("invited_by")
+			.notNull()
+			.references(() => user.id, { onDelete: "cascade" }),
+		createdAt: bigint("created_at", { mode: "number" }).notNull(),
+		expiresAt: bigint("expires_at", { mode: "number" }).notNull(),
+		acceptedAt: bigint("accepted_at", { mode: "number" }),
+	},
+	(table) => [
+		uniqueIndex("tenant_invite_token_idx").on(table.token),
+		index("tenant_invite_tenant_idx").on(table.tenantId),
+	],
+);
+
+export type TenantInviteRow = typeof tenantInvites.$inferSelect;
+export type NewTenantInviteRow = typeof tenantInvites.$inferInsert;
 
 export const apiKeys = pgTable(
 	"api_keys",
@@ -217,6 +257,10 @@ export const docs = pgTable("docs", {
 		enum: ["pending", "crawling", "ready", "failed"],
 	}).notNull(),
 	errorMessage: text("error_message"),
+	/** Distinguishes crawled web pages from manually-entered FAQ/file knowledge. */
+	sourceType: text("source_type", { enum: ["web", "faq", "file"] })
+		.notNull()
+		.default("web"),
 	createdAt: bigint("created_at", { mode: "number" }).notNull(),
 	updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
 });
@@ -258,3 +302,70 @@ export const memories = pgTable("memories", {
 
 export type MemoryRow = typeof memories.$inferSelect;
 export type NewMemoryRow = typeof memories.$inferInsert;
+
+/**
+ * One row per tenant — Otto has no separate multi-website "agent" concept
+ * today, so this is the tenant's single agent configuration. systemPrompt
+ * (when set) overrides otto-core's BASE_SYSTEM_PROMPT for that tenant's
+ * live sessions; toolSettings is a JSON-serialized Record<string, boolean>
+ * keyed by tool label, since the tool set itself is fixed and defined in
+ * apps/web, not stored per-row.
+ */
+export const agents = pgTable(
+	"agents",
+	{
+		id: text("id").primaryKey(),
+		tenantId: text("tenant_id")
+			.notNull()
+			.references(() => tenants.id, { onDelete: "cascade" }),
+		name: text("name").notNull().default("Otto Support"),
+		model: text("model").notNull().default("anthropic/claude-sonnet-4.5"),
+		systemPrompt: text("system_prompt"),
+		maxToolCalls: integer("max_tool_calls").notNull().default(6),
+		extendedReasoning: boolean("extended_reasoning").notNull().default(true),
+		enabled: boolean("enabled").notNull().default(true),
+		tonePreset: text("tone_preset").notNull().default("Balanced"),
+		voiceTone: text("voice_tone"),
+		clarificationPolicy: text("clarification_policy"),
+		escalationPolicy: text("escalation_policy"),
+		/** JSON-serialized Record<string, boolean>. Null until first save. */
+		toolSettings: text("tool_settings"),
+		createdAt: bigint("created_at", { mode: "number" }).notNull(),
+		updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+	},
+	(table) => [uniqueIndex("agent_tenant_idx").on(table.tenantId)],
+);
+
+export type AgentRow = typeof agents.$inferSelect;
+export type NewAgentRow = typeof agents.$inferInsert;
+
+/**
+ * One row per billable LLM call (agent turn or embedding), so usage can be
+ * summed over any rolling window instead of just an all-time counter — the
+ * Plan & Usage page already advertises "rolling 30-day window" copy that
+ * needs this. Individual rows aren't queried directly outside aggregation;
+ * revisit with a cleanup job if row count ever becomes a real concern.
+ */
+export const usageEvents = pgTable(
+	"usage_events",
+	{
+		id: text("id").primaryKey(),
+		tenantId: text("tenant_id")
+			.notNull()
+			.references(() => tenants.id, { onDelete: "cascade" }),
+		kind: text("kind", { enum: ["agent_step", "embedding"] }).notNull(),
+		promptTokens: integer("prompt_tokens").notNull().default(0),
+		completionTokens: integer("completion_tokens").notNull().default(0),
+		totalTokens: integer("total_tokens").notNull().default(0),
+		createdAt: bigint("created_at", { mode: "number" }).notNull(),
+	},
+	(table) => [
+		index("usage_events_tenant_created_idx").on(
+			table.tenantId,
+			table.createdAt,
+		),
+	],
+);
+
+export type UsageEventRow = typeof usageEvents.$inferSelect;
+export type NewUsageEventRow = typeof usageEvents.$inferInsert;

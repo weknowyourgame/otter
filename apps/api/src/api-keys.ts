@@ -114,3 +114,25 @@ export async function validateApiKey(rawKey: string): Promise<ValidatedApiKey | 
 export async function markApiKeyUsed(id: string): Promise<void> {
 	await touchApiKey(id);
 }
+
+/**
+ * A widget request may present its key via query param, x-otto-key header,
+ * or Authorization: Bearer — but if more than one is present and they
+ * disagree about identity, that's a request trying to be ambiguous about
+ * who it is, not a client sending redundant proof. Reject rather than
+ * silently pick one.
+ */
+export function extractApiKey(request: Request): string | undefined {
+	const url = new URL(request.url);
+	const queryKey = url.searchParams.get("key")?.trim();
+	const headerKey = request.headers.get("x-otto-key")?.trim();
+	const bearer = request.headers
+		.get("authorization")
+		?.match(/^Bearer\s+(.+)$/i)?.[1]
+		?.trim();
+	const keys = [queryKey, headerKey, bearer].filter((key): key is string =>
+		Boolean(key),
+	);
+	if (new Set(keys).size > 1) return undefined;
+	return keys[0];
+}

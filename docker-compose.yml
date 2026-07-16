@@ -1,0 +1,38 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      # No password on purpose — matches apps/api/.env.example's
+      # DATABASE_URL=postgres://localhost:5432/otto, which has no
+      # credentials in it. Standard JS postgres clients (Bun.SQL included)
+      # default an omitted user to "postgres", so a bare connection string
+      # should reach this role without edits. If your client behaves
+      # differently, use postgres://postgres@localhost:5432/otto instead.
+      POSTGRES_USER: postgres
+      POSTGRES_HOST_AUTH_METHOD: trust
+      POSTGRES_DB: otto
+    ports:
+      - "5432:5432"
+    volumes:
+      - otto_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - otto_redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  otto_postgres_data:
+  otto_redis_data:

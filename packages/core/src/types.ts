@@ -86,6 +86,16 @@ export interface EngineConfig {
 	apiKeyId?: string;
 	/** Optional — if omitted, sessions can never be paused. See safety.ts. */
 	pauseStore?: PauseStore;
+	/**
+	 * Tenant-configured persona/behaviour instructions, appended after
+	 * prompt.ts's BASE_SYSTEM_PROMPT — never a replacement, since the base
+	 * prompt defines the tool-calling contract the whole engine depends on.
+	 */
+	systemPromptAddendum?: string;
+	/** Overrides MAX_TOOL_RESOLUTION_ITERATIONS for this tenant's turns. */
+	maxToolCallsPerTurn?: number;
+	/** When true, /step refuses new turns with a fixed "agent is off" reply. */
+	agentDisabled?: boolean;
 }
 
 // ---- session bookkeeping (also powers the dashboard) ----

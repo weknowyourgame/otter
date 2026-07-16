@@ -27,7 +27,6 @@ import {
 	SelectField,
 	SettingsSection,
 	SettingToggle,
-	Toggle,
 } from "./ui";
 import { WorkspaceShell } from "./workspace-shell";
 
@@ -48,8 +47,41 @@ function SettingsPageFrame({
 	);
 }
 
+type Account = { name: string; email: string; role: "owner" | "member" };
+
+function useAccount(): Account | null {
+	const [account, setAccount] = useState<Account | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account")
+			.then((response) => (response.ok ? response.json() : null))
+			.then(
+				(
+					body: {
+						user?: { name: string; email: string };
+						role?: "owner" | "member";
+					} | null,
+				) => {
+					if (active && body?.user && body.role) {
+						setAccount({
+							name: body.user.name,
+							email: body.user.email,
+							role: body.role,
+						});
+					}
+				},
+			)
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return account;
+}
+
 export function GeneralSettingsPage() {
 	const [saved, setSaved] = useState(false);
+	const account = useAccount();
 	return (
 		<SettingsPageFrame title="General">
 			<SettingsSection
@@ -110,8 +142,17 @@ export function GeneralSettingsPage() {
 				title="Your profile"
 			>
 				<div className="od-form-stack">
-					<Field defaultValue="Sarthak Kapila" label="Name" />
-					<Field defaultValue="sarthak@otto.so" label="Email" readOnly />
+					<Field
+						defaultValue={account?.name ?? ""}
+						key={account?.name ?? "name"}
+						label="Name"
+					/>
+					<Field
+						defaultValue={account?.email ?? ""}
+						key={account?.email ?? "email"}
+						label="Email"
+						readOnly
+					/>
 					<SelectField defaultValue="Asia/Kolkata" label="Timezone">
 						<option>Asia/Kolkata</option>
 						<option>Europe/London</option>
@@ -213,29 +254,102 @@ export function NotificationsSettingsPage() {
 	);
 }
 
-const initialMembers = [
-	{
-		name: "Sarthak Kapila",
-		email: "sarthak@otto.so",
-		role: "Owner",
-		status: "Active",
-	},
-	{ name: "Maya Chen", email: "maya@otto.so", role: "Admin", status: "Active" },
-];
+type TeamMember = {
+	userId: string;
+	name: string;
+	email: string;
+	role: "owner" | "member";
+	createdAt: number;
+};
+
+type TeamInvite = {
+	id: string;
+	email: string;
+	role: "owner" | "member";
+	createdAt: number;
+	expiresAt: number;
+};
+
+function useTeam() {
+	const [members, setMembers] = useState<TeamMember[] | null>(null);
+	const [invites, setInvites] = useState<TeamInvite[] | null>(null);
+
+	async function refresh() {
+		const response = await fetch("/api/account/team");
+		if (!response.ok) return;
+		const body = (await response.json()) as {
+			members: TeamMember[];
+			invites: TeamInvite[];
+		};
+		setMembers(body.members);
+		setInvites(body.invites);
+	}
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refresh is redefined every render but should only run once on mount
+	useEffect(() => {
+		void refresh();
+	}, []);
+
+	return { members, invites, refresh };
+}
 
 export function TeamSettingsPage() {
-	const [members, setMembers] = useState(initialMembers);
+	const account = useAccount();
+	const { members, invites, refresh } = useTeam();
 	const [inviteOpen, setInviteOpen] = useState(false);
 	const [inviteEmail, setInviteEmail] = useState("");
+	const [inviteRole, setInviteRole] = useState<"owner" | "member">("member");
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState("");
+
+	async function sendInvite(event: FormEvent) {
+		event.preventDefault();
+		if (!inviteEmail) return;
+		setSubmitting(true);
+		setError("");
+		const response = await fetch("/api/account/team/invite", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ email: inviteEmail, role: inviteRole }),
+		});
+		setSubmitting(false);
+		if (!response.ok) {
+			setError("Could not send that invitation. Try again.");
+			return;
+		}
+		await refresh();
+		setInviteEmail("");
+		setInviteOpen(false);
+	}
+
+	async function removeMember(userId: string) {
+		const response = await fetch(`/api/account/team/${userId}`, {
+			method: "DELETE",
+		});
+		if (!response.ok) {
+			setError("Could not remove that teammate.");
+			return;
+		}
+		await refresh();
+	}
+
+	async function revokeInvite(id: string) {
+		await fetch(`/api/account/team/invite/${id}`, { method: "DELETE" });
+		await refresh();
+	}
+
+	const seatsUsed = members?.length ?? 0;
+
 	return (
 		<SettingsPageFrame title="Team">
+			{error ? <div className="od-settings-error">{error}</div> : null}
 			<SettingsSection
 				description="Invite teammates to manage conversations, knowledge, and agent behavior."
 				title="Members"
 			>
 				<div className="od-team-head">
 					<div>
-						<strong>{members.length} of 3 seats used</strong>
+						<strong>{seatsUsed} of 3 seats used</strong>
 						<p>Owners and admins can invite teammates.</p>
 					</div>
 					<Button onClick={() => setInviteOpen(true)} variant="primary">
@@ -253,8 +367,8 @@ export function TeamSettingsPage() {
 							</tr>
 						</thead>
 						<tbody>
-							{members.map((member) => (
-								<tr key={member.email}>
+							{(members ?? []).map((member) => (
+								<tr key={member.userId}>
 									<td>
 										<div className="od-person">
 											<span>{member.name.slice(0, 1)}</span>
@@ -265,19 +379,24 @@ export function TeamSettingsPage() {
 										</div>
 									</td>
 									<td>
-										<span className="od-badge">{member.role}</span>
+										<span className="od-badge">
+											{member.role === "owner" ? "Owner" : "Member"}
+										</span>
 									</td>
 									<td>
-										<span className="od-status is-live">{member.status}</span>
+										<span className="od-status is-live">Active</span>
 									</td>
 									<td>
-										<Button
-											aria-label={`More actions for ${member.name}`}
-											size="icon"
-											variant="ghost"
-										>
-											<MoreHorizontal size={16} />
-										</Button>
+										{account && member.email !== account.email ? (
+											<Button
+												aria-label={`Remove ${member.name}`}
+												onClick={() => void removeMember(member.userId)}
+												size="icon"
+												variant="ghost"
+											>
+												<MoreHorizontal size={16} />
+											</Button>
+										) : null}
 									</td>
 								</tr>
 							))}
@@ -285,7 +404,9 @@ export function TeamSettingsPage() {
 					</table>
 				</div>
 				<PanelFooter>
-					<span>1 seat remaining on the Free plan</span>
+					<span>
+						{Math.max(0, 3 - seatsUsed)} seat(s) remaining on the Free plan
+					</span>
 					<Link className="od-inline-link" href="/settings/plan">
 						Compare plans
 					</Link>
@@ -295,13 +416,49 @@ export function TeamSettingsPage() {
 				description="Invitations expire after seven days."
 				title="Pending invitations"
 			>
-				<div className="od-empty-row">
-					<Mail size={18} />
-					<div>
-						<strong>No pending invitations</strong>
-						<p>New invitations will appear here until accepted.</p>
+				{invites && invites.length > 0 ? (
+					<div className="od-table-wrap od-table-wrap--flush">
+						<table className="od-table">
+							<thead>
+								<tr>
+									<th>Email</th>
+									<th>Role</th>
+									<th />
+								</tr>
+							</thead>
+							<tbody>
+								{invites.map((invite) => (
+									<tr key={invite.id}>
+										<td>{invite.email}</td>
+										<td>
+											<span className="od-badge">
+												{invite.role === "owner" ? "Owner" : "Member"}
+											</span>
+										</td>
+										<td>
+											<Button
+												aria-label={`Revoke invitation for ${invite.email}`}
+												onClick={() => void revokeInvite(invite.id)}
+												size="icon"
+												variant="ghost"
+											>
+												<Trash2 size={15} />
+											</Button>
+										</td>
+									</tr>
+								))}
+							</tbody>
+						</table>
 					</div>
-				</div>
+				) : (
+					<div className="od-empty-row">
+						<Mail size={18} />
+						<div>
+							<strong>No pending invitations</strong>
+							<p>New invitations will appear here until accepted.</p>
+						</div>
+					</div>
+				)}
 			</SettingsSection>
 			<Modal
 				description="They will be able to access Otto immediately after accepting."
@@ -309,23 +466,7 @@ export function TeamSettingsPage() {
 				open={inviteOpen}
 				title="Invite a teammate"
 			>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						if (!inviteEmail) return;
-						setMembers((current) => [
-							...current,
-							{
-								name: inviteEmail.split("@")[0] || "Teammate",
-								email: inviteEmail,
-								role: "Member",
-								status: "Invited",
-							},
-						]);
-						setInviteEmail("");
-						setInviteOpen(false);
-					}}
-				>
+				<form onSubmit={sendInvite}>
 					<div className="od-modal__body">
 						<Field
 							autoFocus
@@ -335,17 +476,23 @@ export function TeamSettingsPage() {
 							type="email"
 							value={inviteEmail}
 						/>
-						<SelectField defaultValue="Member" label="Organization role">
-							<option>Member</option>
-							<option>Admin</option>
+						<SelectField
+							label="Organization role"
+							onChange={(event) =>
+								setInviteRole(event.target.value as "owner" | "member")
+							}
+							value={inviteRole}
+						>
+							<option value="member">Member</option>
+							<option value="owner">Owner</option>
 						</SelectField>
 					</div>
 					<div className="od-modal__footer">
 						<Button onClick={() => setInviteOpen(false)} type="button">
 							Cancel
 						</Button>
-						<Button type="submit" variant="primary">
-							Send invitation
+						<Button disabled={submitting} type="submit" variant="primary">
+							{submitting ? "Sending…" : "Send invitation"}
 						</Button>
 					</div>
 				</form>
@@ -354,7 +501,32 @@ export function TeamSettingsPage() {
 	);
 }
 
+type TenantUsage = {
+	requests: number;
+	totalTokens: number;
+	conversations: number;
+	teamMembers: number;
+};
+
+function useTenantUsage(): TenantUsage | null {
+	const [usage, setUsage] = useState<TenantUsage | null>(null);
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account/usage")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { usage?: TenantUsage } | null) => {
+				if (active && body?.usage) setUsage(body.usage);
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return usage;
+}
+
 export function PlanSettingsPage() {
+	const usage = useTenantUsage();
 	return (
 		<SettingsPageFrame title="Plan & Usage">
 			<SettingsSection
@@ -371,7 +543,7 @@ export function PlanSettingsPage() {
 					</div>
 					<Link
 						className="od-button od-button--primary od-button--md"
-						href="/price"
+						href="/pricing"
 					>
 						Upgrade plan
 					</Link>
@@ -388,11 +560,23 @@ export function PlanSettingsPage() {
 				title="Usage & limits"
 			>
 				<div className="od-usage-list">
-					<Meter label="AI credits" limit={1000} tone="orange" value={184} />
-					<Meter label="Contacts" limit={100} value={24} />
-					<Meter label="Team members" limit={3} value={2} />
-					<Meter label="Conversations" limit={20} value={6} />
-					<Meter label="Messages" limit={200} value={42} />
+					<Meter
+						label="AI tokens"
+						limit={1_000_000}
+						tone="orange"
+						value={usage?.totalTokens ?? 0}
+					/>
+					<Meter
+						label="Team members"
+						limit={3}
+						value={usage?.teamMembers ?? 0}
+					/>
+					<Meter
+						label="Conversations"
+						limit={20}
+						value={usage?.conversations ?? 0}
+					/>
+					<Meter label="Messages" limit={200} value={usage?.requests ?? 0} />
 				</div>
 			</SettingsSection>
 			<SettingsSection
@@ -534,8 +718,6 @@ export function DevelopersSettingsPage() {
 	const [newKeyName, setNewKeyName] = useState("");
 	const [newKeyKind, setNewKeyKind] = useState("public:test");
 	const [createdKey, setCreatedKey] = useState<CreatedApiKey | null>(null);
-	const [byok, setByok] = useState(false);
-	const [byokKey, setByokKey] = useState("");
 
 	useEffect(() => {
 		let active = true;
@@ -703,50 +885,6 @@ export function DevelopersSettingsPage() {
 						<Plus size={15} /> New API key
 					</Button>
 					<span>{keys.length} active keys</span>
-				</PanelFooter>
-			</SettingsSection>
-			<SettingsSection
-				description="Use a customer-owned OpenRouter API key for AI calls on this website."
-				title="OpenRouter key"
-			>
-				<div className="od-byok">
-					<div className="od-byok__head">
-						<div>
-							<strong>Use your OpenRouter key</strong>
-							<p>
-								When enabled, AI calls use your OpenRouter key first and do not
-								debit Otto AI credits.
-							</p>
-						</div>
-						<Toggle
-							checked={byok}
-							label="Use your OpenRouter key"
-							onChange={setByok}
-						/>
-					</div>
-					<p>
-						Your key is encrypted at rest and is never returned by the API or
-						displayed again after it is saved.
-					</p>
-					<div className="od-key-input">
-						<Field
-							label="OpenRouter API key"
-							onChange={(event) => setByokKey(event.target.value)}
-							placeholder="sk-or-v1-..."
-							type="password"
-							value={byokKey}
-						/>
-						<Button disabled={!byokKey} variant="primary">
-							Save key
-						</Button>
-					</div>
-					<span className="od-badge">No key saved</span>
-				</div>
-				<PanelFooter>
-					<span>BYOK is available on Pro</span>
-					<Link className="od-inline-link" href="/settings/plan">
-						Upgrade
-					</Link>
 				</PanelFooter>
 			</SettingsSection>
 			<SettingsSection

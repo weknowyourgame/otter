@@ -33,9 +33,25 @@ You also have:
 
 Use these sparingly and silently — never announce "I'll remember that" or narrate memory operations to the user.`;
 
-/** Memory tools are only offered when the session has a userKey to scope them to (see engine.ts) — keep the prompt in sync so the model doesn't try calling a tool it wasn't given. */
-export function buildSystemPrompt(includeMemoryTools: boolean): string {
-	return includeMemoryTools ? `${BASE_SYSTEM_PROMPT}${MEMORY_TOOLS_ADDENDUM}` : BASE_SYSTEM_PROMPT;
+/**
+ * Memory tools are only offered when the session has a userKey to scope
+ * them to (see engine.ts) — keep the prompt in sync so the model doesn't
+ * try calling a tool it wasn't given. `addendum` is tenant-configured
+ * persona/behaviour text (agents.systemPrompt) appended after the tool
+ * contract — never a replacement, so a tenant can't accidentally break
+ * the required one-tool-call-per-turn format.
+ */
+export function buildSystemPrompt(
+	includeMemoryTools: boolean,
+	addendum?: string,
+): string {
+	const base = includeMemoryTools
+		? `${BASE_SYSTEM_PROMPT}${MEMORY_TOOLS_ADDENDUM}`
+		: BASE_SYSTEM_PROMPT;
+	const trimmedAddendum = addendum?.trim();
+	return trimmedAddendum
+		? `${base}\n\nAdditional instructions from this workspace:\n${trimmedAddendum}`
+		: base;
 }
 
 export function renderSnapshot(snapshot: PageSnapshot): string {

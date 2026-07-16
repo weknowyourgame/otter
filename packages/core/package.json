@@ -14,7 +14,8 @@
 	},
 	"files": ["dist"],
 	"scripts": {
-		"build": "node scripts/build.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist"
+		"build": "node scripts/build.mjs && tsc -p tsconfig.json --emitDeclarationOnly --outDir dist",
+		"test": "bun test"
 	},
 	"dependencies": {
 		"otto-db": "workspace:*"

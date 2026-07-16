@@ -12,7 +12,7 @@
 	--ol-blue: #5d72ff;
 	--ol-green: #72d7a4;
 	--ol-purple: #b792ff;
-	--ol-font: var(--font-landing-body-face), system-ui, sans-serif;
+	--ol-font: var(--font-landing-body);
 	--ol-mono: var(--ol-font);
 	min-height: 100vh;
 	overflow: clip;

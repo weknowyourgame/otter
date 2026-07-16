@@ -31,6 +31,51 @@ export const createDocBodySchema = z
 	})
 	.strict();
 
+export const teamInviteBodySchema = z
+	.object({
+		email: z.string().trim().min(1).email(),
+		role: z.enum(["owner", "member"]),
+	})
+	.strict();
+
+export const organizationBodySchema = z
+	.object({
+		name: z.string().trim().min(1).max(120),
+	})
+	.strict();
+
+export const agentConfigBodySchema = z
+	.object({
+		name: z.string().trim().min(1).max(80),
+		model: z.string().trim().min(1).max(200),
+		systemPrompt: z.string().max(8000).nullable(),
+		maxToolCalls: z.number().int().min(1).max(12),
+		extendedReasoning: z.boolean(),
+		enabled: z.boolean(),
+		tonePreset: z.string().trim().min(1).max(40),
+		voiceTone: z.string().max(2000).nullable(),
+		clarificationPolicy: z.string().max(2000).nullable(),
+		escalationPolicy: z.string().max(2000).nullable(),
+		toolSettings: z.record(z.string(), z.boolean()),
+	})
+	.strict();
+
+export const createFaqBodySchema = z
+	.object({
+		question: z.string().trim().min(1).max(400),
+		answer: z.string().trim().min(1).max(4000),
+	})
+	.strict();
+
+export const createFileBodySchema = z
+	.object({
+		name: z.string().trim().min(1).max(255),
+		/** Extracted text content (.txt/.md today); null for formats we don't parse yet. */
+		content: z.string().max(200_000).nullable(),
+		size: z.number().int().nonnegative(),
+	})
+	.strict();
+
 // Mirrors otto-core's PageSnapshot/PageElement/LastActionReport/StepRequestUser
 // (packages/core/src/types.ts) — kept dependency-free rather than importing
 // otto-core's types directly, same reasoning packages/sdk/src/types.ts gives

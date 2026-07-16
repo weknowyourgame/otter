@@ -3,7 +3,6 @@
 import {
 	Bot,
 	Check,
-	ChevronDown,
 	CircleHelp,
 	FilePlus2,
 	Files,
@@ -13,8 +12,8 @@ import {
 	Sparkles,
 	Trash2,
 } from "lucide-react";
-import type { ChangeEvent, ReactNode } from "react";
-import { useRef, useState } from "react";
+import type { ChangeEvent, FormEvent, ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	Button,
 	EmptyState,
@@ -22,7 +21,6 @@ import {
 	Modal,
 	PageTitle,
 	PanelFooter,
-	SegmentedMeter,
 	SelectField,
 	SettingsSection,
 	SettingToggle,
@@ -30,6 +28,53 @@ import {
 	Toggle,
 } from "./ui";
 import { TrainingSummary, WorkspaceShell } from "./workspace-shell";
+
+type AgentConfig = {
+	name: string;
+	model: string;
+	systemPrompt: string | null;
+	maxToolCalls: number;
+	extendedReasoning: boolean;
+	enabled: boolean;
+	tonePreset: string;
+	voiceTone: string | null;
+	clarificationPolicy: string | null;
+	escalationPolicy: string | null;
+	toolSettings: Record<string, boolean>;
+};
+
+function useAgentConfig() {
+	const [config, setConfig] = useState<AgentConfig | null>(null);
+
+	useEffect(() => {
+		let active = true;
+		fetch("/api/account/agent")
+			.then((response) => (response.ok ? response.json() : null))
+			.then((body: { agent?: AgentConfig } | null) => {
+				if (active && body?.agent) setConfig(body.agent);
+			})
+			.catch(() => {});
+		return () => {
+			active = false;
+		};
+	}, []);
+
+	async function save(patch: Partial<AgentConfig>): Promise<boolean> {
+		if (!config) return false;
+		const next = { ...config, ...patch };
+		const response = await fetch("/api/account/agent", {
+			method: "PUT",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify(next),
+		});
+		if (!response.ok) return false;
+		const body = (await response.json()) as { agent: AgentConfig };
+		setConfig(body.agent);
+		return true;
+	}
+
+	return { config, save };
+}
 
 function AgentPageFrame({
 	title,
@@ -50,15 +95,55 @@ function AgentPageFrame({
 	);
 }
 
+const MODEL_OPTIONS = [
+	{ value: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
+	{ value: "openai/gpt-4.1-mini", label: "GPT-4.1 Mini" },
+	{ value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+];
+
 export function AgentGeneralPage() {
+	const { config, save } = useAgentConfig();
+	const [name, setName] = useState("");
+	const [model, setModel] = useState("");
+	const [systemPrompt, setSystemPrompt] = useState("");
+	const [maxToolCalls, setMaxToolCalls] = useState(6);
+	const [extendedReasoning, setExtendedReasoning] = useState(true);
 	const [enabled, setEnabled] = useState(true);
-	const [thinking, setThinking] = useState(true);
+	const [saving, setSaving] = useState(false);
 	const [saved, setSaved] = useState(false);
+
+	useEffect(() => {
+		if (!config) return;
+		setName(config.name);
+		setModel(config.model);
+		setSystemPrompt(config.systemPrompt ?? "");
+		setMaxToolCalls(config.maxToolCalls);
+		setExtendedReasoning(config.extendedReasoning);
+		setEnabled(config.enabled);
+	}, [config]);
+
+	async function handleSave() {
+		setSaving(true);
+		const ok = await save({
+			name: name.trim() || "Otto Support",
+			model,
+			systemPrompt: systemPrompt.trim() || null,
+			maxToolCalls,
+			extendedReasoning,
+			enabled,
+		});
+		setSaving(false);
+		if (ok) {
+			setSaved(true);
+			window.setTimeout(() => setSaved(false), 1400);
+		}
+	}
+
 	return (
 		<AgentPageFrame
 			action={
 				<span className="od-agent-live">
-					<i /> Agent live
+					<i /> {enabled ? "Agent live" : "Agent off"}
 				</span>
 			}
 			title="General"
@@ -73,8 +158,8 @@ export function AgentGeneralPage() {
 							<Bot size={22} />
 						</div>
 						<div>
-							<strong>Otto Support</strong>
-							<p>AI teammate · Trained 4 minutes ago</p>
+							<strong>{name || "Otto Support"}</strong>
+							<p>AI teammate</p>
 						</div>
 						<Toggle
 							checked={enabled}
@@ -82,21 +167,29 @@ export function AgentGeneralPage() {
 							onChange={setEnabled}
 						/>
 					</div>
-					<Field defaultValue="Otto Support" label="Agent name" />
+					<Field
+						label="Agent name"
+						onChange={(event) => setName(event.target.value)}
+						value={name}
+					/>
 					<SelectField
-						defaultValue="Claude 3.7 Sonnet"
 						hint="Used for primary customer replies."
 						label="AI model"
+						onChange={(event) => setModel(event.target.value)}
+						value={model}
 					>
-						<option>Claude 3.7 Sonnet</option>
-						<option>GPT-4.1 mini</option>
-						<option>Gemini 2.5 Flash</option>
+						{MODEL_OPTIONS.map((option) => (
+							<option key={option.value} value={option.value}>
+								{option.label}
+							</option>
+						))}
 					</SelectField>
 					<TextAreaField
-						defaultValue="You are Otto, the calm and capable support teammate for Otto Labs. Give direct answers, use the knowledge base before asking questions, and hand off when confidence is low."
-						hint="Use @tools to reference enabled capabilities."
+						hint="Appended to Otto's base instructions — describe persona and priorities, not tool syntax."
 						label="System prompt"
+						onChange={(event) => setSystemPrompt(event.target.value)}
 						rows={8}
+						value={systemPrompt}
 					/>
 				</div>
 				<PanelFooter>
@@ -106,14 +199,12 @@ export function AgentGeneralPage() {
 								<Check size={14} /> Saved
 							</>
 						) : (
-							"8,000 characters remaining"
+							`${Math.max(0, 8000 - systemPrompt.length)} characters remaining`
 						)}
 					</span>
 					<Button
-						onClick={() => {
-							setSaved(true);
-							window.setTimeout(() => setSaved(false), 1400);
-						}}
+						disabled={saving || !config}
+						onClick={() => void handleSave()}
 						variant="primary"
 					>
 						Save agent
@@ -125,9 +216,12 @@ export function AgentGeneralPage() {
 				title="AI thinking"
 			>
 				<SettingToggle
-					checked={thinking}
+					checked={extendedReasoning}
 					description="Recommended for technical support and multi-step troubleshooting."
-					onChange={setThinking}
+					onChange={(checked) => {
+						setExtendedReasoning(checked);
+						void save({ extendedReasoning: checked });
+					}}
 					title="Extended reasoning"
 				/>
 			</SettingsSection>
@@ -142,10 +236,15 @@ export function AgentGeneralPage() {
 					</div>
 					<input
 						aria-label="Maximum tool calls"
-						defaultValue="6"
 						max="12"
 						min="1"
+						onChange={(event) => {
+							const value = Number(event.target.value);
+							setMaxToolCalls(value);
+							void save({ maxToolCalls: value });
+						}}
 						type="number"
+						value={maxToolCalls}
 					/>
 				</div>
 			</SettingsSection>
@@ -153,29 +252,55 @@ export function AgentGeneralPage() {
 	);
 }
 
-const behaviorPrompts = [
+const behaviorFields = [
 	{
+		key: "voiceTone" as const,
 		title: "Voice & tone",
 		description: "How Otto should sound across every conversation.",
-		value:
-			"Be warm, concise, and confident. Use plain language. Match the visitor's technical depth without sounding robotic. Never pad an answer with generic acknowledgements.",
 	},
 	{
+		key: "clarificationPolicy" as const,
 		title: "Clarification policy",
 		description: "When the agent should ask a question before acting.",
-		value:
-			"Ask one focused clarification only when the missing detail changes the answer. Otherwise, state the assumption and help immediately.",
 	},
 	{
+		key: "escalationPolicy" as const,
 		title: "Escalation policy",
 		description: "How to recognize and handle situations requiring a person.",
-		value:
-			"Escalate billing disputes, security incidents, account ownership changes, or requests where confidence is below 70%. Summarize what has already been tried.",
 	},
 ];
 
 export function AgentBehaviourPage() {
+	const { config, save } = useAgentConfig();
 	const [tone, setTone] = useState("Balanced");
+	const [values, setValues] = useState({
+		voiceTone: "",
+		clarificationPolicy: "",
+		escalationPolicy: "",
+	});
+	const [savingKey, setSavingKey] = useState<string | null>(null);
+	const [savedKey, setSavedKey] = useState<string | null>(null);
+
+	useEffect(() => {
+		if (!config) return;
+		setTone(config.tonePreset);
+		setValues({
+			voiceTone: config.voiceTone ?? "",
+			clarificationPolicy: config.clarificationPolicy ?? "",
+			escalationPolicy: config.escalationPolicy ?? "",
+		});
+	}, [config]);
+
+	async function saveField(key: keyof typeof values) {
+		setSavingKey(key);
+		const ok = await save({ [key]: values[key].trim() || null });
+		setSavingKey(null);
+		if (ok) {
+			setSavedKey(key);
+			window.setTimeout(() => setSavedKey(null), 1400);
+		}
+	}
+
 	return (
 		<AgentPageFrame title="Behaviour">
 			<div className="od-preset-strip">
@@ -184,30 +309,51 @@ export function AgentBehaviourPage() {
 					<button
 						className={tone === item ? "is-active" : ""}
 						key={item}
-						onClick={() => setTone(item)}
+						onClick={() => {
+							setTone(item);
+							void save({ tonePreset: item });
+						}}
 						type="button"
 					>
 						{item}
 					</button>
 				))}
 			</div>
-			{behaviorPrompts.map((prompt) => (
+			{behaviorFields.map((field) => (
 				<SettingsSection
-					description={prompt.description}
-					key={prompt.title}
-					title={prompt.title}
+					description={field.description}
+					key={field.key}
+					title={field.title}
 				>
 					<div className="od-form-stack">
 						<TextAreaField
-							aria-label={prompt.title}
-							defaultValue={prompt.value}
+							aria-label={field.title}
 							label="Instructions"
+							onChange={(event) =>
+								setValues((current) => ({
+									...current,
+									[field.key]: event.target.value,
+								}))
+							}
 							rows={7}
+							value={values[field.key]}
 						/>
 					</div>
 					<PanelFooter>
-						<Button>Reset</Button>
-						<Button variant="primary">Save behavior</Button>
+						<span className="od-save-note">
+							{savedKey === field.key ? (
+								<>
+									<Check size={14} /> Saved
+								</>
+							) : null}
+						</span>
+						<Button
+							disabled={savingKey === field.key || !config}
+							onClick={() => void saveField(field.key)}
+							variant="primary"
+						>
+							Save behavior
+						</Button>
 					</PanelFooter>
 				</SettingsSection>
 			))}
@@ -259,15 +405,33 @@ const toolGroups = [
 	},
 ] as const;
 
+const DEFAULT_TOOL_STATES: Record<string, boolean> = Object.fromEntries(
+	toolGroups.flatMap((group) => group.tools.map((tool) => [tool[0], tool[2]])),
+);
+
 export function AgentToolsPage() {
+	const { config, save } = useAgentConfig();
 	const [customOpen, setCustomOpen] = useState(false);
-	const [toolStates, setToolStates] = useState<Record<string, boolean>>(() =>
-		Object.fromEntries(
-			toolGroups.flatMap((group) =>
-				group.tools.map((tool) => [tool[0], tool[2]]),
-			),
-		),
-	);
+	const [toolStates, setToolStates] =
+		useState<Record<string, boolean>>(DEFAULT_TOOL_STATES);
+
+	useEffect(() => {
+		if (!config) return;
+		setToolStates(
+			Object.keys(config.toolSettings).length > 0
+				? { ...DEFAULT_TOOL_STATES, ...config.toolSettings }
+				: DEFAULT_TOOL_STATES,
+		);
+	}, [config]);
+
+	function toggleTool(name: string, checked: boolean) {
+		setToolStates((current) => {
+			const next = { ...current, [name]: checked };
+			void save({ toolSettings: next });
+			return next;
+		});
+	}
+
 	return (
 		<AgentPageFrame
 			action={
@@ -307,12 +471,7 @@ export function AgentToolsPage() {
 									<Toggle
 										checked={toolStates[name] ?? false}
 										label={`Toggle ${name}`}
-										onChange={(checked) =>
-											setToolStates((current) => ({
-												...current,
-												[name]: checked,
-											}))
-										}
+										onChange={(checked) => toggleTool(name, checked)}
 									/>
 								</div>
 								<p>{description}</p>
@@ -351,18 +510,85 @@ export function AgentToolsPage() {
 	);
 }
 
+type WebDoc = {
+	id: string;
+	url: string;
+	title: string | null;
+	status: "pending" | "crawling" | "ready" | "failed";
+	errorMessage: string | null;
+	sourceType?: "web" | "faq" | "file";
+};
+
+function useWebSources() {
+	const [docs, setDocs] = useState<WebDoc[] | null>(null);
+
+	async function refresh() {
+		const response = await fetch("/api/docs");
+		if (!response.ok) return;
+		const body = (await response.json()) as { docs: WebDoc[] };
+		setDocs(body.docs.filter((doc) => (doc.sourceType ?? "web") === "web"));
+	}
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refresh is redefined every render but should only run once on mount
+	useEffect(() => {
+		void refresh();
+	}, []);
+
+	return { docs, refresh };
+}
+
+function statusLabel(status: WebDoc["status"]): string {
+	switch (status) {
+		case "pending":
+			return "Queued";
+		case "crawling":
+			return "Crawling…";
+		case "ready":
+			return "Ready";
+		case "failed":
+			return "Failed";
+	}
+}
+
 export function WebSourcesPage() {
+	const { docs, refresh } = useWebSources();
 	const [addOpen, setAddOpen] = useState(false);
-	const [sources, setSources] = useState(["otto.so"]);
 	const [newUrl, setNewUrl] = useState("");
-	const [crawling, setCrawling] = useState(false);
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState("");
+
+	async function addSource(event: FormEvent) {
+		event.preventDefault();
+		if (!newUrl) return;
+		setSubmitting(true);
+		setError("");
+		const response = await fetch("/api/docs", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ url: newUrl }),
+		});
+		setSubmitting(false);
+		if (!response.ok) {
+			setError("Could not add that URL. Check it's a valid, complete address.");
+			return;
+		}
+		await refresh();
+		setAddOpen(false);
+		setNewUrl("");
+	}
+
+	async function removeSource(id: string) {
+		await fetch(`/api/docs/${id}`, { method: "DELETE" });
+		await refresh();
+	}
+
 	return (
 		<WorkspaceShell
 			mode="agent"
 			rightRail={
 				<TrainingSummary
-					pages={sources.length * 3}
-					trained={sources.length > 1}
+					pages={docs?.length ?? 0}
+					trained={(docs?.length ?? 0) > 0}
 				/>
 			}
 		>
@@ -376,55 +602,35 @@ export function WebSourcesPage() {
 				>
 					Web Sources
 				</PageTitle>
-				<div className="od-source-limits">
-					<div>
-						<span>Link Sources</span>
-						<strong>{sources.length} / 5</strong>
-					</div>
-					<SegmentedMeter filled={sources.length * 8} segments={40} />
-					<div>
-						<span>Total Pages</span>
-						<strong>{sources.length * 3} / 25</strong>
-					</div>
-					<SegmentedMeter filled={sources.length * 5} segments={40} />
-					<div>
-						<span>Knowledge Base Size</span>
-						<strong>{sources.length} KB / 1 MB</strong>
-					</div>
-					<SegmentedMeter filled={Math.max(1, sources.length)} segments={40} />
-					<a href="/settings/plan">Upgrade for 1,000+ pages</a>
-				</div>
+				<p className="od-page-intro">
+					Otto ingests one page per source today — submit each URL you want in
+					the knowledge base directly.
+				</p>
 				<div className="od-source-list">
-					{sources.map((source) => (
-						<div className="od-source-domain" key={source}>
+					{(docs ?? []).map((doc) => (
+						<div className="od-source-domain" key={doc.id}>
 							<div className="od-source-domain__head">
 								<Globe2 size={15} />
-								<strong>{source}</strong>
-								<span>1 source · 3 pages · 1 KB</span>
+								<strong>{doc.title || doc.url}</strong>
+								<span>{statusLabel(doc.status)}</span>
 								<Button
-									aria-label={`Refresh ${source}`}
+									aria-label={`Remove ${doc.url}`}
+									onClick={() => void removeSource(doc.id)}
 									size="icon"
 									variant="ghost"
 								>
-									<RefreshCw size={14} />
+									<Trash2 size={14} />
 								</Button>
-								<ChevronDown size={14} />
 							</div>
-							<div className="od-source-tree">
-								<div>
-									/ <small>1 KB</small>
+							{doc.status === "failed" && doc.errorMessage ? (
+								<div className="od-source-tree">
+									<div>{doc.errorMessage}</div>
 								</div>
-								<div>
-									/docs <small>0.4 KB</small>
-								</div>
-								<div>
-									/pricing <small>0.2 KB</small>
-								</div>
-							</div>
+							) : null}
 						</div>
 					))}
 				</div>
-				{sources.length === 0 ? (
+				{docs !== null && docs.length === 0 ? (
 					<EmptyState
 						action={
 							<Button onClick={() => setAddOpen(true)} variant="primary">
@@ -438,59 +644,26 @@ export function WebSourcesPage() {
 				) : null}
 			</div>
 			<Modal
-				description="Otto discovers linked pages and adds them to the agent's knowledge base."
+				description="Otto reads this page and adds it to the agent's knowledge base."
 				onClose={() => setAddOpen(false)}
 				open={addOpen}
 				title="Add a website"
 			>
-				<form
-					onSubmit={(event) => {
-						event.preventDefault();
-						if (!newUrl) return;
-						setCrawling(true);
-						window.setTimeout(() => {
-							try {
-								setSources((current) => [
-									...current,
-									new URL(newUrl).hostname.replace("www.", ""),
-								]);
-							} catch {
-								setSources((current) => [...current, newUrl]);
-							}
-							setCrawling(false);
-							setAddOpen(false);
-							setNewUrl("");
-						}, 1300);
-					}}
-				>
+				<form onSubmit={(event) => void addSource(event)}>
 					<div className="od-modal__body">
 						<Field
 							autoFocus
-							hint="Start with your homepage or documentation root."
+							hint="A single page URL — Otto doesn't yet crawl a whole site automatically."
 							label="Website URL"
 							onChange={(event) => setNewUrl(event.target.value)}
 							placeholder="https://docs.example.com"
 							type="url"
 							value={newUrl}
 						/>
-						<div className="od-crawl-options">
-							<SettingToggle
-								checked
-								description="Follow links on the same domain."
-								onChange={() => {}}
-								title="Discover linked pages"
-							/>
-							<SettingToggle
-								checked
-								description="Keep this source synchronized every 24 hours."
-								onChange={() => {}}
-								title="Automatic recrawling"
-							/>
-						</div>
-						{crawling ? (
+						{error ? <p className="od-auth-error">{error}</p> : null}
+						{submitting ? (
 							<div className="od-crawling">
-								<RefreshCw className="od-spin" size={15} /> Discovering pages
-								and reading content...
+								<RefreshCw className="od-spin" size={15} /> Submitting…
 							</div>
 						) : null}
 					</div>
@@ -499,11 +672,11 @@ export function WebSourcesPage() {
 							Cancel
 						</Button>
 						<Button
-							disabled={!newUrl || crawling}
+							disabled={!newUrl || submitting}
 							type="submit"
 							variant="primary"
 						>
-							{crawling ? "Crawling..." : "Add and crawl"}
+							{submitting ? "Adding…" : "Add source"}
 						</Button>
 					</div>
 				</form>
@@ -512,22 +685,40 @@ export function WebSourcesPage() {
 	);
 }
 
+type Faq = { id: string; question: string; answer: string };
+
+function useFaqs() {
+	const [faqs, setFaqs] = useState<Faq[] | null>(null);
+
+	async function refresh() {
+		const response = await fetch("/api/faqs");
+		if (!response.ok) return;
+		const body = (await response.json()) as { faqs: Faq[] };
+		setFaqs(body.faqs);
+	}
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refresh is redefined every render but should only run once on mount
+	useEffect(() => {
+		void refresh();
+	}, []);
+
+	return { faqs, refresh };
+}
+
 export function FaqPage() {
-	const [faqs, setFaqs] = useState([
-		{
-			question: "Can I install Otto in a Next.js app?",
-			answer:
-				"Yes. Install @otto/sdk, add OttoProvider, and mount the widget once near your root layout.",
-		},
-	]);
+	const { faqs, refresh } = useFaqs();
 	const [open, setOpen] = useState(false);
 	const [question, setQuestion] = useState("");
 	const [answer, setAnswer] = useState("");
+	const [submitting, setSubmitting] = useState(false);
 	return (
 		<WorkspaceShell
 			mode="agent"
 			rightRail={
-				<TrainingSummary faqs={faqs.length} trained={faqs.length > 1} />
+				<TrainingSummary
+					faqs={faqs?.length ?? 0}
+					trained={(faqs?.length ?? 0) > 0}
+				/>
 			}
 		>
 			<div className="od-training-page">
@@ -545,8 +736,8 @@ export function FaqPage() {
 					ambiguous.
 				</p>
 				<div className="od-faq-list">
-					{faqs.map((faq, index) => (
-						<article key={`${faq.question}-${index}`}>
+					{(faqs ?? []).map((faq) => (
+						<article key={faq.id}>
 							<div>
 								<CircleHelp size={17} />
 								<div>
@@ -557,8 +748,8 @@ export function FaqPage() {
 							<Button
 								aria-label="Delete FAQ"
 								onClick={() =>
-									setFaqs((current) =>
-										current.filter((_, faqIndex) => faqIndex !== index),
+									void fetch(`/api/faqs/${faq.id}`, { method: "DELETE" }).then(
+										refresh,
 									)
 								}
 								size="icon"
@@ -580,10 +771,19 @@ export function FaqPage() {
 					onSubmit={(event) => {
 						event.preventDefault();
 						if (!question || !answer) return;
-						setFaqs((current) => [...current, { question, answer }]);
-						setQuestion("");
-						setAnswer("");
-						setOpen(false);
+						setSubmitting(true);
+						void fetch("/api/faqs", {
+							method: "POST",
+							headers: { "content-type": "application/json" },
+							body: JSON.stringify({ question, answer }),
+						})
+							.then(refresh)
+							.finally(() => {
+								setSubmitting(false);
+								setQuestion("");
+								setAnswer("");
+								setOpen(false);
+							});
 					}}
 				>
 					<div className="od-modal__body">
@@ -605,8 +805,8 @@ export function FaqPage() {
 						<Button onClick={() => setOpen(false)} type="button">
 							Cancel
 						</Button>
-						<Button type="submit" variant="primary">
-							Add FAQ
+						<Button disabled={submitting} type="submit" variant="primary">
+							{submitting ? "Adding…" : "Add FAQ"}
 						</Button>
 					</div>
 				</form>
@@ -615,49 +815,102 @@ export function FaqPage() {
 	);
 }
 
+type FileDoc = {
+	id: string;
+	title: string | null;
+	status: "pending" | "crawling" | "ready" | "failed";
+};
+
+const TEXT_EXTENSIONS = [".txt", ".md"];
+
+function readAsText(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(String(reader.result ?? ""));
+		reader.onerror = () => reject(reader.error);
+		reader.readAsText(file);
+	});
+}
+
 export function FilesPage() {
 	const inputRef = useRef<HTMLInputElement>(null);
-	const [files, setFiles] = useState<Array<{ name: string; size: string }>>([]);
-	const addFiles = (event: ChangeEvent<HTMLInputElement>) =>
-		setFiles(
-			Array.from(event.target.files ?? []).map((file) => ({
-				name: file.name,
-				size: `${Math.max(1, Math.round(file.size / 1024))} KB`,
-			})),
-		);
+	const [files, setFiles] = useState<FileDoc[] | null>(null);
+	const [uploading, setUploading] = useState(false);
+
+	async function refresh() {
+		const response = await fetch("/api/files");
+		if (!response.ok) return;
+		const body = (await response.json()) as { files: FileDoc[] };
+		setFiles(body.files);
+	}
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: refresh is redefined every render but should only run once on mount
+	useEffect(() => {
+		void refresh();
+	}, []);
+
+	async function addFiles(event: ChangeEvent<HTMLInputElement>) {
+		const selected = Array.from(event.target.files ?? []);
+		event.target.value = "";
+		if (selected.length === 0) return;
+		setUploading(true);
+		for (const file of selected) {
+			const isText = TEXT_EXTENSIONS.some((ext) =>
+				file.name.toLowerCase().endsWith(ext),
+			);
+			const content = isText ? await readAsText(file).catch(() => null) : null;
+			await fetch("/api/files", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({ name: file.name, content, size: file.size }),
+			});
+		}
+		setUploading(false);
+		await refresh();
+	}
+
+	async function removeFile(id: string) {
+		await fetch(`/api/files/${id}`, { method: "DELETE" });
+		await refresh();
+	}
+
 	return (
 		<WorkspaceShell
 			mode="agent"
 			rightRail={
-				<TrainingSummary files={files.length} trained={files.length > 0} />
+				<TrainingSummary
+					files={files?.length ?? 0}
+					trained={(files?.length ?? 0) > 0}
+				/>
 			}
 		>
 			<div className="od-training-page">
 				<PageTitle
 					action={
-						<Button onClick={() => inputRef.current?.click()}>
-							<Plus size={15} /> Add file
+						<Button
+							disabled={uploading}
+							onClick={() => inputRef.current?.click()}
+						>
+							<Plus size={15} /> {uploading ? "Uploading…" : "Add file"}
 						</Button>
 					}
 				>
 					Files
 				</PageTitle>
-				<div className="od-file-counter">
-					<span>{files.length} / 10 Files</span>
-					<a href="/settings/plan">Upgrade for unlimited files</a>
-				</div>
 				<p className="od-page-intro">
-					Saved files your agent can search during a conversation.
+					Saved files your agent can search during a conversation. Only .txt/.md
+					content is indexed today — other formats are stored but not yet
+					searchable.
 				</p>
 				<input
 					accept=".pdf,.md,.txt,.doc,.docx"
 					className="od-visually-hidden"
 					multiple
-					onChange={addFiles}
+					onChange={(event) => void addFiles(event)}
 					ref={inputRef}
 					type="file"
 				/>
-				{files.length === 0 ? (
+				{files !== null && files.length === 0 ? (
 					<EmptyState
 						action={
 							<Button
@@ -673,22 +926,20 @@ export function FilesPage() {
 					/>
 				) : (
 					<div className="od-file-list">
-						{files.map((file, index) => (
-							<article key={`${file.name}-${index}`}>
+						{(files ?? []).map((file) => (
+							<article key={file.id}>
 								<span>
 									<Files size={17} />
 								</span>
 								<div>
-									<strong>{file.name}</strong>
-									<small>{file.size} · Ready to train</small>
+									<strong>{file.title}</strong>
+									<small>
+										{file.status === "ready" ? "Ready" : file.status}
+									</small>
 								</div>
 								<Button
-									aria-label={`Remove ${file.name}`}
-									onClick={() =>
-										setFiles((current) =>
-											current.filter((_, fileIndex) => fileIndex !== index),
-										)
-									}
+									aria-label={`Remove ${file.title}`}
+									onClick={() => void removeFile(file.id)}
 									size="icon"
 									variant="ghost"
 								>

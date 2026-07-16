@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { OttoMark } from "./logo";
+import { OttoMark, OttoMascot } from "./logo";
 
 type ChatMessage = {
 	id: number;
@@ -53,7 +53,10 @@ export function SupportWidget({
 		event.preventDefault();
 		const text = input.trim();
 		if (!text || typing) return;
-		setMessages((current) => [...current, { id: nextId.current++, role: "visitor", text }]);
+		setMessages((current) => [
+			...current,
+			{ id: nextId.current++, role: "visitor", text },
+		]);
 		setInput("");
 		setTyping(true);
 		timer.current = window.setTimeout(() => {
@@ -75,17 +78,29 @@ export function SupportWidget({
 			data-embedded={embedded ? "true" : "false"}
 			data-open={open ? "true" : "false"}
 		>
-			<div aria-hidden={!open} className="mk-widget-panel" data-open={open ? "true" : "false"}>
+			<div
+				aria-hidden={!open}
+				className="mk-widget-panel"
+				data-open={open ? "true" : "false"}
+			>
 				{view === "home" ? (
 					<>
 						<header className="mk-widget-header mk-widget-header-home">
-							<div className="mk-widget-avatars" aria-label="Support team online">
+							<div
+								className="mk-widget-avatars"
+								aria-label="Support team online"
+							>
 								<img alt="Support agent" src="/marketing/anthony-picture.jpg" />
 								<span className="mk-widget-avatar-mark">
-									<OttoMark />
+									<OttoMascot />
 								</span>
 							</div>
-							<button aria-label="Close support" className="mk-icon-button" onClick={() => setOpen(false)} type="button">
+							<button
+								aria-label="Close support"
+								className="mk-icon-button"
+								onClick={() => setOpen(false)}
+								type="button"
+							>
 								×
 							</button>
 						</header>
@@ -93,7 +108,11 @@ export function SupportWidget({
 							<h2>{greeting}, how can we help?</h2>
 						</div>
 						<div className="mk-widget-home-action">
-							<button className="mk-widget-question" onClick={() => setView("conversation")} type="button">
+							<button
+								className="mk-widget-question"
+								onClick={() => setView("conversation")}
+								type="button"
+							>
 								<span>Ask us a question</span>
 								<span aria-hidden="true">›</span>
 							</button>
@@ -106,30 +125,57 @@ export function SupportWidget({
 				) : (
 					<div className="mk-widget-conversation">
 						<header className="mk-widget-header mk-widget-conversation-header">
-							<button aria-label="Back" className="mk-icon-button" onClick={() => setView("home")} type="button">
+							<button
+								aria-label="Back"
+								className="mk-icon-button"
+								onClick={() => setView("home")}
+								type="button"
+							>
 								←
 							</button>
 							<div>
 								<strong>Otto Support</strong>
-								<span><i /> Online now</span>
+								<span>
+									<i /> Online now
+								</span>
 							</div>
-							<button aria-label="Close support" className="mk-icon-button" onClick={() => setOpen(false)} type="button">
+							<button
+								aria-label="Close support"
+								className="mk-icon-button"
+								onClick={() => setOpen(false)}
+								type="button"
+							>
 								×
 							</button>
 						</header>
-						<div aria-label="Conversation timeline" className="mk-widget-messages" role="log">
+						<div
+							aria-label="Conversation timeline"
+							className="mk-widget-messages"
+							role="log"
+						>
 							{messages.map((message) => (
-								<div className={`mk-chat-message mk-chat-${message.role}`} key={message.id}>
+								<div
+									className={`mk-chat-message mk-chat-${message.role}`}
+									key={message.id}
+								>
 									{message.role === "agent" && (
-										<span className="mk-message-avatar"><OttoMark /></span>
+										<span className="mk-message-avatar">
+											<OttoMascot />
+										</span>
 									)}
 									<p>{message.text}</p>
 								</div>
 							))}
 							{typing && (
 								<div className="mk-chat-message mk-chat-agent">
-									<span className="mk-message-avatar"><OttoMark /></span>
-									<span className="mk-typing" aria-label="Otto is typing"><i /><i /><i /></span>
+									<span className="mk-message-avatar">
+										<OttoMascot />
+									</span>
+									<span className="mk-typing" aria-label="Otto is typing">
+										<i />
+										<i />
+										<i />
+									</span>
 								</div>
 							)}
 						</div>
@@ -148,8 +194,17 @@ export function SupportWidget({
 								value={input}
 							/>
 							<div>
-								<span className="mk-widget-powered"><span>We run on</span><OttoMark /></span>
-								<button aria-label="Send message" disabled={!input.trim() || typing} type="submit">↑</button>
+								<span className="mk-widget-powered">
+									<span>We run on</span>
+									<OttoMark />
+								</span>
+								<button
+									aria-label="Send message"
+									disabled={!input.trim() || typing}
+									type="submit"
+								>
+									↑
+								</button>
 							</div>
 						</form>
 					</div>
@@ -163,7 +218,13 @@ export function SupportWidget({
 				onClick={() => setOpen((current) => !current)}
 				type="button"
 			>
-				{open ? <span className="mk-widget-chevron">⌄</span> : <OttoMark />}
+				{open ? (
+					<span className="mk-widget-chevron">⌄</span>
+				) : (
+					<span className="mk-widget-bubble-face">
+						<OttoMascot />
+					</span>
+				)}
 				{!open && <span className="mk-widget-ping" />}
 			</button>
 		</div>

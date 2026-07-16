@@ -1,6 +1,7 @@
 import {
 	deleteExpiredSessions,
 	getSession as getSessionRow,
+	insertUsageEvent,
 	listSessions as listSessionRows,
 	type SessionRow,
 	upsertSession,
@@ -143,9 +144,22 @@ export async function runStep(
 		};
 	}
 
+	if (config.agentDisabled) {
+		return {
+			sessionId: req.sessionId ?? newId(),
+			action: {
+				type: "say",
+				text: "This agent is currently turned off for this workspace.",
+			},
+			source: "ai",
+		};
+	}
+
 	const apiKey = config.apiKey?.trim() || undefined;
 	const model = config.model?.trim() || DEFAULT_MODEL;
 	const maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;
+	const maxToolCallsPerTurn =
+		config.maxToolCallsPerTurn ?? MAX_TOOL_RESOLUTION_ITERATIONS;
 
 	const userKey = req.user?.email?.trim() || undefined;
 
@@ -157,7 +171,13 @@ export async function runStep(
 	}
 	if (!session) {
 		const history: ChatMessage[] = [
-			{ role: "system", content: buildSystemPrompt(Boolean(userKey)) },
+			{
+				role: "system",
+				content: buildSystemPrompt(
+					Boolean(userKey),
+					config.systemPromptAddendum,
+				),
+			},
 		];
 		if (userKey) {
 			const facts = await loadKnownFacts(userKey, config.tenantId);
@@ -204,7 +224,7 @@ export async function runStep(
 	}
 
 	const response = apiKey
-		? await aiStep(session, req, apiKey, model, userKey)
+		? await aiStep(session, req, apiKey, model, userKey, maxToolCallsPerTurn)
 		: localStep(session, req);
 
 	if (response.status) record(session, "step", response.status);
@@ -228,6 +248,7 @@ async function aiStep(
 	apiKey: string,
 	model: string,
 	userKey: string | undefined,
+	maxToolCallsPerTurn: number,
 ): Promise<StepResponse> {
 	const snapshotText = renderSnapshot(req.snapshot);
 
@@ -274,15 +295,22 @@ async function aiStep(
 		// the SDK never sees them, only the client-facing actions in
 		// AgentAction. Bounded so a model that keeps calling tools can't loop
 		// forever within one runStep().
-		for (
-			let iteration = 0;
-			iteration < MAX_TOOL_RESOLUTION_ITERATIONS;
-			iteration++
-		) {
+		for (let iteration = 0; iteration < maxToolCallsPerTurn; iteration++) {
 			const step = await requestNextAction(session.history, apiKey, model, {
 				includeMemoryTools: Boolean(userKey),
 			});
 			session.history.push(step.assistantMessage);
+			if (step.usage && session.tenantId) {
+				void insertUsageEvent({
+					id: newId(),
+					tenantId: session.tenantId,
+					kind: "agent_step",
+					promptTokens: step.usage.promptTokens,
+					completionTokens: step.usage.completionTokens,
+					totalTokens: step.usage.totalTokens,
+					createdAt: Date.now(),
+				});
+			}
 
 			if (step.kind === "action") {
 				return {

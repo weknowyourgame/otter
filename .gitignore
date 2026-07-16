@@ -12,3 +12,4 @@ otto.db*
 !lib/
 graphify-out/
 cossistant/
+*.rdb

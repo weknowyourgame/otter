@@ -12,7 +12,10 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
 	const pathname = usePathname();
 	const router = useRouter();
 	const { data: session, isPending } = authClient.useSession();
-	const isPublic = PUBLIC_PATHS.has(pathname) || pathname.startsWith("/demo");
+	const isPublic =
+		PUBLIC_PATHS.has(pathname) ||
+		pathname.startsWith("/demo") ||
+		pathname.startsWith("/invite");
 
 	useEffect(() => {
 		if (!isPublic && !isPending && !session) {

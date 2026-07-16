@@ -16,7 +16,7 @@ import {
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OttoGlyph } from "@/components/marks";
 import {
 	Button,
@@ -88,22 +88,36 @@ function FlowShell({
 export function OrganizationCreateFlow() {
 	const router = useRouter();
 	const [name, setName] = useState("");
-	const [slug, setSlug] = useState("");
+	const [submitting, setSubmitting] = useState(false);
+	const [error, setError] = useState("");
+
+	async function submit(event: FormEvent) {
+		event.preventDefault();
+		if (!name.trim()) return;
+		setSubmitting(true);
+		setError("");
+		const response = await fetch("/api/account/organization", {
+			method: "PUT",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({ name: name.trim() }),
+		});
+		setSubmitting(false);
+		if (!response.ok) {
+			setError("Could not save that name. Try again.");
+			return;
+		}
+		router.push("/websites/create");
+	}
+
 	return (
 		<FlowShell
-			description="Organizations keep websites, billing, and teammates under one roof."
+			description="Every signup already has a workspace — this just names it."
 			eyebrow="New workspace"
 			step={1}
-			title="Create an organization."
+			title="Name your organization."
 			total={1}
 		>
-			<form
-				className="od-flow-card"
-				onSubmit={(event) => {
-					event.preventDefault();
-					router.push("/websites/create");
-				}}
-			>
+			<form className="od-flow-card" onSubmit={(event) => void submit(event)}>
 				<div className="od-flow-card__head">
 					<span>
 						<Users size={19} />
@@ -117,30 +131,21 @@ export function OrganizationCreateFlow() {
 					<Field
 						autoFocus
 						label="Organization name"
-						onChange={(event) => {
-							setName(event.target.value);
-							setSlug(
-								event.target.value
-									.toLowerCase()
-									.trim()
-									.replace(/[^a-z0-9]+/g, "-"),
-							);
-						}}
+						onChange={(event) => setName(event.target.value)}
 						placeholder="Acme, Inc."
 						value={name}
 					/>
-					<Field
-						hint="Used in internal Otto URLs. You can change it later."
-						label="Organization slug"
-						onChange={(event) => setSlug(event.target.value)}
-						placeholder="acme"
-						value={slug}
-					/>
+					{error ? <p className="od-auth-error">{error}</p> : null}
 				</div>
 				<div className="od-flow-card__footer">
 					<Link href="/org">Cancel</Link>
-					<Button disabled={!name.trim()} type="submit" variant="primary">
-						Create organization <ArrowRight size={15} />
+					<Button
+						disabled={!name.trim() || submitting}
+						type="submit"
+						variant="primary"
+					>
+						{submitting ? "Saving…" : "Save organization"}{" "}
+						<ArrowRight size={15} />
 					</Button>
 				</div>
 			</form>
@@ -148,15 +153,17 @@ export function OrganizationCreateFlow() {
 	);
 }
 
-const installPrompt = `Add Otto support to this Next.js application.
+function buildInstallPrompt(publicKey: string): string {
+	return `Add Otto support to this Next.js application.
 
-1. Install @otto/sdk with your existing package manager.
+1. Install otto-sdk with your existing package manager.
 2. Wrap the root layout with OttoProvider.
 3. Mount <OttoWidget /> once, near the end of the body.
-4. Use this public key: pk_test_otto_91a2
+4. Use this public key: ${publicKey}
 5. Allow the domain configured for this website.
 
 Keep the existing visual system unchanged and verify the widget opens on mobile.`;
+}
 
 export function WebsiteCreateFlow() {
 	const [step, setStep] = useState(1);
@@ -164,6 +171,72 @@ export function WebsiteCreateFlow() {
 	const [domain, setDomain] = useState("");
 	const [framework, setFramework] = useState("Next.js");
 	const [mode, setMode] = useState("ai");
+	const [installKey, setInstallKey] = useState<string | null>(null);
+	const [keyError, setKeyError] = useState("");
+
+	useEffect(() => {
+		if (step !== 2 || installKey) return;
+		let active = true;
+		fetch("/api/account/keys", {
+			method: "POST",
+			headers: { "content-type": "application/json" },
+			body: JSON.stringify({
+				name: `${name.trim() || "Website"} widget key`,
+				type: "public",
+				mode: "test",
+			}),
+		})
+			.then(async (response) => {
+				if (!response.ok) throw new Error();
+				const body = (await response.json()) as { key: { rawKey: string } };
+				if (active) setInstallKey(body.key.rawKey);
+			})
+			.catch(() => {
+				if (active) setKeyError("Could not generate a key automatically.");
+			});
+		return () => {
+			active = false;
+		};
+	}, [step, installKey, name]);
+
+	const publicKeyDisplay = installKey ?? "Generating key…";
+	const installPrompt = buildInstallPrompt(publicKeyDisplay);
+	const [finishing, setFinishing] = useState(false);
+
+	async function finishInstall() {
+		setFinishing(true);
+		try {
+			await fetch("/api/account/keys", {
+				method: "POST",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					name: `${name.trim() || "Website"} live key`,
+					type: "public",
+					mode: "live",
+				}),
+			});
+			if (domain.trim()) {
+				const originsResponse = await fetch("/api/account/origins");
+				const existing = originsResponse.ok
+					? ((await originsResponse.json()) as { origins: string[] }).origins
+					: [];
+				const candidate = domain.trim().startsWith("http")
+					? domain.trim()
+					: `https://${domain.trim()}`;
+				await fetch("/api/account/origins", {
+					method: "PUT",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({
+						origins: Array.from(new Set([...existing, candidate])),
+					}),
+				});
+			}
+		} finally {
+			setFinishing(false);
+			setStep(3);
+		}
+	}
+
 	return (
 		<FlowShell
 			description="Create the site, choose a framework, then connect Otto with a generated key."
@@ -284,14 +357,15 @@ export function WebsiteCreateFlow() {
 									<span>1</span>
 									<div>
 										<strong>Install the SDK</strong>
-										<code>npm install @otto/sdk</code>
+										<code>npm install otto-sdk</code>
 									</div>
 								</div>
 								<div>
 									<span>2</span>
 									<div>
 										<strong>Add your public key</strong>
-										<code>pk_test_otto_91a2</code>
+										<code>{publicKeyDisplay}</code>
+										{keyError ? <small>{keyError}</small> : null}
 									</div>
 								</div>
 								<div>
@@ -306,8 +380,13 @@ export function WebsiteCreateFlow() {
 					</div>
 					<div className="od-flow-card__footer">
 						<Button onClick={() => setStep(1)}>Back</Button>
-						<Button onClick={() => setStep(3)} variant="primary">
-							I installed Otto <Check size={15} />
+						<Button
+							disabled={finishing}
+							onClick={() => void finishInstall()}
+							variant="primary"
+						>
+							{finishing ? "Finishing…" : "I installed Otto"}{" "}
+							<Check size={15} />
 						</Button>
 					</div>
 				</div>
