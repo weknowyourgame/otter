@@ -1,10 +1,15 @@
 const DEFAULT_API_URL = "http://localhost:8787";
 
+function normalizeApiBase(value: string): string {
+	const trimmed = value.trim() || DEFAULT_API_URL;
+	const withProtocol = /^[a-z][a-z0-9+.-]*:\/\//i.test(trimmed)
+		? trimmed
+		: `http://${trimmed}`;
+	return withProtocol.replace(/\/$/, "");
+}
+
 function targetUrl(request: Request, path: string): URL {
-	const base = (process.env.OTTER_API_URL?.trim() || DEFAULT_API_URL).replace(
-		/\/$/,
-		"",
-	);
+	const base = normalizeApiBase(process.env.OTTER_API_URL ?? DEFAULT_API_URL);
 	const target = new URL(`${base}${path.startsWith("/") ? path : `/${path}`}`);
 	target.search = new URL(request.url).search;
 	return target;

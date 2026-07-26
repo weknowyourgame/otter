@@ -2,14 +2,25 @@
 
 import { useState } from "react";
 import { useStore } from "@/components/cordant/store";
-import { Badge, Button, FakeQR, Input, PageHeader, Panel, Row, Toggle } from "@/components/cordant/ui";
+import {
+	Badge,
+	Button,
+	FakeQR,
+	Input,
+	PageHeader,
+	Panel,
+	Row,
+	Toggle,
+} from "@/components/cordant/ui";
 
 export default function Security() {
 	const [twoFA, setTwoFA] = useStore("2fa-enabled", false);
 	const [sessionAlerts, setSessionAlerts] = useStore("session-alerts", true);
 	const [resetSent, setResetSent] = useStore("password-reset-sent", false);
 	// wizard: null = closed; "scan" | "verify" | "recovery"
-	const [stage, setStage] = useState<null | "scan" | "verify" | "recovery">(null);
+	const [stage, setStage] = useState<null | "scan" | "verify" | "recovery">(
+		null,
+	);
 	const [code, setCode] = useState("");
 	const [codeError, setCodeError] = useState(false);
 
@@ -31,9 +42,15 @@ export default function Security() {
 				crumbs={[{ label: "My settings" }, { label: "Security" }]}
 			/>
 
-			<Panel title="Two-factor authentication" sub="A second factor keeps your account safe even if your password leaks.">
+			<Panel
+				title="Two-factor authentication"
+				sub="A second factor keeps your account safe even if your password leaks."
+			>
 				{!twoFA && stage === null && (
-					<Row label="Authenticator app" sub="Use TOTP codes from an app like 1Password or Google Authenticator.">
+					<Row
+						label="Authenticator app"
+						sub="Use TOTP codes from an app like 1Password or Google Authenticator."
+					>
 						<Button variant="primary" onClick={() => setStage("scan")}>
 							Enable two-factor authentication
 						</Button>
@@ -42,7 +59,9 @@ export default function Security() {
 
 				{stage === "scan" && (
 					<div className="py-2">
-						<p className="mb-1 text-[13.5px] font-semibold text-zinc-800">Step 1 · Scan this QR code</p>
+						<p className="mb-1 text-[13.5px] font-semibold text-zinc-800">
+							Step 1 · Scan this QR code
+						</p>
 						<p className="mb-5 text-[12.5px] text-zinc-500">
 							Open your authenticator app and scan the code to add Cordant.
 						</p>
@@ -56,7 +75,7 @@ export default function Security() {
 								</code>
 							</div>
 						</div>
-						<div className="flex gap-2.5">
+						<div className="flex flex-wrap gap-2.5">
 							<Button variant="primary" onClick={() => setStage("verify")}>
 								I've scanned it — continue
 							</Button>
@@ -67,11 +86,13 @@ export default function Security() {
 
 				{stage === "verify" && (
 					<div className="py-2">
-						<p className="mb-1 text-[13.5px] font-semibold text-zinc-800">Step 2 · Enter the 6-digit code</p>
+						<p className="mb-1 text-[13.5px] font-semibold text-zinc-800">
+							Step 2 · Enter the 6-digit code
+						</p>
 						<p className="mb-4 text-[12.5px] text-zinc-500">
 							Type the code your authenticator app is showing right now.
 						</p>
-						<div className="mb-1.5 flex max-w-xs gap-2.5">
+						<div className="mb-1.5 grid max-w-xs gap-2.5 sm:grid-cols-[minmax(0,1fr)_auto]">
 							<Input
 								inputMode="numeric"
 								maxLength={6}
@@ -95,19 +116,38 @@ export default function Security() {
 
 				{stage === "recovery" && (
 					<div className="py-2">
-						<div className="mb-4 flex items-center gap-2.5">
+						<div className="mb-4 flex flex-wrap items-center gap-2.5">
 							<span className="grid h-6 w-6 place-items-center rounded-full bg-emerald-100">
-								<svg aria-hidden="true" viewBox="0 0 24 24" className="h-3.5 w-3.5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+								<svg
+									aria-hidden="true"
+									viewBox="0 0 24 24"
+									className="h-3.5 w-3.5 text-emerald-600"
+									fill="none"
+									stroke="currentColor"
+									strokeWidth="2.5"
+									strokeLinecap="round"
+									strokeLinejoin="round"
+								>
 									<path d="M5 12.5l4.5 4.5L19 7.5" />
 								</svg>
 							</span>
-							<p className="text-[14px] font-semibold text-zinc-900">Two-factor authentication is on</p>
+							<p className="text-[14px] font-semibold text-zinc-900">
+								Two-factor authentication is on
+							</p>
 						</div>
 						<p className="mb-3 text-[12.5px] text-zinc-500">
-							Store these one-time recovery codes somewhere safe — they're your way in if you lose your phone.
+							Store these one-time recovery codes somewhere safe — they're your
+							way in if you lose your phone.
 						</p>
-						<div className="mb-5 grid w-fit grid-cols-2 gap-x-8 gap-y-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 font-mono text-[12.5px] text-zinc-700">
-							{["4KX2-9PLM", "8WQR-33ZN", "T6VD-01AH", "PB5E-7YKC", "MM2J-XR84", "ZC19-QQ5F"].map((c) => (
+						<div className="mb-5 grid w-full max-w-sm grid-cols-1 gap-y-1.5 rounded-xl border border-zinc-200 bg-zinc-50 px-5 py-4 font-mono text-[12.5px] text-zinc-700 sm:grid-cols-2 sm:gap-x-8">
+							{[
+								"4KX2-9PLM",
+								"8WQR-33ZN",
+								"T6VD-01AH",
+								"PB5E-7YKC",
+								"MM2J-XR84",
+								"ZC19-QQ5F",
+							].map((c) => (
 								<span key={c}>{c}</span>
 							))}
 						</div>
@@ -119,7 +159,7 @@ export default function Security() {
 
 				{twoFA && stage === null && (
 					<Row label="Authenticator app" sub="TOTP via your authenticator app.">
-						<div className="flex items-center gap-3">
+						<div className="flex flex-wrap items-center gap-3">
 							<Badge tone="green">Enabled</Badge>
 							<Button
 								variant="danger"
@@ -144,20 +184,28 @@ export default function Security() {
 							: "Last changed 3 months ago."
 					}
 				>
-					<div className="flex items-center gap-3">
+					<div className="flex flex-wrap items-center gap-3">
 						{resetSent ? <Badge tone="green">Reset sent</Badge> : null}
-						<Button onClick={() => setResetSent(true)}>
-							Send reset email
-						</Button>
+						<Button onClick={() => setResetSent(true)}>Send reset email</Button>
 					</div>
 				</Row>
 			</Panel>
 
 			<Panel title="Sessions">
-				<Row label="New sign-in alerts" sub="Email me when a new device signs in.">
-					<Toggle checked={sessionAlerts} onChange={setSessionAlerts} label="New sign-in alerts" />
+				<Row
+					label="New sign-in alerts"
+					sub="Email me when a new device signs in."
+				>
+					<Toggle
+						checked={sessionAlerts}
+						onChange={setSessionAlerts}
+						label="New sign-in alerts"
+					/>
 				</Row>
-				<Row label="Active sessions" sub="MacBook Pro · San Francisco — this device.">
+				<Row
+					label="Active sessions"
+					sub="MacBook Pro · San Francisco — this device."
+				>
 					<Button variant="danger">Sign out everywhere</Button>
 				</Row>
 			</Panel>
