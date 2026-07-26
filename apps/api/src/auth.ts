@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { betterAuth } from "better-auth/minimal";
 import {
@@ -13,6 +14,7 @@ import {
 	sendEmail,
 	verificationEmailHtml,
 } from "./email.js";
+import { logger } from "./logger.js";
 
 function configuredSecret(): string {
 	const secret = process.env.BETTER_AUTH_SECRET?.trim();
@@ -36,6 +38,14 @@ function tenantSlug(name: string, userId: string): string {
 		.replace(/^-|-$/g, "")
 		.slice(0, 36);
 	return `${base || "workspace"}-${userId.slice(0, 8)}`;
+}
+
+function shouldAutoVerifyLocalEmail(): boolean {
+	return (
+		process.env.NODE_ENV !== "production" &&
+		!process.env.RESEND_API_KEY?.trim() &&
+		process.env.OTTER_DISABLE_LOCAL_AUTO_VERIFY !== "1"
+	);
 }
 
 // Top-level await: getDb() is async under the Postgres driver (was
@@ -91,6 +101,16 @@ export const auth = betterAuth({
 				subject: "Verify your Otter email",
 				html: verificationEmailHtml(url),
 			});
+			if (shouldAutoVerifyLocalEmail()) {
+				await db
+					.update(user)
+					.set({ emailVerified: true, updatedAt: new Date() })
+					.where(eq(user.id, verifyUser.id));
+				logger.warn(
+					{ email: verifyUser.email },
+					"RESEND_API_KEY not set — auto-verified local development signup",
+				);
+			}
 		},
 	},
 	trustedOrigins: dashboardOrigins(),

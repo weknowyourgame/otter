@@ -446,6 +446,12 @@ const goals = [
 const generatedPrompt =
 	"You are Otter Support, the thoughtful support teammate for Otter Labs. Answer clearly and directly using the knowledge base. Ask at most one focused clarification when necessary. Be warm without adding filler. Escalate account security, billing disputes, and requests where confidence is low.";
 
+const modelIds: Record<string, string> = {
+	"Claude 3.7 Sonnet": "anthropic/claude-sonnet-4.5",
+	"GPT-4.1 mini": "openai/gpt-4.1-mini",
+	"Gemini 2.5 Flash": "google/gemini-2.5-flash",
+};
+
 export function AgentCreateFlow() {
 	const router = useRouter();
 	const [step, setStep] = useState(1);
@@ -458,6 +464,7 @@ export function AgentCreateFlow() {
 	const [model, setModel] = useState("Claude 3.7 Sonnet");
 	const [prompt, setPrompt] = useState(generatedPrompt);
 	const [saving, setSaving] = useState(false);
+	const [saveError, setSaveError] = useState("");
 
 	const continueFromBasics = () => {
 		setStep(2);
@@ -471,6 +478,62 @@ export function AgentCreateFlow() {
 		window.setTimeout(() => setAnalysis(3), 1650);
 		window.setTimeout(() => setStep(3), 2300);
 	};
+
+	async function finishAgentSetup() {
+		setSaving(true);
+		setSaveError("");
+		try {
+			const agentResponse = await fetch("/api/account/agent", {
+				method: "PUT",
+				headers: { "content-type": "application/json" },
+				body: JSON.stringify({
+					name: name.trim(),
+					model: modelIds[model] ?? model,
+					systemPrompt: [
+						prompt.trim(),
+						selectedGoals.length
+							? `Primary goals: ${selectedGoals.join(", ")}.`
+							: "",
+						crawl && url.trim() ? `Use ${url.trim()} as an initial knowledge source.` : "",
+					]
+						.filter(Boolean)
+						.join("\n\n"),
+					maxToolCalls: 6,
+					extendedReasoning: true,
+					enabled: true,
+					tonePreset: tone,
+					voiceTone: tone,
+					clarificationPolicy:
+						"Ask one focused clarification only when the user's request cannot be completed safely from the current page.",
+					escalationPolicy:
+						"Escalate billing disputes, irreversible account actions, and security-sensitive changes that require an admin.",
+					toolSettings: {
+						click: true,
+						fill: true,
+						navigate: true,
+						search_knowledge_base: true,
+						remember: true,
+					},
+				}),
+			});
+			if (!agentResponse.ok) throw new Error("agent_save_failed");
+
+			if (crawl && url.trim()) {
+				const docsResponse = await fetch("/api/docs", {
+					method: "POST",
+					headers: { "content-type": "application/json" },
+					body: JSON.stringify({ url: url.trim() }),
+				});
+				if (!docsResponse.ok) throw new Error("crawl_enqueue_failed");
+			}
+
+			router.push("/agent");
+		} catch {
+			setSaveError("Could not finish setup. Check the website URL and try again.");
+		} finally {
+			setSaving(false);
+		}
+	}
 
 	return (
 		<FlowShell
@@ -697,15 +760,13 @@ export function AgentCreateFlow() {
 							rows={10}
 							value={prompt}
 						/>
+						{saveError ? <p className="od-auth-error">{saveError}</p> : null}
 					</div>
 					<div className="od-flow-card__footer">
 						<Button onClick={() => setStep(1)}>Edit basics</Button>
 						<Button
 							disabled={!prompt.trim() || saving}
-							onClick={() => {
-								setSaving(true);
-								window.setTimeout(() => router.push("/agent"), 900);
-							}}
+							onClick={() => void finishAgentSetup()}
 							variant="primary"
 						>
 							{saving ? (
