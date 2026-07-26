@@ -87,21 +87,22 @@ export function SupportWidget({
 					<>
 						<header className="mk-widget-header mk-widget-header-home">
 							<div
-								className="mk-widget-avatars"
 								aria-label="Support team online"
+								className="mk-widget-avatars"
+								role="img"
 							>
-								<img alt="Support agent" src="/marketing/anthony-picture.jpg" />
 								<span className="mk-widget-avatar-mark">
 									<OtterMascot />
 								</span>
+								<span className="mk-widget-avatar-simple">AI</span>
 							</div>
 							<button
-								aria-label="Close support"
+								aria-label="Minimize support"
 								className="mk-icon-button"
 								onClick={() => setOpen(false)}
 								type="button"
 							>
-								×
+								-
 							</button>
 						</header>
 						<div className="mk-widget-home-copy">
@@ -140,12 +141,12 @@ export function SupportWidget({
 								</span>
 							</div>
 							<button
-								aria-label="Close support"
+								aria-label="Minimize support"
 								className="mk-icon-button"
 								onClick={() => setOpen(false)}
 								type="button"
 							>
-								×
+								-
 							</button>
 						</header>
 						<div
@@ -171,7 +172,11 @@ export function SupportWidget({
 									<span className="mk-message-avatar">
 										<OtterMascot />
 									</span>
-									<span className="mk-typing" aria-label="Otter is typing">
+									<span
+										aria-label="Otter is typing"
+										className="mk-typing"
+										role="status"
+									>
 										<i />
 										<i />
 										<i />

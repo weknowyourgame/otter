@@ -7,7 +7,7 @@ import { buildStyles } from "./styles.js";
 import type { ResolvedConfig } from "./types.js";
 
 const GLYPH = `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.2c.75 5.05 4.7 9 9.75 9.75-5.05.75-9 4.7-9.75 9.75-.75-5.05-4.7-9-9.75-9.75C7.3 11.2 11.25 7.25 12 2.2z"/></svg>`;
-const ICON_CLOSE = `<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>`;
+const ICON_MINIMIZE = `<svg viewBox="0 0 24 24"><path d="M6 12h12"/></svg>`;
 const ICON_NEW = `<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>`;
 const ICON_SEND = `<svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5L12 5l6.5 6.5"/></svg>`;
 const ICON_SHIELD = `<svg viewBox="0 0 24 24"><path d="M12 3l7.5 3v5.2c0 4.6-3.2 8.2-7.5 9.8-4.3-1.6-7.5-5.2-7.5-9.8V6L12 3z"/><path d="M9.2 12.2l2 2 3.6-4"/></svg>`;
@@ -77,12 +77,15 @@ export class WidgetUI {
 			<section class="otter-panel" data-open="false" role="dialog" aria-label="${esc(config.name)}">
 				<header class="otter-header">
 					<div class="otter-brand">
-						<span class="otter-brand-dot">${GLYPH}</span>
-						<div><h1>${esc(config.name)}</h1><p>AI support — it does it for you</p></div>
+						<div class="otter-avatars" aria-label="${esc(config.name)} online">
+							<span class="otter-brand-dot">${GLYPH}</span>
+							<span class="otter-avatar-simple">AI</span>
+						</div>
+						<div><h1>${esc(config.name)} Support</h1><p><i></i> Online now</p></div>
 					</div>
 					<div class="otter-header-actions">
 						<button class="otter-icon-btn" type="button" data-act="new" aria-label="New conversation">${ICON_NEW}</button>
-						<button class="otter-icon-btn" type="button" data-act="close" aria-label="Close">${ICON_CLOSE}</button>
+						<button class="otter-icon-btn" type="button" data-act="minimize" aria-label="Minimize">${ICON_MINIMIZE}</button>
 					</div>
 				</header>
 				<div class="otter-messages"></div>
@@ -118,11 +121,14 @@ export class WidgetUI {
 	}
 
 	private applyTheme(): void {
-		const set = (t: "dark" | "light") => this.root.setAttribute("data-theme", t);
+		const set = (t: "dark" | "light") =>
+			this.root.setAttribute("data-theme", t);
 		if (this.config.theme === "auto") {
 			this.themeQuery = window.matchMedia("(prefers-color-scheme: dark)");
 			set(this.themeQuery.matches ? "dark" : "light");
-			this.themeQuery.addEventListener("change", (e) => set(e.matches ? "dark" : "light"));
+			this.themeQuery.addEventListener("change", (e) =>
+				set(e.matches ? "dark" : "light"),
+			);
 		} else {
 			set(this.config.theme);
 		}
@@ -130,9 +136,13 @@ export class WidgetUI {
 
 	private wire(): void {
 		this.q(".otter-launcher").addEventListener("click", () => this.toggle());
-		this.q("[data-act='close']").addEventListener("click", () => this.close());
+		this.q("[data-act='minimize']").addEventListener("click", () =>
+			this.close(),
+		);
 		this.q("[data-act='new']").addEventListener("click", () => this.reset());
-		this.q(".otter-pill-stop").addEventListener("click", () => this.callbacks.onStop());
+		this.q(".otter-pill-stop").addEventListener("click", () =>
+			this.callbacks.onStop(),
+		);
 
 		const form = this.q(".otter-composer");
 		form.addEventListener("submit", (e) => {
@@ -171,7 +181,10 @@ export class WidgetUI {
 	open(): void {
 		this.panel.setAttribute("data-open", "true");
 		if (!this.messages.children.length) {
-			this.agent(`Hi! I'm ${this.config.name}. Tell me what you need — I'll do it right here on the page.`, { record: false });
+			this.agent(
+				`Hi! I'm ${this.config.name}. Tell me what you need — I'll do it right here on the page.`,
+				{ record: false },
+			);
 		}
 		setTimeout(() => this.input.focus(), 120);
 	}
@@ -222,7 +235,10 @@ export class WidgetUI {
 		this.messages.appendChild(el);
 		this.scrollDown();
 		if (opts.record !== false) {
-			this.transcript.push({ kind: opts.error ? "agent-error" : "agent", text });
+			this.transcript.push({
+				kind: opts.error ? "agent-error" : "agent",
+				text,
+			});
 		}
 	}
 
@@ -242,7 +258,11 @@ export class WidgetUI {
 	// ---------- step trail ----------
 
 	trail(restored?: Array<{ status: string; ok: boolean }>): Trail {
-		const entry: TranscriptEntry = { kind: "trail", steps: [...(restored ?? [])], finished: null };
+		const entry: TranscriptEntry = {
+			kind: "trail",
+			steps: [...(restored ?? [])],
+			finished: null,
+		};
 		this.transcript.push(entry);
 
 		const box = document.createElement("div");
@@ -258,23 +278,36 @@ export class WidgetUI {
 		const stepsEl = box.querySelector(".otter-trail-steps") as HTMLDivElement;
 		const head = box.querySelector(".otter-trail-head") as HTMLButtonElement;
 		head.addEventListener("click", () => {
-			box.setAttribute("data-open", box.getAttribute("data-open") === "true" ? "false" : "true");
+			box.setAttribute(
+				"data-open",
+				box.getAttribute("data-open") === "true" ? "false" : "true",
+			);
 		});
 		this.scrollDown();
 
 		let count = 0;
-		const addRow = (status: string): { row: HTMLDivElement; icon: HTMLSpanElement } => {
+		const addRow = (
+			status: string,
+		): { row: HTMLDivElement; icon: HTMLSpanElement } => {
 			count += 1;
 			const row = document.createElement("div");
 			row.className = "otter-step";
 			row.setAttribute("data-state", "active");
 			row.innerHTML = `<span class="otter-step-icon">${SPINNER}</span><span class="otter-step-text"></span>`;
-			(row.querySelector(".otter-step-text") as HTMLElement).textContent = status;
+			(row.querySelector(".otter-step-text") as HTMLElement).textContent =
+				status;
 			stepsEl.appendChild(row);
 			this.scrollDown();
-			return { row, icon: row.querySelector(".otter-step-icon") as HTMLSpanElement };
+			return {
+				row,
+				icon: row.querySelector(".otter-step-icon") as HTMLSpanElement,
+			};
 		};
-		const setIcon = (icon: HTMLSpanElement, row: HTMLDivElement, ok: boolean) => {
+		const setIcon = (
+			icon: HTMLSpanElement,
+			row: HTMLDivElement,
+			ok: boolean,
+		) => {
 			row.setAttribute("data-state", ok ? "done" : "error");
 			icon.innerHTML = ok
 				? `<span class="otter-check">${svgStroke(ICON_CHECK)}</span>`
@@ -317,9 +350,12 @@ export class WidgetUI {
 						: kind === "stopped"
 							? `Stopped after ${count} step${count === 1 ? "" : "s"}`
 							: `Stopped — ${count} step${count === 1 ? "" : "s"} attempted`;
-				(box.querySelector(".otter-trail-count") as HTMLElement).textContent = label;
+				(box.querySelector(".otter-trail-count") as HTMLElement).textContent =
+					label;
 				if (kind !== "done") {
-					const check = box.querySelector(".otter-trail-head .otter-check") as HTMLElement;
+					const check = box.querySelector(
+						".otter-trail-head .otter-check",
+					) as HTMLElement;
 					check.innerHTML = svgStroke(ICON_CROSS);
 				}
 				ui.scrollDown();
@@ -349,8 +385,10 @@ export class WidgetUI {
 					<button class="otter-btn otter-btn-ghost" type="button"></button>
 					<button class="otter-btn ${opts.danger ? "otter-btn-danger" : "otter-btn-primary"}" type="button"></button>
 				</div>`;
-			(el.querySelector(".otter-card-title span") as HTMLElement).textContent = opts.title;
-			(el.querySelector(".otter-card-body") as HTMLElement).textContent = opts.body;
+			(el.querySelector(".otter-card-title span") as HTMLElement).textContent =
+				opts.title;
+			(el.querySelector(".otter-card-body") as HTMLElement).textContent =
+				opts.body;
 			const deny = el.querySelector(".otter-btn-ghost") as HTMLButtonElement;
 			const allow = el.querySelectorAll(".otter-btn")[1] as HTMLButtonElement;
 			deny.textContent = opts.denyLabel;
@@ -396,7 +434,8 @@ export class WidgetUI {
 
 	pill(show: boolean, status?: string): void {
 		if (status) this.pillStatus.textContent = status;
-		else if (show) this.pillStatus.textContent = `${this.config.name} is working…`;
+		else if (show)
+			this.pillStatus.textContent = `${this.config.name} is working…`;
 		this.pillEl.setAttribute("data-visible", show ? "true" : "false");
 	}
 
@@ -420,7 +459,8 @@ export class WidgetUI {
 			const e = entries[i];
 			if (e.kind === "user") this.user(e.text ?? "");
 			else if (e.kind === "agent") this.agent(e.text ?? "");
-			else if (e.kind === "agent-error") this.agent(e.text ?? "", { error: true });
+			else if (e.kind === "agent-error")
+				this.agent(e.text ?? "", { error: true });
 			else if (e.kind === "trail") {
 				const t = this.trail(e.steps ?? []);
 				if (e.finished) t.finish(e.finished);

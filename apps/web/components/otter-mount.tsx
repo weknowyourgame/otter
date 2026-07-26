@@ -19,7 +19,7 @@ export function OtterMount() {
 			endpoint: "/api/agent",
 			publicKey,
 			name: "Otter",
-			accent: "#5B6CF9",
+			accent: "#69D8C8",
 			theme: "dark",
 			user: { email: "demo@cordant.io", name: "Demo User" },
 		});

@@ -17,8 +17,8 @@ type AssetThreshold = { raw: number; gzip: number };
 // under) — node's zlib produces slightly different gzip byte counts for the
 // same input, so baselines must be captured with the same tool that checks them.
 const BASELINES: Record<AssetName, AssetThreshold> = {
-	"otter-loader.global.js": { raw: 1458, gzip: 631 },
-	"otter-widget.global.js": { raw: 60_822, gzip: 15_653 },
+	"otter-loader.global.js": { raw: 1534, gzip: 645 },
+	"otter-widget.global.js": { raw: 62_529, gzip: 15_923 },
 };
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -43,7 +43,9 @@ for (const assetName of Object.keys(BASELINES) as AssetName[]) {
 	const assetPath = join(distDir, assetName);
 
 	if (!existsSync(assetPath)) {
-		errors.push(`Missing embed asset: ${assetName} (run \`bun run --cwd packages/sdk build\` first)`);
+		errors.push(
+			`Missing embed asset: ${assetName} (run \`bun run --cwd packages/sdk build\` first)`,
+		);
 		continue;
 	}
 
@@ -59,9 +61,13 @@ for (const assetName of Object.keys(BASELINES) as AssetName[]) {
 	);
 
 	if (gzipDelta > 0) {
-		errors.push(`${assetName} gzip regressed by ${formatBytes(gzipDelta)} over the ${formatBytes(baseline.gzip)} baseline`);
+		errors.push(
+			`${assetName} gzip regressed by ${formatBytes(gzipDelta)} over the ${formatBytes(baseline.gzip)} baseline`,
+		);
 	} else if (rawDelta > 0) {
-		warnings.push(`${assetName} raw size grew by ${formatBytes(rawDelta)} over the ${formatBytes(baseline.raw)} baseline`);
+		warnings.push(
+			`${assetName} raw size grew by ${formatBytes(rawDelta)} over the ${formatBytes(baseline.raw)} baseline`,
+		);
 	}
 }
 
