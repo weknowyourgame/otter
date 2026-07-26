@@ -30,7 +30,7 @@ import type {
 
 const SESSION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_STEPS = 24;
-const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
+const DEFAULT_MODEL = "openai/gpt-5.3-codex";
 const MAX_TOOL_RESOLUTION_ITERATIONS = 3;
 
 interface Session {

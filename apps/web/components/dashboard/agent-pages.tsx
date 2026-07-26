@@ -96,9 +96,7 @@ function AgentPageFrame({
 }
 
 const MODEL_OPTIONS = [
-	{ value: "anthropic/claude-sonnet-4.5", label: "Claude Sonnet 4.5" },
-	{ value: "openai/gpt-4.1-mini", label: "GPT-4.1 Mini" },
-	{ value: "google/gemini-2.5-flash", label: "Gemini 2.5 Flash" },
+	{ value: "openai/gpt-5.3-codex", label: "GPT-5.3 Codex" },
 ];
 
 export function AgentGeneralPage() {

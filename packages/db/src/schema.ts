@@ -319,7 +319,7 @@ export const agents = pgTable(
 			.notNull()
 			.references(() => tenants.id, { onDelete: "cascade" }),
 		name: text("name").notNull().default("Otter Support"),
-		model: text("model").notNull().default("anthropic/claude-sonnet-4.5"),
+		model: text("model").notNull().default("openai/gpt-5.3-codex"),
 		systemPrompt: text("system_prompt"),
 		maxToolCalls: integer("max_tool_calls").notNull().default(6),
 		extendedReasoning: boolean("extended_reasoning").notNull().default(true),

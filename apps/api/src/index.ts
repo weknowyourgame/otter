@@ -111,6 +111,7 @@ const checkRateLimit = createRateLimiter(pauseRedis);
 // loop rather than abuse.
 const AGENT_KEY_RATE_LIMIT = { limit: 60, windowSeconds: 60 };
 const DASHBOARD_RATE_LIMIT = { limit: 300, windowSeconds: 60 };
+const REQUIRED_AGENT_MODEL = "openai/gpt-5.3-codex";
 
 function rateLimitedResponse(retryAfterSeconds: number): Response {
 	return Response.json(
@@ -121,7 +122,7 @@ function rateLimitedResponse(retryAfterSeconds: number): Response {
 
 const baseEngineConfig: EngineConfig = {
 	apiKey: process.env.OPENROUTER_API_KEY,
-	model: process.env.AGENT_MODEL,
+	model: REQUIRED_AGENT_MODEL,
 	pauseStore,
 };
 
@@ -133,7 +134,7 @@ async function engineConfigFor(
 		...baseEngineConfig,
 		tenantId: agentAuth.key.tenantId,
 		apiKeyId: agentAuth.key.id,
-		model: agent?.model || baseEngineConfig.model,
+		model: REQUIRED_AGENT_MODEL,
 		systemPromptAddendum: agent?.systemPrompt ?? undefined,
 		maxToolCallsPerTurn: agent?.maxToolCalls,
 		agentDisabled: agent ? !agent.enabled : false,
@@ -479,7 +480,7 @@ app.put("/api/account/origins", requireDashboard, async (c) => {
 
 const DEFAULT_AGENT_CONFIG = {
 	name: "Otter Support",
-	model: "anthropic/claude-sonnet-4.5",
+	model: REQUIRED_AGENT_MODEL,
 	systemPrompt: null as string | null,
 	maxToolCalls: 6,
 	extendedReasoning: true,
@@ -506,7 +507,7 @@ app.get("/api/account/agent", requireDashboard, async (c) => {
 	return c.json({
 		agent: {
 			name: agent.name,
-			model: agent.model,
+			model: REQUIRED_AGENT_MODEL,
 			systemPrompt: agent.systemPrompt,
 			maxToolCalls: agent.maxToolCalls,
 			extendedReasoning: agent.extendedReasoning,
@@ -538,7 +539,7 @@ app.put("/api/account/agent", requireDashboard, async (c) => {
 		id: existing?.id ?? crypto.randomUUID(),
 		tenantId,
 		name: parsed.data.name,
-		model: parsed.data.model,
+		model: REQUIRED_AGENT_MODEL,
 		systemPrompt: parsed.data.systemPrompt,
 		maxToolCalls: parsed.data.maxToolCalls,
 		extendedReasoning: parsed.data.extendedReasoning,
@@ -554,7 +555,7 @@ app.put("/api/account/agent", requireDashboard, async (c) => {
 	return c.json({
 		agent: {
 			name: saved.name,
-			model: saved.model,
+			model: REQUIRED_AGENT_MODEL,
 			systemPrompt: saved.systemPrompt,
 			maxToolCalls: saved.maxToolCalls,
 			extendedReasoning: saved.extendedReasoning,

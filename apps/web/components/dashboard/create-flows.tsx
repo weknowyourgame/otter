@@ -328,8 +328,7 @@ export function WebsiteCreateFlow() {
 								<Sparkles size={18} />
 								<strong>Copy prompt for AI</strong>
 								<p>
-									Fastest. Paste one complete prompt into Codex, Cursor, or
-									Claude.
+									Fastest. Paste one complete prompt into Codex or your editor.
 								</p>
 								<span>Recommended</span>
 							</button>
@@ -447,9 +446,7 @@ const generatedPrompt =
 	"You are Otter Support, the thoughtful support teammate for Otter Labs. Answer clearly and directly using the knowledge base. Ask at most one focused clarification when necessary. Be warm without adding filler. Escalate account security, billing disputes, and requests where confidence is low.";
 
 const modelIds: Record<string, string> = {
-	"Claude 3.7 Sonnet": "anthropic/claude-sonnet-4.5",
-	"GPT-4.1 mini": "openai/gpt-4.1-mini",
-	"Gemini 2.5 Flash": "google/gemini-2.5-flash",
+	"GPT-5.3 Codex": "openai/gpt-5.3-codex",
 };
 
 export function AgentCreateFlow() {
@@ -461,7 +458,7 @@ export function AgentCreateFlow() {
 	const [selectedGoals, setSelectedGoals] = useState([goals[0], goals[1]]);
 	const [analysis, setAnalysis] = useState(0);
 	const [tone, setTone] = useState("Warm & concise");
-	const [model, setModel] = useState("Claude 3.7 Sonnet");
+	const [model, setModel] = useState("GPT-5.3 Codex");
 	const [prompt, setPrompt] = useState(generatedPrompt);
 	const [saving, setSaving] = useState(false);
 	const [saveError, setSaveError] = useState("");
@@ -494,7 +491,9 @@ export function AgentCreateFlow() {
 						selectedGoals.length
 							? `Primary goals: ${selectedGoals.join(", ")}.`
 							: "",
-						crawl && url.trim() ? `Use ${url.trim()} as an initial knowledge source.` : "",
+						crawl && url.trim()
+							? `Use ${url.trim()} as an initial knowledge source.`
+							: "",
 					]
 						.filter(Boolean)
 						.join("\n\n"),
@@ -529,7 +528,9 @@ export function AgentCreateFlow() {
 
 			router.push("/agent");
 		} catch {
-			setSaveError("Could not finish setup. Check the website URL and try again.");
+			setSaveError(
+				"Could not finish setup. Check the website URL and try again.",
+			);
 		} finally {
 			setSaving(false);
 		}
@@ -749,9 +750,7 @@ export function AgentCreateFlow() {
 							onChange={(event) => setModel(event.target.value)}
 							value={model}
 						>
-							<option>Claude 3.7 Sonnet</option>
-							<option>GPT-4.1 mini</option>
-							<option>Gemini 2.5 Flash</option>
+							<option>GPT-5.3 Codex</option>
 						</SelectField>
 						<TextAreaField
 							hint="You can mention enabled tools using @tool-name after setup."

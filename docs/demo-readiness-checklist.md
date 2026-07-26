@@ -8,7 +8,7 @@ Full pass across backend (`apps/api`, `apps/workers`, `packages/*`) and frontend
 Created a demo dashboard user (`demo@cordant.io`), issued a public test key, restricted it to `http://localhost:3001`, added the key to `apps/web/.env.local`.
 
 ### ✅ `OPENROUTER_API_KEY` was empty in `apps/api/.env`
-Copied the working key from `apps/web/.env.local` into `apps/api/.env`, matched `AGENT_MODEL` to `claude-opus-4.7-fast`.
+Copied the working key from `apps/web/.env.local` into `apps/api/.env`. Agent turns now always use `openai/gpt-5.3-codex`.
 
 ### ✅ No seed/reset script
 Added `packages/db/scripts/reset.ts` — truncates all otter-db tables (`sessions`, `docs`, `chunks`, `memories`, `api_keys`, `allowed_origins`, `tenant_members`, `tenants`, `account`, `session`, `verification`, `user`) via `TRUNCATE ... CASCADE`. Run with `bun run db:reset` (root script wired to `packages/db`'s `reset` script).

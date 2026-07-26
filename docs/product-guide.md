@@ -67,7 +67,7 @@ Email/password via Better Auth. Email verification and password reset are both r
 Shows real data from `GET /sessions`: live visitor count (active agent sessions right now), total conversations, % handled by AI without human escalation, and a real conversation list filterable by inbox/resolved. Nothing here is a fake fixed number — a brand-new tenant genuinely shows all zeros.
 
 ### Agent configuration
-One agent config per tenant (no multi-agent/multi-website concept yet). Configurable: name, model (Claude Sonnet 4.5 / GPT-4.1 Mini / Gemini 2.5 Flash), a custom system-prompt addendum (appended to Otter's base browser-automation instructions, never replacing them — so a bad prompt can't break the tool-calling contract), max tool calls per turn, extended-reasoning toggle, and an enabled/disabled switch. All of it is read live by the agent loop on every request — verified by literally changing the prompt and watching the model's real output change.
+One agent config per tenant (no multi-agent/multi-website concept yet). Configurable: name, a custom system-prompt addendum (appended to Otter's base browser-automation instructions, never replacing them — so a bad prompt can't break the tool-calling contract), max tool calls per turn, extended-reasoning toggle, and an enabled/disabled switch. Agent turns always use `openai/gpt-5.3-codex`.
 
 **Known gap:** the Tools & Skills page's toggles (things like "Update sentiment," "Finish: Escalate") persist correctly but don't gate anything yet — the mock tool list there doesn't match Otter's actual implemented tools (click/fill/navigate/scroll/say/search_knowledge_base/done/fail/remember/forget). Reconciling the two is separate future work.
 

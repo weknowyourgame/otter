@@ -51,12 +51,13 @@ BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
 OTTER_API_KEY_SECRET=replace-with-a-different-32-character-secret
 OTTER_DASHBOARD_ORIGINS=http://localhost:3001
 OPENROUTER_API_KEY=
-AGENT_MODEL=anthropic/claude-sonnet-4.5
 ```
 
 Copy `apps/api/.env.example` and `apps/web/.env.example` for the complete
 local setup. Without an OpenRouter key the loop uses the deterministic local
 planner; agent requests still require an Otter tenant key.
+
+Agent turns always use `openai/gpt-5.3-codex`.
 
 ## The loop
 

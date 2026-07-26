@@ -53,9 +53,6 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
-      - key: AGENT_MODEL
-        value: anthropic/claude-sonnet-4.5
-
   - type: keyvalue
     name: otter-redis
     plan: free
