@@ -30,6 +30,7 @@ import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
+import { demoDashboardSessions, demoFixturesEnabled } from "./demo-fixtures";
 import { Button, cx, SegmentedMeter } from "./ui";
 
 export type WorkspaceMode =
@@ -248,13 +249,24 @@ function useInboxCount(): number {
 			.then((response) => (response.ok ? response.json() : null))
 			.then((body: { sessions?: { state: string }[] } | null) => {
 				if (active && body?.sessions) {
+					const sessions =
+						demoFixturesEnabled() && body.sessions.length === 0
+							? demoDashboardSessions()
+							: body.sessions;
 					setCount(
-						body.sessions.filter((session) => session.state === "active")
-							.length,
+						sessions.filter((session) => session.state === "active").length,
 					);
 				}
 			})
-			.catch(() => {});
+			.catch(() => {
+				if (active && demoFixturesEnabled()) {
+					setCount(
+						demoDashboardSessions().filter(
+							(session) => session.state === "active",
+						).length,
+					);
+				}
+			});
 		return () => {
 			active = false;
 		};

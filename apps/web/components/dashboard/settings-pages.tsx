@@ -16,6 +16,7 @@ import {
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useEffect, useState } from "react";
+import { withDemoTenantUsage } from "./demo-fixtures";
 import {
 	Button,
 	CopyButton,
@@ -515,9 +516,11 @@ function useTenantUsage(): TenantUsage | null {
 		fetch("/api/account/usage")
 			.then((response) => (response.ok ? response.json() : null))
 			.then((body: { usage?: TenantUsage } | null) => {
-				if (active && body?.usage) setUsage(body.usage);
+				if (active) setUsage(withDemoTenantUsage(body?.usage ?? null));
 			})
-			.catch(() => {});
+			.catch(() => {
+				if (active) setUsage(withDemoTenantUsage(null));
+			});
 		return () => {
 			active = false;
 		};

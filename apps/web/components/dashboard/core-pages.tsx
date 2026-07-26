@@ -4,6 +4,7 @@ import { ArrowRight, Bot, Globe2, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { OtterMascot } from "@/components/marks";
+import { withDemoDashboardSessions } from "./demo-fixtures";
 import { Button, cx, EmptyState, PageTitle } from "./ui";
 import { WorkspaceShell } from "./workspace-shell";
 
@@ -24,10 +25,10 @@ function useSessions(): DashboardSession[] | null {
 		fetch("/api/sessions")
 			.then((response) => (response.ok ? response.json() : null))
 			.then((body: { sessions?: DashboardSession[] } | null) => {
-				if (active) setSessions(body?.sessions ?? []);
+				if (active) setSessions(withDemoDashboardSessions(body?.sessions ?? []));
 			})
 			.catch(() => {
-				if (active) setSessions([]);
+				if (active) setSessions(withDemoDashboardSessions([]));
 			});
 		return () => {
 			active = false;

@@ -86,6 +86,13 @@ export const PROJECTS: Project[] = [
 		lead: "Elena Kowalski",
 		description: "Ingestion, ETL, and the reporting warehouse.",
 	},
+	{
+		id: "proj-apollo",
+		key: "APL",
+		name: "Apollo Launch",
+		lead: "Marcus Webb",
+		description: "Enterprise rollout workspace for the Apollo customer launch.",
+	},
 ];
 
 export const DEFAULT_TICKETS: Ticket[] = [

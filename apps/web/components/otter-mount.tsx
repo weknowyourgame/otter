@@ -7,9 +7,17 @@ import { useEffect } from "react";
 // init() reuses the active instance; destroy on real unmount.
 export function OtterMount() {
 	useEffect(() => {
+		let publicKey = process.env.NEXT_PUBLIC_OTTER_PUBLIC_KEY;
+		try {
+			publicKey =
+				window.localStorage.getItem("otter-demo-public-key")?.trim() ||
+				publicKey;
+		} catch {
+			// localStorage can be unavailable in restricted browser modes.
+		}
 		const otter = init({
 			endpoint: "/api/agent",
-			publicKey: process.env.NEXT_PUBLIC_OTTER_PUBLIC_KEY,
+			publicKey,
 			name: "Otter",
 			accent: "#5B6CF9",
 			theme: "dark",
