@@ -10,7 +10,7 @@ type DocStatusUpdate = {
 
 const statusUpdates: DocStatusUpdate[] = [];
 
-mock.module("otto-db", () => ({
+mock.module("otter-db", () => ({
 	updateDocStatus: async (
 		docId: string,
 		patch: { status: string; errorMessage?: string | null },
@@ -34,7 +34,7 @@ mock.module("otto-db", () => ({
 	setChunkEmbedding: async () => {},
 }));
 
-mock.module("otto-core", () => ({
+mock.module("otter-core", () => ({
 	requestEmbedding: async () => {
 		throw new Error(
 			"embeddings should not be requested without an OpenRouter key",

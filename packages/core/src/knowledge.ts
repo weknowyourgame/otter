@@ -1,10 +1,10 @@
 // Retrieval for the answer path. No vector-index extension (sqlite-vec etc)
-// — cosine similarity in JS over otto-db's chunk rows, matching the
+// — cosine similarity in JS over otter-db's chunk rows, matching the
 // zero-infra approach the rest of this repo has used since Phase 3. Fine at
 // today's scale; revisit if the chunk count grows enough to make a linear
 // scan slow.
 
-import { listAllChunks } from "otto-db";
+import { listAllChunks } from "otter-db";
 import { requestEmbedding } from "./embeddings.js";
 
 const TOP_K = 4;

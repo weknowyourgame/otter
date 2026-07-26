@@ -76,12 +76,12 @@ export const createFileBodySchema = z
 	})
 	.strict();
 
-// Mirrors otto-core's PageSnapshot/PageElement/LastActionReport/StepRequestUser
+// Mirrors otter-core's PageSnapshot/PageElement/LastActionReport/StepRequestUser
 // (packages/core/src/types.ts) — kept dependency-free rather than importing
-// otto-core's types directly, same reasoning packages/sdk/src/types.ts gives
+// otter-core's types directly, same reasoning packages/sdk/src/types.ts gives
 // for mirroring instead of importing: this is a wire contract, not a shared
 // implementation, and the two sides should be free to evolve independently
-// without a build-order dependency between apps/api and otto-core's types.
+// without a build-order dependency between apps/api and otter-core's types.
 const pageElementSchema = z
 	.object({
 		ref: z.number(),

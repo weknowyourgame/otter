@@ -1,5 +1,5 @@
 {
-	"name": "otto-web",
+	"name": "otter-web",
 	"private": true,
 	"version": "0.1.0",
 	"scripts": {
@@ -11,8 +11,8 @@
 		"better-auth": "1.6.15",
 		"lucide-react": "^0.460.0",
 		"next": "^15.0.0",
-		"otto-core": "*",
-		"otto-sdk": "*",
+		"otter-core": "*",
+		"otter-sdk": "*",
 		"react": "^18.3.1",
 		"react-dom": "^18.3.1"
 	},

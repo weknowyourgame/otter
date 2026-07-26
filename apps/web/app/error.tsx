@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { Button } from "@/components/dashboard/ui";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 
 export default function ErrorPage({
 	error,
@@ -20,10 +20,10 @@ export default function ErrorPage({
 			<section className="od-auth-panel">
 				<header className="od-auth-brand">
 					<span>
-						<OttoGlyph className="h-5 w-5" />
+						<OtterGlyph className="h-5 w-5" />
 					</span>
 					<div>
-						<strong>Otto</strong>
+						<strong>Otter</strong>
 						<small>Agent workspace</small>
 					</div>
 				</header>

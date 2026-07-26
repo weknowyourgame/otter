@@ -1,5 +1,5 @@
 // Raw fetch against Resend's REST API — no SDK dependency, same reasoning
-// otto-core's embeddings.ts gives for calling OpenRouter directly. Gracefully
+// otter-core's embeddings.ts gives for calling OpenRouter directly. Gracefully
 // no-ops (logs instead of throwing) when RESEND_API_KEY isn't configured yet,
 // matching FirecrawlService's "not configured" pattern: a missing optional
 // credential shouldn't break the auth flow that calls this, just skip the
@@ -14,7 +14,7 @@ function isConfigured(): boolean {
 }
 
 function fromAddress(): string {
-	return process.env.EMAIL_FROM?.trim() || "Otto <onboarding@resend.dev>";
+	return process.env.EMAIL_FROM?.trim() || "Otter <onboarding@resend.dev>";
 }
 
 export async function sendEmail(params: {
@@ -52,9 +52,9 @@ export async function sendEmail(params: {
 }
 
 export function verificationEmailHtml(url: string): string {
-	return `<p>Confirm your email to finish setting up your Otto workspace.</p><p><a href="${url}">Verify your email</a></p><p>If you didn't create an Otto account, you can ignore this email.</p>`;
+	return `<p>Confirm your email to finish setting up your Otter workspace.</p><p><a href="${url}">Verify your email</a></p><p>If you didn't create an Otter account, you can ignore this email.</p>`;
 }
 
 export function resetPasswordEmailHtml(url: string): string {
-	return `<p>Someone asked to reset the password for your Otto account.</p><p><a href="${url}">Reset your password</a></p><p>If you didn't request this, you can ignore this email — your password won't change.</p>`;
+	return `<p>Someone asked to reset the password for your Otter account.</p><p><a href="${url}">Reset your password</a></p><p>If you didn't request this, you can ignore this email — your password won't change.</p>`;
 }

@@ -1,5 +1,5 @@
 {
-	"name": "otto-redis",
+	"name": "otter-redis",
 	"private": true,
 	"version": "0.1.0",
 	"description": "Shared ioredis connection helper — used for BullMQ job connections and, later, realtime pub/sub. Adapted from cossistant/packages/redis.",

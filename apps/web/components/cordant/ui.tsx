@@ -1,7 +1,7 @@
 "use client";
 
 // Shared chrome for Cordant, the demo ops console. Light theme on purpose —
-// the dark Otto widget reads as a distinct product layered on top of it.
+// the dark Otter widget reads as a distinct product layered on top of it.
 
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";

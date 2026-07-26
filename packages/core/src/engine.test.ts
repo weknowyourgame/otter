@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type { SessionRow } from "otto-db";
+import type { SessionRow } from "otter-db";
 
 // engine.ts (and the knowledge/memory modules it calls into) talk to
-// Postgres via otto-db — mocked here so these tests exercise the actual
+// Postgres via otter-db — mocked here so these tests exercise the actual
 // tool-resolution loop and guard logic without a live database.
 const fakeSessions = new Map<string, SessionRow>();
 const usageEvents: Array<{ tenantId: string; totalTokens: number }> = [];
 
-mock.module("otto-db", () => ({
+mock.module("otter-db", () => ({
 	getSession: async (id: string) => fakeSessions.get(id),
 	upsertSession: async (row: SessionRow) => {
 		fakeSessions.set(row.id, row);

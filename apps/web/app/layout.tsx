@@ -18,8 +18,8 @@ const dashboardMono = IBM_Plex_Mono({
 });
 
 export const metadata: Metadata = {
-	title: "Otto — Workspace",
-	description: "Otto's dashboard and live demo workspace.",
+	title: "Otter — Workspace",
+	description: "Otter's dashboard and live demo workspace.",
 };
 
 export default function AppRootLayout({

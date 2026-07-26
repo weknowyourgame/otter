@@ -1,5 +1,5 @@
-// A pluggable interface, not a hard otto-redis dependency — otto-core has
-// stayed infra-free everywhere else (otto-db is a local SQLite file, not a
+// A pluggable interface, not a hard otter-redis dependency — otter-core has
+// stayed infra-free everywhere else (otter-db is a local SQLite file, not a
 // server), and every runStep() call would hit this, so a hard Redis
 // dependency here would break the zero-infra demo path whenever Redis isn't
 // running. Matches cossistant's own kill-switch.ts, which also takes

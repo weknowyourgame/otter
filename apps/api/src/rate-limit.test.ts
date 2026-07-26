@@ -1,5 +1,5 @@
 import { describe, expect, it } from "bun:test";
-import type { Redis } from "otto-redis";
+import type { Redis } from "otter-redis";
 import { createRateLimiter } from "./rate-limit.js";
 
 /** In-memory stand-in for the handful of ioredis commands checkRateLimit uses. */

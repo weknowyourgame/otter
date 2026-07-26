@@ -27,7 +27,7 @@ const services = [
 	},
 ] as const;
 
-console.log("Starting Otto development servers:\n");
+console.log("Starting Otter development servers:\n");
 console.log(`  Landing:   http://localhost:${services[0].port}`);
 console.log(`  Dashboard: http://localhost:${services[1].port}/dashboard\n`);
 console.log(`  API:       http://localhost:${services[2].port}\n`);

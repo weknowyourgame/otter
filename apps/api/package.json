@@ -1,5 +1,5 @@
 {
-	"name": "otto-api",
+	"name": "otter-api",
 	"private": true,
 	"version": "0.1.0",
 	"description": "Standalone agent backend (Hono + Bun): POST /step and GET /sessions (same contract as apps/web's routes, moved here), plus GET /ws for the realtime step socket. apps/web's own /api/agent/step and /api/sessions routes are untouched and keep working as an HTTP fallback.",
@@ -12,10 +12,10 @@
 	"dependencies": {
 		"better-auth": "1.6.15",
 		"hono": "^4.6.14",
-		"otto-core": "workspace:*",
-		"otto-db": "workspace:*",
-		"otto-jobs": "workspace:*",
-		"otto-redis": "workspace:*",
+		"otter-core": "workspace:*",
+		"otter-db": "workspace:*",
+		"otter-jobs": "workspace:*",
+		"otter-redis": "workspace:*",
 		"pino": "^10.3.1",
 		"zod": "^4.4.3"
 	},

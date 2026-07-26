@@ -1,11 +1,11 @@
 // The agent's eyes: serialize the live page into a compact, LLM-readable
 // snapshot. Every interactive element gets a stable numeric ref stamped on
-// the node as data-otto-ref — the executor targets elements only that way.
+// the node as data-otter-ref — the executor targets elements only that way.
 
 import type { ElementState, PageElement, PageSnapshot } from "./types.js";
 
-export const HOST_ID = "otto-host";
-const REF_ATTR = "data-otto-ref";
+export const HOST_ID = "otter-host";
+const REF_ATTR = "data-otter-ref";
 const MAX_ELEMENTS = 160;
 const MAX_HEADINGS = 12;
 

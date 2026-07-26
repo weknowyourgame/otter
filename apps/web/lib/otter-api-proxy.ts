@@ -1,7 +1,7 @@
 const DEFAULT_API_URL = "http://localhost:8787";
 
 function targetUrl(request: Request, path: string): URL {
-	const base = (process.env.OTTO_API_URL?.trim() || DEFAULT_API_URL).replace(
+	const base = (process.env.OTTER_API_URL?.trim() || DEFAULT_API_URL).replace(
 		/\/$/,
 		"",
 	);
@@ -10,7 +10,7 @@ function targetUrl(request: Request, path: string): URL {
 	return target;
 }
 
-export async function proxyToOttoApi(
+export async function proxyToOtterApi(
 	request: Request,
 	path: string,
 ): Promise<Response> {
@@ -42,11 +42,11 @@ export async function proxyToOttoApi(
 			headers: upstream.headers,
 		});
 	} catch (error) {
-		console.error(`[otto-web] API proxy failed for ${path}`, error);
+		console.error(`[otter-web] API proxy failed for ${path}`, error);
 		return Response.json(
 			{
 				error: "api_unavailable",
-				detail: "Start the Otto API with `bun run api`.",
+				detail: "Start the Otter API with `bun run api`.",
 			},
 			{ status: 503 },
 		);

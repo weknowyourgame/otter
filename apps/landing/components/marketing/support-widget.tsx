@@ -1,7 +1,7 @@
 "use client";
 
 import { type FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { OttoMark, OttoMascot } from "./logo";
+import { OtterMark, OtterMascot } from "./logo";
 
 type ChatMessage = {
 	id: number;
@@ -92,7 +92,7 @@ export function SupportWidget({
 							>
 								<img alt="Support agent" src="/marketing/anthony-picture.jpg" />
 								<span className="mk-widget-avatar-mark">
-									<OttoMascot />
+									<OtterMascot />
 								</span>
 							</div>
 							<button
@@ -118,7 +118,7 @@ export function SupportWidget({
 							</button>
 							<div className="mk-widget-powered">
 								<span>We run on</span>
-								<OttoMark />
+								<OtterMark />
 							</div>
 						</div>
 					</>
@@ -134,7 +134,7 @@ export function SupportWidget({
 								←
 							</button>
 							<div>
-								<strong>Otto Support</strong>
+								<strong>Otter Support</strong>
 								<span>
 									<i /> Online now
 								</span>
@@ -160,7 +160,7 @@ export function SupportWidget({
 								>
 									{message.role === "agent" && (
 										<span className="mk-message-avatar">
-											<OttoMascot />
+											<OtterMascot />
 										</span>
 									)}
 									<p>{message.text}</p>
@@ -169,9 +169,9 @@ export function SupportWidget({
 							{typing && (
 								<div className="mk-chat-message mk-chat-agent">
 									<span className="mk-message-avatar">
-										<OttoMascot />
+										<OtterMascot />
 									</span>
-									<span className="mk-typing" aria-label="Otto is typing">
+									<span className="mk-typing" aria-label="Otter is typing">
 										<i />
 										<i />
 										<i />
@@ -196,7 +196,7 @@ export function SupportWidget({
 							<div>
 								<span className="mk-widget-powered">
 									<span>We run on</span>
-									<OttoMark />
+									<OtterMark />
 								</span>
 								<button
 									aria-label="Send message"
@@ -222,7 +222,7 @@ export function SupportWidget({
 					<span className="mk-widget-chevron">⌄</span>
 				) : (
 					<span className="mk-widget-bubble-face">
-						<OttoMascot />
+						<OtterMascot />
 					</span>
 				)}
 				{!open && <span className="mk-widget-ping" />}

@@ -109,7 +109,7 @@ export async function requestNextAction(
 		headers: {
 			authorization: `Bearer ${apiKey}`,
 			"content-type": "application/json",
-			"x-title": "Otto Agent",
+			"x-title": "Otter Agent",
 		},
 		body: JSON.stringify({
 			model,

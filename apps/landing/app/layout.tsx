@@ -9,9 +9,9 @@ const landingBody = Manrope({
 });
 
 export const metadata: Metadata = {
-	title: "Otto | Support that gets the task done",
+	title: "Otter | Support that gets the task done",
 	description:
-		"Otto is an embeddable AI support agent that helps customers complete tasks inside your product.",
+		"Otter is an embeddable AI support agent that helps customers complete tasks inside your product.",
 };
 
 export default function RootLayout({

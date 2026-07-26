@@ -4,7 +4,7 @@ import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button, Field } from "@/components/dashboard/ui";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 
 type AuthMode = "sign-in" | "sign-up";
@@ -58,10 +58,10 @@ export default function LoginPage() {
 			<section className="od-auth-panel">
 				<header className="od-auth-brand">
 					<span>
-						<OttoGlyph className="h-5 w-5" />
+						<OtterGlyph className="h-5 w-5" />
 					</span>
 					<div>
-						<strong>Otto</strong>
+						<strong>Otter</strong>
 						<small>Agent workspace</small>
 					</div>
 				</header>

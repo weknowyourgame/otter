@@ -10,7 +10,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { SQL } from "bun";
 
-const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otto";
+const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
 const MIGRATIONS_DIR = `${import.meta.dir}/../drizzle`;
 
 async function main() {

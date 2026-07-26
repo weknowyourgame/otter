@@ -1,9 +1,9 @@
-import { proxyToOttoApi } from "@/lib/otto-api-proxy";
+import { proxyToOtterApi } from "@/lib/otter-api-proxy";
 
 export function POST(request: Request): Promise<Response> {
-	return proxyToOttoApi(request, "/step");
+	return proxyToOtterApi(request, "/step");
 }
 
 export function OPTIONS(request: Request): Promise<Response> {
-	return proxyToOttoApi(request, "/step");
+	return proxyToOtterApi(request, "/step");
 }

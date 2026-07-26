@@ -28,7 +28,7 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 import { Button, cx, SegmentedMeter } from "./ui";
 
@@ -40,7 +40,7 @@ export type WorkspaceMode =
 	| "contacts"
 	| "info";
 
-const SUPPORT_EMAIL = "support@otto.so";
+const SUPPORT_EMAIL = "support@otter.so";
 
 function gmailComposeHref(subject: string) {
 	return `https://mail.google.com/mail/?view=cm&fs=1&to=${encodeURIComponent(
@@ -394,7 +394,7 @@ function SidebarFooter() {
 		<div className="od-sidebar__footer">
 			<UsageCard />
 			<a
-				href={gmailComposeHref("Otto Help Request")}
+				href={gmailComposeHref("Otter Help Request")}
 				rel="noreferrer"
 				target="_blank"
 			>
@@ -440,14 +440,14 @@ function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
 					<Menu size={18} />
 				</Button>
 				<Link
-					aria-label="Otto dashboard"
+					aria-label="Otter dashboard"
 					className="od-topbar__brand"
 					href="/dashboard"
 				>
 					<span className="od-topbar__mark">
-						<OttoGlyph className="h-4 w-4" />
+						<OtterGlyph className="h-4 w-4" />
 					</span>
-					<span>Otto</span>
+					<span>Otter</span>
 				</Link>
 				<Button
 					className="od-topbar__back"
@@ -461,7 +461,7 @@ function Topbar({ mode, onMenu }: { mode: WorkspaceMode; onMenu: () => void }) {
 			<nav className="od-topbar__links" aria-label="Workspace actions">
 				<a
 					className="od-topbar__feedback"
-					href={gmailComposeHref("Otto Feedback")}
+					href={gmailComposeHref("Otter Feedback")}
 					rel="noreferrer"
 					target="_blank"
 				>

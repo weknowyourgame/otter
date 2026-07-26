@@ -136,10 +136,10 @@ export function CordantShell({ children }: { children: ReactNode }) {
 						<span className="truncate text-[12.5px]">Search tickets, projects, people…</span>
 					</div>
 					<p className="hidden truncate text-[12.5px] text-zinc-400 lg:block">
-						Live demo — try asking Otto <em className="text-zinc-600">"enable 2FA"</em> and see what it finds.
+						Live demo — try asking Otter <em className="text-zinc-600">"enable 2FA"</em> and see what it finds.
 					</p>
 					<Link href="/" className="flex-none text-[13px] font-semibold text-zinc-400 transition hover:text-zinc-900">
-						← otto.dev
+						← otter.dev
 					</Link>
 				</header>
 				<main className="mx-auto max-w-4xl px-6 py-9 md:px-10">{children}</main>

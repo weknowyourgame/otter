@@ -16,15 +16,15 @@ export class Cursor {
 		name: string,
 	) {
 		this.el = document.createElement("div");
-		this.el.className = "otto-cursor";
+		this.el.className = "otter-cursor";
 		this.el.innerHTML = `
 			<svg width="22" height="22" viewBox="0 0 24 24" fill="none">
 				<path d="M4.5 2.5L19.5 11.2L12.6 13.1L9.4 19.6L4.5 2.5Z"
-					fill="var(--otto-accent)" stroke="rgba(255,255,255,0.9)" stroke-width="1.6"
+					fill="var(--otter-accent)" stroke="rgba(255,255,255,0.9)" stroke-width="1.6"
 					stroke-linejoin="round"/>
 			</svg>
-			<span class="otto-cursor-tag">${escapeHtml(name)}</span>
-			<span class="otto-cursor-ripple"></span>`;
+			<span class="otter-cursor-tag">${escapeHtml(name)}</span>
+			<span class="otter-cursor-ripple"></span>`;
 		root.appendChild(this.el);
 	}
 
@@ -34,7 +34,7 @@ export class Cursor {
 		this.el.style.transform = `translate3d(${x}px, ${y}px, 0)`;
 		if (this.visible) return;
 		this.visible = true;
-		this.el.classList.add("otto-cursor-visible");
+		this.el.classList.add("otter-cursor-visible");
 		if (!this.reducedMotion) {
 			await this.el.animate(
 				[
@@ -66,7 +66,7 @@ export class Cursor {
 	}
 
 	async press(): Promise<void> {
-		const ripple = this.el.querySelector<HTMLElement>(".otto-cursor-ripple");
+		const ripple = this.el.querySelector<HTMLElement>(".otter-cursor-ripple");
 		if (!ripple) return;
 		if (this.reducedMotion) return;
 		const squeeze = this.el.animate(
@@ -90,7 +90,7 @@ export class Cursor {
 	hide(): void {
 		if (!this.visible) return;
 		this.visible = false;
-		const finish = () => this.el.classList.remove("otto-cursor-visible");
+		const finish = () => this.el.classList.remove("otter-cursor-visible");
 		if (this.reducedMotion) {
 			finish();
 			return;
@@ -111,7 +111,7 @@ export class TargetRing {
 
 	constructor(root: ShadowRoot) {
 		this.el = document.createElement("div");
-		this.el.className = "otto-ring";
+		this.el.className = "otter-ring";
 		root.appendChild(this.el);
 	}
 
@@ -121,11 +121,11 @@ export class TargetRing {
 		this.el.style.left = `${rect.left - pad}px`;
 		this.el.style.width = `${rect.width + pad * 2}px`;
 		this.el.style.height = `${rect.height + pad * 2}px`;
-		this.el.classList.add("otto-ring-visible");
+		this.el.classList.add("otter-ring-visible");
 	}
 
 	hide(): void {
-		this.el.classList.remove("otto-ring-visible");
+		this.el.classList.remove("otter-ring-visible");
 	}
 
 	destroy(): void {

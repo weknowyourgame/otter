@@ -1,10 +1,10 @@
 #!/usr/bin/env bun
-// Truncates every otto-db table for a clean demo slate. Order doesn't matter
+// Truncates every otter-db table for a clean demo slate. Order doesn't matter
 // for FK dependencies since TRUNCATE ... CASCADE handles that, but the list
 // mirrors schema.ts's table set so it stays obvious if a table is missing.
 import { SQL } from "bun";
 
-const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otto";
+const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
 
 const TABLES = [
 	"sessions",
@@ -28,7 +28,7 @@ async function main() {
 	const quotedTables = TABLES.map((name) => `"${name}"`).join(", ");
 	await sql.unsafe(`TRUNCATE TABLE ${quotedTables} CASCADE;`);
 
-	console.log(`Truncated ${TABLES.length} otto-db tables:`);
+	console.log(`Truncated ${TABLES.length} otter-db tables:`);
 	for (const table of TABLES) console.log(`  - ${table}`);
 
 	await sql.end();

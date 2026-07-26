@@ -31,7 +31,7 @@ export function PricingPage() {
 			<div className="od-content-page">
 				<PageTitle>Pricing</PageTitle>
 				<EmptyState
-					description="Otto is currently free while we build out the platform. Paid plans aren't live yet — check Settings → Plan & Usage for your current usage."
+					description="Otter is currently free while we build out the platform. Paid plans aren't live yet — check Settings → Plan & Usage for your current usage."
 					icon={<CreditCard size={28} />}
 					title="Paid plans aren't live yet"
 					action={
@@ -51,7 +51,7 @@ export function ChangelogPage() {
 			<div className="od-content-page">
 				<PageTitle>Changelog</PageTitle>
 				<EmptyState
-					description="We haven't started publishing release notes yet. Check back once Otto ships its first public update."
+					description="We haven't started publishing release notes yet. Check back once Otter ships its first public update."
 					icon={<Sparkles size={28} />}
 					title="Nothing published yet"
 				/>

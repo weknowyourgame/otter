@@ -17,7 +17,7 @@ CREATE TABLE "account" (
 CREATE TABLE "agents" (
 	"id" text PRIMARY KEY NOT NULL,
 	"tenant_id" text NOT NULL,
-	"name" text DEFAULT 'Otto Support' NOT NULL,
+	"name" text DEFAULT 'Otter Support' NOT NULL,
 	"model" text DEFAULT 'anthropic/claude-sonnet-4.5' NOT NULL,
 	"system_prompt" text,
 	"max_tool_calls" integer DEFAULT 6 NOT NULL,

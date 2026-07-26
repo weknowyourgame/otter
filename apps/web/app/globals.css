@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "./dashboard.css";
 
-/* Otto's app surfaces (dashboard, demo). This file is exclusive to the
+/* Otter's app surfaces (dashboard, demo). This file is exclusive to the
 	 (app) route group — the marketing site has its own, completely separate
 	 globals.css, so tokens here can never be pulled out from under it by an
 	 edit to that file (and vice versa). Cordant's own pages (/demo) are

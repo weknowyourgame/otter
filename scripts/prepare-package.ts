@@ -4,9 +4,9 @@
 // inside it), and strips scripts/devDependencies/files which don't belong
 // in a published package.
 //
-// Adapted from cossistant/scripts/prepare-package.ts, but Otto's packages
+// Adapted from cossistant/scripts/prepare-package.ts, but Otter's packages
 // hand-author `exports` pointing straight at built files (e.g.
-// "./dist/otto-sdk.esm.js"), not at TypeScript source under src/ the way
+// "./dist/otter-sdk.esm.js"), not at TypeScript source under src/ the way
 // cossistant's do — so there's no .ts -> .js/.d.ts extension remapping to
 // do here, just stripping the now-redundant "dist/" segment.
 //
@@ -27,7 +27,7 @@ function toDistExport(value: unknown): unknown {
 	return value;
 }
 
-/** Converts workspace:* dependencies (e.g. "otto-db": "workspace:*") to real semver versions. */
+/** Converts workspace:* dependencies (e.g. "otter-db": "workspace:*") to real semver versions. */
 async function resolveWorkspaceDependencies(
 	dependencies: Record<string, string> | undefined,
 	packageDir: string,
@@ -42,7 +42,7 @@ async function resolveWorkspaceDependencies(
 				const workspacePkg = JSON.parse(await readFile(workspacePkgPath, "utf8"));
 				resolved[name] = workspacePkg.version;
 			} catch {
-				resolved[name] = version; // e.g. otto-typescript-config, a devDependency-only package
+				resolved[name] = version; // e.g. otter-typescript-config, a devDependency-only package
 			}
 		} else {
 			resolved[name] = version;
@@ -66,7 +66,7 @@ async function main() {
 	const resolvedDependencies = await resolveWorkspaceDependencies(pkg.dependencies, packageDir);
 	const resolvedPeerDependencies = await resolveWorkspaceDependencies(pkg.peerDependencies, packageDir);
 
-	// Deliberately doesn't touch `private` — both otto-core and otto-sdk are
+	// Deliberately doesn't touch `private` — both otter-core and otter-sdk are
 	// "private": true today, and that stays as-is here so a `bun publish`
 	// still refuses to run until someone consciously removes that flag from
 	// the source package.json as part of an actual release.

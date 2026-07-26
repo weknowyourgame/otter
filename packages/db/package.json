@@ -1,8 +1,8 @@
 {
-	"name": "otto-db",
+	"name": "otter-db",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Session/tenant/knowledge-base persistence for otto-core and apps/api. Postgres via Bun's native SQL client (Bun.SQL) + drizzle-orm/bun-sql — no extra npm dependency, matching how bun:sqlite was used before this was migrated off SQLite. Needs DATABASE_URL pointed at a real Postgres instance.",
+	"description": "Session/tenant/knowledge-base persistence for otter-core and apps/api. Postgres via Bun's native SQL client (Bun.SQL) + drizzle-orm/bun-sql — no extra npm dependency, matching how bun:sqlite was used before this was migrated off SQLite. Needs DATABASE_URL pointed at a real Postgres instance.",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

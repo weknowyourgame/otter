@@ -28,7 +28,7 @@ function makeClone(element: Element) {
 }
 
 /** Restores the motion and interaction layer omitted by the static Framer export. */
-export function OttoRuntime() {
+export function OtterRuntime() {
 	useEffect(() => {
 		const main = document.querySelector<HTMLElement>("#main");
 		if (!main) return;
@@ -42,17 +42,17 @@ export function OttoRuntime() {
 			video.defaultMuted = true;
 			video.playsInline = true;
 			video.preload = "auto";
-			video.classList.add("otto-motion-video");
-			video.style.setProperty("--otto-video-index", String(index));
-			video.parentElement?.classList.add("otto-media-shell");
+			video.classList.add("otter-motion-video");
+			video.style.setProperty("--otter-video-index", String(index));
+			video.parentElement?.classList.add("otter-media-shell");
 			video.load();
 		});
 		cleanups.push(() => {
 			videos.forEach((video) => {
 				video.pause();
-				video.classList.remove("otto-motion-video");
-				video.style.removeProperty("--otto-video-index");
-				video.parentElement?.classList.remove("otto-media-shell", "otto-media-live");
+				video.classList.remove("otter-motion-video");
+				video.style.removeProperty("--otter-video-index");
+				video.parentElement?.classList.remove("otter-media-shell", "otter-media-live");
 			});
 		});
 
@@ -66,7 +66,7 @@ export function OttoRuntime() {
 					entries.forEach((entry) => {
 						const video = entry.target as HTMLVideoElement;
 						if (entry.isIntersecting) {
-							video.parentElement?.classList.add("otto-media-live");
+							video.parentElement?.classList.add("otter-media-live");
 							playVideo(video);
 						} else {
 							video.pause();
@@ -84,19 +84,19 @@ export function OttoRuntime() {
 		const headings = Array.from(main.querySelectorAll<HTMLElement>("h1"));
 		const heading = headings.find(isVisible) ?? headings[0];
 		if (heading) {
-			heading.classList.add("otto-hero-heading");
+			heading.classList.add("otter-hero-heading");
 			const letters = Array.from(heading.querySelectorAll<HTMLElement>("span span")).filter(
 				(span) => span.children.length === 0 && Boolean(span.textContent?.trim()),
 			);
 			letters.forEach((letter, index) => {
-				letter.classList.add("otto-letter");
-				letter.style.setProperty("--otto-letter-index", String(index));
+				letter.classList.add("otter-letter");
+				letter.style.setProperty("--otter-letter-index", String(index));
 			});
 			cleanups.push(() => {
-				heading.classList.remove("otto-hero-heading");
+				heading.classList.remove("otter-hero-heading");
 				letters.forEach((letter) => {
-					letter.classList.remove("otto-letter");
-					letter.style.removeProperty("--otto-letter-index");
+					letter.classList.remove("otter-letter");
+					letter.style.removeProperty("--otter-letter-index");
 				});
 			});
 		}
@@ -115,20 +115,20 @@ export function OttoRuntime() {
 					!(element.tagName === "P" && Boolean(element.closest("a"))),
 			);
 			heroCopy.forEach((element, index) => {
-				element.classList.add("otto-hero-copy");
-				element.style.setProperty("--otto-hero-copy-index", String(index));
+				element.classList.add("otter-hero-copy");
+				element.style.setProperty("--otter-hero-copy-index", String(index));
 			});
 			cleanups.push(() => {
 				heroCopy.forEach((element) => {
-					element.classList.remove("otto-hero-copy");
-					element.style.removeProperty("--otto-hero-copy-index");
+					element.classList.remove("otter-hero-copy");
+					element.style.removeProperty("--otter-hero-copy-index");
 				});
 			});
 		}
 
 		if (hero) {
 			const host = document.createElement("div");
-			host.dataset.ottoHeroField = "true";
+			host.dataset.otterHeroField = "true";
 			Object.assign(host.style, {
 				position: "absolute",
 				inset: "0",
@@ -212,14 +212,14 @@ export function OttoRuntime() {
 				const bounds = heroSection.getBoundingClientRect();
 				targetPointerX = clamp((event.clientX - bounds.left) / bounds.width - 0.5, -0.5, 0.5);
 				targetPointerY = clamp((event.clientY - bounds.top) / bounds.height - 0.5, -0.5, 0.5);
-				heroSection.style.setProperty("--otto-pointer-x", `${targetPointerX * 5}px`);
-				heroSection.style.setProperty("--otto-pointer-y", `${targetPointerY * 4}px`);
+				heroSection.style.setProperty("--otter-pointer-x", `${targetPointerX * 5}px`);
+				heroSection.style.setProperty("--otter-pointer-y", `${targetPointerY * 4}px`);
 			};
 			const onPointerLeave = () => {
 				targetPointerX = 0;
 				targetPointerY = 0;
-				heroSection?.style.setProperty("--otto-pointer-x", "0px");
-				heroSection?.style.setProperty("--otto-pointer-y", "0px");
+				heroSection?.style.setProperty("--otter-pointer-x", "0px");
+				heroSection?.style.setProperty("--otter-pointer-y", "0px");
 			};
 
 			resize();
@@ -244,8 +244,8 @@ export function OttoRuntime() {
 				heroObserver?.disconnect();
 				heroSection?.removeEventListener("pointermove", onPointerMove);
 				heroSection?.removeEventListener("pointerleave", onPointerLeave);
-				heroSection?.style.removeProperty("--otto-pointer-x");
-				heroSection?.style.removeProperty("--otto-pointer-y");
+				heroSection?.style.removeProperty("--otter-pointer-x");
+				heroSection?.style.removeProperty("--otter-pointer-y");
 				host.remove();
 			});
 		}
@@ -262,27 +262,27 @@ export function OttoRuntime() {
 		});
 
 		const enhanceHorizontalTrack = (track: HTMLElement, speed: number, minimumDuration: number) => {
-			if (track.dataset.ottoEnhanced === "true") return;
+			if (track.dataset.otterEnhanced === "true") return;
 			const originals = Array.from(track.children);
 			if (originals.length < 2) return;
-			track.dataset.ottoEnhanced = "true";
+			track.dataset.otterEnhanced = "true";
 			const clones = originals.map(makeClone);
 			clones.forEach((clone) => track.append(clone));
 			const distance = clones[0].offsetLeft - (originals[0] as HTMLElement).offsetLeft;
 			if (distance <= 0) {
 				clones.forEach((clone) => clone.remove());
-				delete track.dataset.ottoEnhanced;
+				delete track.dataset.otterEnhanced;
 				return;
 			}
-			track.style.setProperty("--otto-marquee-distance", `${distance}px`);
-			track.style.setProperty("--otto-marquee-duration", `${Math.max(minimumDuration, distance / speed)}s`);
-			track.classList.add("otto-marquee-track");
+			track.style.setProperty("--otter-marquee-distance", `${distance}px`);
+			track.style.setProperty("--otter-marquee-duration", `${Math.max(minimumDuration, distance / speed)}s`);
+			track.classList.add("otter-marquee-track");
 			cleanups.push(() => {
 				clones.forEach((clone) => clone.remove());
-				track.classList.remove("otto-marquee-track");
-				track.style.removeProperty("--otto-marquee-distance");
-				track.style.removeProperty("--otto-marquee-duration");
-				delete track.dataset.ottoEnhanced;
+				track.classList.remove("otter-marquee-track");
+				track.style.removeProperty("--otter-marquee-distance");
+				track.style.removeProperty("--otter-marquee-duration");
+				delete track.dataset.otterEnhanced;
 			});
 		};
 
@@ -298,9 +298,9 @@ export function OttoRuntime() {
 			const track = scroller.querySelector<HTMLElement>("ul");
 			if (!track) return;
 			enhanceHorizontalTrack(track, 64, 34);
-			Array.from(track.children).forEach((item) => item.classList.add("otto-rail-card"));
+			Array.from(track.children).forEach((item) => item.classList.add("otter-rail-card"));
 			cleanups.push(() => {
-				Array.from(track.children).forEach((item) => item.classList.remove("otto-rail-card"));
+				Array.from(track.children).forEach((item) => item.classList.remove("otter-rail-card"));
 			});
 		});
 
@@ -310,28 +310,28 @@ export function OttoRuntime() {
 		reviewWalls.forEach((wall) => {
 			const tracks = Array.from(wall.querySelectorAll<HTMLElement>("ul")).filter(isVisible);
 			tracks.forEach((track, index) => {
-				if (track.dataset.ottoEnhanced === "true") return;
+				if (track.dataset.otterEnhanced === "true") return;
 				const originals = Array.from(track.children);
 				if (!originals.length) return;
-				track.dataset.ottoEnhanced = "true";
+				track.dataset.otterEnhanced = "true";
 				const clones = originals.map(makeClone);
 				clones.forEach((clone) => track.append(clone));
 				const distance = clones[0].offsetTop - (originals[0] as HTMLElement).offsetTop;
 				if (distance <= 0) {
 					clones.forEach((clone) => clone.remove());
-					delete track.dataset.ottoEnhanced;
+					delete track.dataset.otterEnhanced;
 					return;
 				}
-				track.style.setProperty("--otto-review-distance", `${distance}px`);
-				track.style.setProperty("--otto-review-duration", `${index % 2 === 0 ? 38 : 44}s`);
-				track.classList.add("otto-review-track");
-				if (index % 2 === 1) track.classList.add("otto-review-reverse");
+				track.style.setProperty("--otter-review-distance", `${distance}px`);
+				track.style.setProperty("--otter-review-duration", `${index % 2 === 0 ? 38 : 44}s`);
+				track.classList.add("otter-review-track");
+				if (index % 2 === 1) track.classList.add("otter-review-reverse");
 				cleanups.push(() => {
 					clones.forEach((clone) => clone.remove());
-					track.classList.remove("otto-review-track", "otto-review-reverse");
-					track.style.removeProperty("--otto-review-distance");
-					track.style.removeProperty("--otto-review-duration");
-					delete track.dataset.ottoEnhanced;
+					track.classList.remove("otter-review-track", "otter-review-reverse");
+					track.style.removeProperty("--otter-review-distance");
+					track.style.removeProperty("--otter-review-duration");
+					delete track.dataset.otterEnhanced;
 				});
 			});
 		});
@@ -358,8 +358,8 @@ export function OttoRuntime() {
 				(element) => !candidates.some((candidate) => candidate !== element && candidate.contains(element)),
 			);
 			outermost.forEach((element, index) => {
-				element.classList.add("otto-reveal-item");
-				element.style.setProperty("--otto-reveal-index", String(index));
+				element.classList.add("otter-reveal-item");
+				element.style.setProperty("--otter-reveal-index", String(index));
 				revealTargets.push(element);
 			});
 		});
@@ -368,7 +368,7 @@ export function OttoRuntime() {
 			(entries) => {
 				entries.forEach((entry) => {
 					if (!entry.isIntersecting) return;
-					entry.target.classList.add("otto-reveal-in");
+					entry.target.classList.add("otter-reveal-in");
 					revealObserver.unobserve(entry.target);
 				});
 			},
@@ -378,8 +378,8 @@ export function OttoRuntime() {
 		cleanups.push(() => {
 			revealObserver.disconnect();
 			revealTargets.forEach((target) => {
-				target.classList.remove("otto-reveal-item", "otto-reveal-in");
-				target.style.removeProperty("--otto-reveal-index");
+				target.classList.remove("otter-reveal-item", "otter-reveal-in");
+				target.style.removeProperty("--otter-reveal-index");
 			});
 		});
 
@@ -388,14 +388,14 @@ export function OttoRuntime() {
 			return isVisible(element) && (value === "1 click" || value === "Always");
 		});
 		metrics.forEach((metric, index) => {
-			metric.classList.add("otto-metric-value");
-			metric.style.setProperty("--otto-metric-index", String(index));
+			metric.classList.add("otter-metric-value");
+			metric.style.setProperty("--otter-metric-index", String(index));
 		});
 		const metricObserver = new IntersectionObserver(
 			(entries) => {
 				entries.forEach((entry) => {
 					if (!entry.isIntersecting) return;
-					entry.target.classList.add("otto-metric-live");
+					entry.target.classList.add("otter-metric-live");
 					metricObserver.unobserve(entry.target);
 				});
 			},
@@ -405,8 +405,8 @@ export function OttoRuntime() {
 		cleanups.push(() => {
 			metricObserver.disconnect();
 			metrics.forEach((metric) => {
-				metric.classList.remove("otto-metric-value", "otto-metric-live");
-				metric.style.removeProperty("--otto-metric-index");
+				metric.classList.remove("otter-metric-value", "otter-metric-live");
+				metric.style.removeProperty("--otter-metric-index");
 			});
 		});
 
@@ -414,27 +414,27 @@ export function OttoRuntime() {
 			main.querySelectorAll<HTMLElement>("[data-framer-name=\"Changelog\"] [data-framer-name=\"Card\"]"),
 		).filter(isVisible);
 		cards.forEach((card) => {
-			card.classList.add("otto-changelog-card");
+			card.classList.add("otter-changelog-card");
 			const onPointerMove = (event: PointerEvent) => {
 				const bounds = card.getBoundingClientRect();
 				const x = clamp((event.clientX - bounds.left) / bounds.width, 0, 1);
 				const y = clamp((event.clientY - bounds.top) / bounds.height, 0, 1);
-				card.style.setProperty("--otto-card-rx", `${(0.5 - y) * 5}deg`);
-				card.style.setProperty("--otto-card-ry", `${(x - 0.5) * 6}deg`);
-				card.style.setProperty("--otto-card-x", `${x * 100}%`);
-				card.style.setProperty("--otto-card-y", `${y * 100}%`);
+				card.style.setProperty("--otter-card-rx", `${(0.5 - y) * 5}deg`);
+				card.style.setProperty("--otter-card-ry", `${(x - 0.5) * 6}deg`);
+				card.style.setProperty("--otter-card-x", `${x * 100}%`);
+				card.style.setProperty("--otter-card-y", `${y * 100}%`);
 			};
 			const onPointerLeave = () => {
-				card.style.setProperty("--otto-card-rx", "0deg");
-				card.style.setProperty("--otto-card-ry", "0deg");
+				card.style.setProperty("--otter-card-rx", "0deg");
+				card.style.setProperty("--otter-card-ry", "0deg");
 			};
 			card.addEventListener("pointermove", onPointerMove);
 			card.addEventListener("pointerleave", onPointerLeave);
 			cleanups.push(() => {
 				card.removeEventListener("pointermove", onPointerMove);
 				card.removeEventListener("pointerleave", onPointerLeave);
-				card.classList.remove("otto-changelog-card");
-				["--otto-card-rx", "--otto-card-ry", "--otto-card-x", "--otto-card-y"].forEach((property) =>
+				card.classList.remove("otter-changelog-card");
+				["--otter-card-rx", "--otter-card-ry", "--otter-card-x", "--otter-card-y"].forEach((property) =>
 					card.style.removeProperty(property),
 				);
 			});
@@ -445,8 +445,8 @@ export function OttoRuntime() {
 				"a[data-framer-name=\"Hero CTA\"], a[data-framer-name=\"Variant 1\"], a[data-framer-name=\"Desktop\"]",
 			),
 		).filter(isVisible);
-		buttons.forEach((button) => button.classList.add("otto-button-motion"));
-		cleanups.push(() => buttons.forEach((button) => button.classList.remove("otto-button-motion")));
+		buttons.forEach((button) => button.classList.add("otter-button-motion"));
+		cleanups.push(() => buttons.forEach((button) => button.classList.remove("otter-button-motion")));
 
 		const cta = main.querySelector<HTMLElement>("[data-framer-name=\"CTA\"]");
 		const meteors = cta
@@ -457,32 +457,32 @@ export function OttoRuntime() {
 				)
 			: [];
 		meteors.forEach((meteor, index) => {
-			meteor.classList.add("otto-meteor");
-			meteor.style.setProperty("--otto-streak-index", String(index));
-			meteor.style.setProperty("--otto-streak-duration", `${3.4 + (index % 5) * 0.48}s`);
+			meteor.classList.add("otter-meteor");
+			meteor.style.setProperty("--otter-streak-index", String(index));
+			meteor.style.setProperty("--otter-streak-duration", `${3.4 + (index % 5) * 0.48}s`);
 		});
 		const ctaObserver = cta
 			? new IntersectionObserver(
-					([entry]) => cta.classList.toggle("otto-cta-live", entry.isIntersecting),
+					([entry]) => cta.classList.toggle("otter-cta-live", entry.isIntersecting),
 					{ rootMargin: "40% 0px", threshold: 0.01 },
 				)
 			: undefined;
 		if (cta && ctaObserver) {
-			cta.classList.add("otto-cta-motion");
+			cta.classList.add("otter-cta-motion");
 			ctaObserver.observe(cta);
 		}
 		cleanups.push(() => {
 			ctaObserver?.disconnect();
-			cta?.classList.remove("otto-cta-motion", "otto-cta-live");
+			cta?.classList.remove("otter-cta-motion", "otter-cta-live");
 			meteors.forEach((meteor) => {
-				meteor.classList.remove("otto-meteor");
-				meteor.style.removeProperty("--otto-streak-index");
-				meteor.style.removeProperty("--otto-streak-duration");
+				meteor.classList.remove("otter-meteor");
+				meteor.style.removeProperty("--otter-streak-index");
+				meteor.style.removeProperty("--otter-streak-duration");
 			});
 		});
 
 		const nav = Array.from(main.querySelectorAll<HTMLElement>("nav[data-framer-name=\"Desktop\"]")).find(isVisible);
-		nav?.classList.add("otto-nav-shell");
+		nav?.classList.add("otter-nav-shell");
 		const parallaxTargets = [
 			...videos.map((video) => video.parentElement).filter((element): element is HTMLElement => Boolean(element)),
 			...Array.from(
@@ -491,18 +491,18 @@ export function OttoRuntime() {
 				),
 			).filter(isVisible),
 		];
-		parallaxTargets.forEach((target) => target.classList.add("otto-parallax-target"));
+		parallaxTargets.forEach((target) => target.classList.add("otter-parallax-target"));
 		let motionFrame = 0;
 		const updateScrollMotion = () => {
 			motionFrame = 0;
-			nav?.classList.toggle("otto-nav-scrolled", window.scrollY > 24);
+			nav?.classList.toggle("otter-nav-scrolled", window.scrollY > 24);
 			const viewportHeight = window.innerHeight;
 			parallaxTargets.forEach((target, index) => {
 				const bounds = target.getBoundingClientRect();
 				if (bounds.bottom < -120 || bounds.top > viewportHeight + 120) return;
 				const progress = clamp((bounds.top + bounds.height / 2 - viewportHeight / 2) / viewportHeight, -1, 1);
 				const amplitude = index === 0 ? 7 : 12;
-				target.style.setProperty("--otto-parallax-y", `${progress * -amplitude}px`);
+				target.style.setProperty("--otter-parallax-y", `${progress * -amplitude}px`);
 			});
 		};
 		const requestScrollMotion = () => {
@@ -515,10 +515,10 @@ export function OttoRuntime() {
 			window.cancelAnimationFrame(motionFrame);
 			window.removeEventListener("scroll", requestScrollMotion);
 			window.removeEventListener("resize", requestScrollMotion);
-			nav?.classList.remove("otto-nav-shell", "otto-nav-scrolled");
+			nav?.classList.remove("otter-nav-shell", "otter-nav-scrolled");
 			parallaxTargets.forEach((target) => {
-				target.classList.remove("otto-parallax-target");
-				target.style.removeProperty("--otto-parallax-y");
+				target.classList.remove("otter-parallax-target");
+				target.style.removeProperty("--otter-parallax-y");
 			});
 		});
 
@@ -531,10 +531,10 @@ export function OttoRuntime() {
 			toggle.setAttribute("aria-label", "Toggle navigation");
 			toggle.setAttribute("aria-expanded", "false");
 			const updateMenu = () => {
-				const open = !menu.classList.contains("otto-mobile-nav-open");
-				menu.classList.toggle("otto-mobile-nav-open", open);
-				phone.classList.toggle("otto-mobile-menu-shell", open);
-				phone.parentElement?.classList.toggle("otto-mobile-menu-host", open);
+				const open = !menu.classList.contains("otter-mobile-nav-open");
+				menu.classList.toggle("otter-mobile-nav-open", open);
+				phone.classList.toggle("otter-mobile-menu-shell", open);
+				phone.parentElement?.classList.toggle("otter-mobile-menu-host", open);
 				toggle.setAttribute("aria-expanded", String(open));
 			};
 			const onKeyDown = (event: KeyboardEvent) => {
@@ -547,8 +547,8 @@ export function OttoRuntime() {
 			cleanups.push(() => {
 				toggle.removeEventListener("click", updateMenu);
 				toggle.removeEventListener("keydown", onKeyDown);
-				phone.classList.remove("otto-mobile-menu-shell");
-				phone.parentElement?.classList.remove("otto-mobile-menu-host");
+				phone.classList.remove("otter-mobile-menu-shell");
+				phone.parentElement?.classList.remove("otter-mobile-menu-host");
 			});
 		});
 

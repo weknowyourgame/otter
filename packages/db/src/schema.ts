@@ -9,7 +9,7 @@ import {
 	uniqueIndex,
 } from "drizzle-orm/pg-core";
 
-// Better Auth owns these four singular tables. Keeping them in Otto's shared
+// Better Auth owns these four singular tables. Keeping them in Otter's shared
 // database lets the API authenticate dashboard requests without introducing a
 // second datastore or leaking session state into the Next.js app.
 export const user = pgTable(
@@ -127,7 +127,7 @@ export const tenantMembers = pgTable(
 );
 
 /**
- * A pending invitation to join a tenant. Otto's dashboard assumes one
+ * A pending invitation to join a tenant. Otter's dashboard assumes one
  * tenant per user today (requireDashboard/getTenantForUser both take the
  * first membership found) — accepting a second invite while already
  * belonging to a tenant is rejected rather than silently creating an
@@ -211,8 +211,8 @@ export type NewAllowedOriginRow = typeof allowedOrigins.$inferInsert;
 
 /**
  * One row per agent session. history/local/events are stored as JSON text
- * rather than normalized tables — otto-core already treats them as opaque
- * blobs it serializes wholesale each step, and Otto's session count/lifetime
+ * rather than normalized tables — otter-core already treats them as opaque
+ * blobs it serializes wholesale each step, and Otter's session count/lifetime
  * doesn't justify the join complexity Cossistant's conversation/message split
  * solves for. Revisit if step history needs to be queried independently.
  */
@@ -230,7 +230,7 @@ export const sessions = pgTable("sessions", {
 	steps: bigint("steps", { mode: "number" }).notNull(),
 	source: text("source", { enum: ["ai", "local"] }).notNull(),
 	state: text("state", { enum: ["active", "done", "failed"] }).notNull(),
-	/** JSON-serialized ChatMessage[] (otto-core's LLM conversation history). */
+	/** JSON-serialized ChatMessage[] (otter-core's LLM conversation history). */
 	history: text("history").notNull(),
 	/** JSON-serialized LocalPlannerState, present only for keyless-fallback sessions. */
 	local: text("local"),
@@ -284,7 +284,7 @@ export type NewChunkRow = typeof chunks.$inferInsert;
 
 /**
  * A durable fact about a user, scoped by userKey (their email — the only
- * identity Otto has today, via OttoConfig.user forwarded on each step).
+ * identity Otter has today, via OtterConfig.user forwarded on each step).
  * No semantic/embedding-based recall like cossistant's optional
  * models.embed — just the most recent facts for that user, injected once
  * at session start. Revisit if the fact count per user grows enough that
@@ -304,9 +304,9 @@ export type MemoryRow = typeof memories.$inferSelect;
 export type NewMemoryRow = typeof memories.$inferInsert;
 
 /**
- * One row per tenant — Otto has no separate multi-website "agent" concept
+ * One row per tenant — Otter has no separate multi-website "agent" concept
  * today, so this is the tenant's single agent configuration. systemPrompt
- * (when set) overrides otto-core's BASE_SYSTEM_PROMPT for that tenant's
+ * (when set) overrides otter-core's BASE_SYSTEM_PROMPT for that tenant's
  * live sessions; toolSettings is a JSON-serialized Record<string, boolean>
  * keyed by tool label, since the tool set itself is fixed and defined in
  * apps/web, not stored per-row.
@@ -318,7 +318,7 @@ export const agents = pgTable(
 		tenantId: text("tenant_id")
 			.notNull()
 			.references(() => tenants.id, { onDelete: "cascade" }),
-		name: text("name").notNull().default("Otto Support"),
+		name: text("name").notNull().default("Otter Support"),
 		model: text("model").notNull().default("anthropic/claude-sonnet-4.5"),
 		systemPrompt: text("system_prompt"),
 		maxToolCalls: integer("max_tool_calls").notNull().default(6),

@@ -1,11 +1,11 @@
-import { proxyToOttoApi } from "@/lib/otto-api-proxy";
+import { proxyToOtterApi } from "@/lib/otter-api-proxy";
 
 export const dynamic = "force-dynamic";
 
 export function GET(request: Request): Promise<Response> {
-	return proxyToOttoApi(request, "/docs");
+	return proxyToOtterApi(request, "/docs");
 }
 
 export function POST(request: Request): Promise<Response> {
-	return proxyToOttoApi(request, "/docs");
+	return proxyToOtterApi(request, "/docs");
 }

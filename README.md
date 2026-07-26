@@ -1,9 +1,9 @@
-# Otto
+# Otter
 
 **Support that completes the task instead of explaining it.**
 
-Otto is an embeddable AI support agent. A customer types "how do I enable
-2FA?" into the widget, clicks **Allow** once, and Otto takes the cursor:
+Otter is an embeddable AI support agent. A customer types "how do I enable
+2FA?" into the widget, clicks **Allow** once, and Otter takes the cursor:
 it navigates the app, clicks and types with a visible animated pointer,
 streams every step into the chat ("Opening security settings…" ✓), and
 finishes with the task actually done on screen. A **Stop** button floats
@@ -11,11 +11,11 @@ on the page the whole time.
 
 ```
 packages/
-  core/   otto-core — the brain. runStep() takes {message?, snapshot,
+  core/   otter-core — the brain. runStep() takes {message?, snapshot,
           lastAction?} and returns exactly one next action via LLM
           tool-calling (OpenRouter), with a keyless local fallback
           planner. Tenant-scoped Postgres sessions power the dashboard feed.
-  sdk/    otto-sdk — the eyes and hands. Vanilla TS in one shadow root:
+  sdk/    otter-sdk — the eyes and hands. Vanilla TS in one shadow root:
           DOM serializer (ref-stamped elements), executor (animated
           cursor + target ring, char-by-char typing, DOM-settle waits),
           chat UI with step trails, consent + destructive-action gates.
@@ -29,8 +29,8 @@ apps/
 
 ## Quick start
 
-Needs a running Postgres instance — `createdb otto` (or point `DATABASE_URL`
-at any Postgres) before starting the API. otto-db creates its own tables on
+Needs a running Postgres instance — `createdb otter` (or point `DATABASE_URL`
+at any Postgres) before starting the API. otter-db creates its own tables on
 first connect; there's no separate migration step.
 
 ```bash
@@ -40,23 +40,23 @@ bun run dev:all   # landing :3000, dashboard :3001, API :8787
 ```
 
 Create an account at http://localhost:3001/login, then issue a public key
-under **Settings -> Developers**. Register the exact origin that embeds Otto.
+under **Settings -> Developers**. Register the exact origin that embeds Otter.
 
 ### API environment (`apps/api/.env`)
 
 ```bash
-DATABASE_URL=postgres://localhost:5432/otto
+DATABASE_URL=postgres://localhost:5432/otter
 BETTER_AUTH_URL=http://localhost:8787
 BETTER_AUTH_SECRET=replace-with-at-least-32-random-characters
-OTTO_API_KEY_SECRET=replace-with-a-different-32-character-secret
-OTTO_DASHBOARD_ORIGINS=http://localhost:3001
+OTTER_API_KEY_SECRET=replace-with-a-different-32-character-secret
+OTTER_DASHBOARD_ORIGINS=http://localhost:3001
 OPENROUTER_API_KEY=
 AGENT_MODEL=anthropic/claude-sonnet-4.5
 ```
 
 Copy `apps/api/.env.example` and `apps/web/.env.example` for the complete
 local setup. Without an OpenRouter key the loop uses the deterministic local
-planner; agent requests still require an Otto tenant key.
+planner; agent requests still require an Otter tenant key.
 
 ## The loop
 
@@ -77,7 +77,7 @@ sessionStorage before a hard navigation and resumes on the other side.
 
 - **Nothing moves without consent** — one Allow card per conversation.
 - **Always stoppable** — a working pill with a Stop button floats on the
-  page whenever Otto is acting; Stop aborts mid-flight.
+  page whenever Otter is acting; Stop aborts mid-flight.
 - **Destructive actions re-confirm individually** — delete / remove /
   cancel plan / payment / password fills each get their own explicit
   confirmation card, regardless of what the backend planned.
@@ -90,7 +90,7 @@ sessionStorage before a hard navigation and resumes on the other side.
 ## Embedding
 
 ```html
-<script src="https://your-cdn/otto-sdk.global.js"
+<script src="https://your-cdn/otter-sdk.global.js"
         data-endpoint="https://api.your-app.com"
         data-public-key="pk_live_..." defer></script>
 ```
@@ -98,12 +98,12 @@ sessionStorage before a hard navigation and resumes on the other side.
 or programmatically:
 
 ```ts
-import { init } from "otto-sdk";
+import { init } from "otter-sdk";
 
 init({
   endpoint: "/api/agent",
   publicKey: "pk_live_...",
-  name: "Otto",
+  name: "Otter",
   accent: "#5B6CF9",
   theme: "dark",            // "light" | "auto"
   user: { email: currentUser.email },   // session attribution
@@ -122,4 +122,4 @@ init({
 
 - Helpdesk connectors (Zendesk/Jira/Intercom inbound tickets → guided
   replies, escalation back) are designed but intentionally removed from
-  this iteration; they return as thin adapters on otto-core.
+  this iteration; they return as thin adapters on otter-core.

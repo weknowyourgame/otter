@@ -12,10 +12,10 @@ jobs:
     runs-on: ubuntu-latest
     env:
       BETTER_AUTH_SECRET: ci-better-auth-secret-ci-better-auth-secret
-      DATABASE_URL: postgres://postgres@localhost:5432/otto
+      DATABASE_URL: postgres://postgres@localhost:5432/otter
       NEXT_TELEMETRY_DISABLED: "1"
       OPENROUTER_API_KEY: ci-not-used
-      OTTO_API_KEY_SECRET: ci-otto-api-key-secret-ci-otto-api-key-secret
+      OTTER_API_KEY_SECRET: ci-otter-api-key-secret-ci-otter-api-key-secret
       REDIS_URL: redis://127.0.0.1:6379
 
     steps:

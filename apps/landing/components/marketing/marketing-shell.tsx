@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { OttoWordmark } from "./logo";
+import { OtterWordmark } from "./logo";
 import { SupportWidget } from "./support-widget";
 
 export function MarketingShell({ children }: { children: ReactNode }) {
@@ -8,7 +8,7 @@ export function MarketingShell({ children }: { children: ReactNode }) {
 		<div className="mk-page">
 			<header className="mk-topbar">
 				<div className="mk-shell mk-topbar-inner">
-					<Link aria-label="Otto home" href="/"><OttoWordmark /></Link>
+					<Link aria-label="Otter home" href="/"><OtterWordmark /></Link>
 					<nav className="mk-desktop-nav" aria-label="Primary navigation">
 						<Link href="/docs">Docs</Link>
 						<Link href="/price">Pricing</Link>
@@ -30,13 +30,13 @@ export function MarketingShell({ children }: { children: ReactNode }) {
 			<footer className="mk-footer">
 				<div className="mk-shell mk-footer-grid">
 					<div>
-						<OttoWordmark />
+						<OtterWordmark />
 						<p>AI-native support infrastructure that lives inside your product.</p>
 					</div>
 					<div><strong>Product</strong><Link href="/price">Pricing</Link><Link href="/changelog">Changelog</Link></div>
 					<div><strong>Resources</strong><Link href="/docs">Docs</Link><Link href="/demo">Demo</Link></div>
 				</div>
-				<div className="mk-shell mk-footer-bottom">© 2026 Otto. Built for product teams.</div>
+				<div className="mk-shell mk-footer-bottom">© 2026 Otter. Built for product teams.</div>
 			</footer>
 			<SupportWidget />
 		</div>

@@ -1,4 +1,4 @@
-// The wire protocol between the Otto SDK (eyes + hands, in the browser)
+// The wire protocol between the Otter SDK (eyes + hands, in the browser)
 // and this engine (the brain, on the server). The SDK serializes the page,
 // the engine answers with exactly one next action, and the SDK executes it
 // and reports back — one POST per step until `done`, `say`, or `fail`.
@@ -14,7 +14,7 @@ export interface ElementState {
 }
 
 export interface PageElement {
-	/** Stable id the SDK stamps on the live node as data-otto-ref. */
+	/** Stable id the SDK stamps on the live node as data-otter-ref. */
 	ref: number;
 	/** button | link | textbox | checkbox | switch | select | tab | option | menuitem */
 	role: string;
@@ -59,10 +59,10 @@ export interface StepRequest {
 	snapshot: PageSnapshot;
 	lastAction?: LastActionReport;
 	/**
-	 * Session attribution, forwarded from OttoConfig.user by the SDK — it was
+	 * Session attribution, forwarded from OtterConfig.user by the SDK — it was
 	 * already being sent (agent.ts's stepPayload includes it) but this type
 	 * never declared it, so the server silently dropped it. Wiring it up now:
-	 * `email` is the only identity Otto has for cross-session memory (Phase 9).
+	 * `email` is the only identity Otter has for cross-session memory (Phase 9).
 	 */
 	user?: StepRequestUser;
 }

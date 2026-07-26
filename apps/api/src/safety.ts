@@ -1,14 +1,14 @@
 // Experimental
 
-import type { PauseStore } from "otto-core";
-import type { Redis } from "otto-redis";
+import type { PauseStore } from "otter-core";
+import type { Redis } from "otter-redis";
 
-const PAUSE_KEY_PREFIX = "otto:paused:";
+const PAUSE_KEY_PREFIX = "otter:paused:";
 const DEFAULT_PAUSE_MINUTES = 15;
 
 // isPaused sits on every single /step and /ws call, unlike the BullMQ
 // connection (which only matters for the web-crawl queue) — so unlike
-// otto-redis's default connection options (maxRetriesPerRequest: null,
+// otter-redis's default connection options (maxRetriesPerRequest: null,
 // tuned for BullMQ's infinite-retry expectations), a down Redis must not be
 // able to hang every step request forever. Bounded timeout, fail open
 // (treat as not-paused) rather than fail closed, since availability of the
@@ -17,7 +17,7 @@ const DEFAULT_PAUSE_MINUTES = 15;
 const ISPAUSED_TIMEOUT_MS = 300;
 // pause()/resume() are meant to reject quickly on a down Redis so index.ts's
 // routes can return a 503 — but discovered by actually testing this with
-// Redis stopped mid-session that they DIDN'T: otto-redis's connection sets
+// Redis stopped mid-session that they DIDN'T: otter-redis's connection sets
 // maxRetriesPerRequest: null (correct for BullMQ, which wants infinite
 // retry), so an unreachable command just queues forever instead of ever
 // rejecting. The request hung for the full 10s Bun.serve idleTimeout instead

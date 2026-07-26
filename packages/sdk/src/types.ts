@@ -1,9 +1,9 @@
-export interface OttoUser {
+export interface OtterUser {
 	email?: string;
 	name?: string;
 }
 
-export interface OttoConfig {
+export interface OtterConfig {
 	/** Base URL of the agent backend; the SDK POSTs to `${endpoint}/step`. */
 	endpoint?: string;
 	/** Embeddable tenant key issued from Dashboard -> Developers. */
@@ -15,7 +15,7 @@ export interface OttoConfig {
 	 * `${endpoint}/step` for any call the socket can't complete.
 	 */
 	wsEndpoint?: string;
-	/** Display name for the assistant. Default "Otto". */
+	/** Display name for the assistant. Default "Otter". */
 	name?: string;
 	/** Accent color (buttons, cursor, highlights). Default "#5B6CF9". */
 	accent?: string;
@@ -23,7 +23,7 @@ export interface OttoConfig {
 	theme?: "dark" | "light" | "auto";
 	position?: "bottom-right" | "bottom-left";
 	/** Logged-in user, forwarded to the backend for session attribution. */
-	user?: OttoUser;
+	user?: OtterUser;
 	/** Client-side hard cap on actions per task. Default 20. */
 	maxSteps?: number;
 	zIndex?: number;
@@ -34,14 +34,14 @@ export interface OttoConfig {
 }
 
 export type ResolvedConfig = Required<
-	Omit<OttoConfig, "user" | "wsEndpoint" | "publicKey">
+	Omit<OtterConfig, "user" | "wsEndpoint" | "publicKey">
 > & {
-	user: OttoUser;
+	user: OtterUser;
 	wsEndpoint?: string;
 	publicKey?: string;
 };
 
-export interface OttoInstance {
+export interface OtterInstance {
 	open(): void;
 	close(): void;
 	/** Programmatically submit a request, as if the user typed it. */

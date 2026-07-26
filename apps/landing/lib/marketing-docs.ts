@@ -52,10 +52,10 @@ function walk(directory: string): string[] {
 
 function brandCopy(value: string) {
 	return value
-		.replaceAll("cossistantcom/cossistant", "otto-ai/otto")
-		.replaceAll("@cossistant", "@otto")
-		.replaceAll("Cossistant", "Otto")
-		.replaceAll("cossistant", "otto");
+		.replaceAll("cossistantcom/cossistant", "otter-ai/otter")
+		.replaceAll("@cossistant", "@otter")
+		.replaceAll("Cossistant", "Otter")
+		.replaceAll("cossistant", "otter");
 }
 
 function toDoc(filePath: string): MarketingDoc {
@@ -67,7 +67,7 @@ function toDoc(filePath: string): MarketingDoc {
 	const { data, body } = parseFrontmatter(raw);
 	const fallbackTitle = segments.length ? humanize(segments.at(-1) ?? "Documentation") : "Documentation";
 	const title = brandCopy(data.title ?? fallbackTitle);
-	const description = brandCopy(data.description ?? `Learn how to use ${title.toLowerCase()} with Otto.`);
+	const description = brandCopy(data.description ?? `Learn how to use ${title.toLowerCase()} with Otter.`);
 	return {
 		title,
 		description,
@@ -105,7 +105,7 @@ export function stripMdx(source: string) {
 
 			const inlineCode: string[] = [];
 			let value = chunk.replace(/`([^`\n]+)`/g, (code) => {
-				const token = `@@OTTO_INLINE_${inlineCode.length}@@`;
+				const token = `@@OTTER_INLINE_${inlineCode.length}@@`;
 				inlineCode.push(code);
 				return token;
 			});
@@ -128,11 +128,11 @@ export function stripMdx(source: string) {
 				.replace(/<>|<\/>/g, "")
 				.replace(/<\/?[A-Za-z][^>]*>/g, "")
 				.replace(/\{["']\s*["']\}/g, " ")
-				.replace(/\{(@@OTTO_INLINE_\d+@@)\}/g, "$1")
+				.replace(/\{(@@OTTER_INLINE_\d+@@)\}/g, "$1")
 				.replace(/^\s*[;{}]+\s*$/gm, "");
 
 			inlineCode.forEach((code, index) => {
-				value = value.replaceAll(`@@OTTO_INLINE_${index}@@`, code);
+				value = value.replaceAll(`@@OTTER_INLINE_${index}@@`, code);
 			});
 			return value;
 		})

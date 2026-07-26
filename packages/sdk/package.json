@@ -1,20 +1,20 @@
 {
-	"name": "otto-sdk",
+	"name": "otter-sdk",
 	"version": "0.1.0",
 	"private": true,
-	"description": "Otto — the embeddable AI support agent that completes the task instead of explaining it. One script tag: chat widget + a consent-gated executor that drives your app's UI with a visible cursor.",
+	"description": "Otter — the embeddable AI support agent that completes the task instead of explaining it. One script tag: chat widget + a consent-gated executor that drives your app's UI with a visible cursor.",
 	"type": "module",
-	"main": "dist/otto-sdk.esm.js",
-	"module": "dist/otto-sdk.esm.js",
+	"main": "dist/otter-sdk.esm.js",
+	"module": "dist/otter-sdk.esm.js",
 	"types": "dist/types/index.d.ts",
 	"exports": {
 		".": {
 			"types": "./dist/types/index.d.ts",
-			"import": "./dist/otto-sdk.esm.js",
-			"default": "./dist/otto-sdk.esm.js"
+			"import": "./dist/otter-sdk.esm.js",
+			"default": "./dist/otter-sdk.esm.js"
 		},
-		"./loader": "./dist/otto-loader.global.js",
-		"./widget": "./dist/otto-widget.global.js"
+		"./loader": "./dist/otter-loader.global.js",
+		"./widget": "./dist/otter-widget.global.js"
 	},
 	"files": [
 		"dist",

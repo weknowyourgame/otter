@@ -1,41 +1,41 @@
-// Otto SDK — embeddable AI support agent that completes the task instead
+// Otter SDK — embeddable AI support agent that completes the task instead
 // of explaining it.
 //
-//   import { init } from "otto-sdk";
+//   import { init } from "otter-sdk";
 //   init({ endpoint: "/api/agent", user: { email: "kim@acme.com" } });
 
 import { AgentLoop } from "./agent.js";
 import { Cursor, TargetRing } from "./cursor.js";
 import { Executor } from "./executor.js";
-import type { OttoConfig, OttoInstance, ResolvedConfig } from "./types.js";
+import type { OtterConfig, OtterInstance, ResolvedConfig } from "./types.js";
 import { WidgetUI } from "./ui.js";
 
 export type {
 	AgentAction,
-	OttoConfig,
-	OttoInstance,
-	OttoUser,
+	OtterConfig,
+	OtterInstance,
+	OtterUser,
 	PageSnapshot,
 } from "./types.js";
 
-let active: OttoInstance | null = null;
+let active: OtterInstance | null = null;
 
-export function init(userConfig: OttoConfig = {}): OttoInstance {
+export function init(userConfig: OtterConfig = {}): OtterInstance {
 	if (active) {
 		console.warn(
-			"[otto-sdk] init() called while already active — reusing existing instance.",
+			"[otter-sdk] init() called while already active — reusing existing instance.",
 		);
 		return active;
 	}
 	if (typeof document === "undefined") {
-		throw new Error("[otto-sdk] init() must run in a browser.");
+		throw new Error("[otter-sdk] init() must run in a browser.");
 	}
 
 	const config: ResolvedConfig = {
 		endpoint: (userConfig.endpoint ?? "/api/agent").replace(/\/$/, ""),
 		wsEndpoint: userConfig.wsEndpoint,
 		publicKey: userConfig.publicKey?.trim() || undefined,
-		name: userConfig.name ?? "Otto",
+		name: userConfig.name ?? "Otter",
 		accent: userConfig.accent ?? "#5B6CF9",
 		theme: userConfig.theme ?? "dark",
 		position: userConfig.position ?? "bottom-right",
@@ -63,7 +63,7 @@ export function init(userConfig: OttoConfig = {}): OttoInstance {
 	// Continue a task that navigated across a full page load.
 	void loop.resumeIfPending().finally(() => cursor.hide());
 
-	const instance: OttoInstance = {
+	const instance: OtterInstance = {
 		open: () => ui.open(),
 		close: () => ui.close(),
 		ask(message: string) {

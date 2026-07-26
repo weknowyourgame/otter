@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OttoMark, OttoMascot } from "./logo";
+import { OtterMark, OtterMascot } from "./logo";
 import { SupportWidget } from "./support-widget";
 
 const customerLogos = ["BEEM", "2020INC", "PIPELINX.CO", "WORKPORT"];
@@ -8,19 +8,19 @@ const workflowSteps = [
 	{
 		index: "01",
 		title: "Understand the request",
-		copy: "Otto reads the conversation, product state, and your approved knowledge sources.",
+		copy: "Otter reads the conversation, product state, and your approved knowledge sources.",
 		status: "Context loaded",
 	},
 	{
 		index: "02",
 		title: "Ask before acting",
-		copy: "The customer sees the exact action Otto wants to take before anything changes.",
+		copy: "The customer sees the exact action Otter wants to take before anything changes.",
 		status: "Permission granted",
 	},
 	{
 		index: "03",
 		title: "Finish the work",
-		copy: "Otto completes the workflow in-product and records the result for your team.",
+		copy: "Otter completes the workflow in-product and records the result for your team.",
 		status: "Action complete",
 	},
 ];
@@ -46,11 +46,11 @@ function ProductWindow() {
 		<div className="ol-product-window">
 			<div className="ol-window-bar">
 				<span className="ol-window-dots"><i /><i /><i /></span>
-				<span>otto.support/live</span>
+				<span>otter.support/live</span>
 			</div>
 			<div className="ol-product-layout">
 				<aside className="ol-product-sidebar" aria-label="Support workspace">
-					<div className="ol-sidebar-brand"><OttoMark /><span>Otto</span></div>
+					<div className="ol-sidebar-brand"><OtterMark /><span>Otter</span></div>
 					<span className="is-active">Inbox <b>12</b></span>
 					<span>Knowledge</span>
 					<span>Workflows</span>
@@ -63,13 +63,13 @@ function ProductWindow() {
 							<strong>Change subscription plan</strong>
 							<span>Conversation #2841</span>
 						</div>
-						<span className="ol-live-state"><i /> Otto is working</span>
+						<span className="ol-live-state"><i /> Otter is working</span>
 					</header>
 					<div className="ol-message ol-message-user">
 						<p>Can you move our workspace to the Pro plan?</p>
 					</div>
-					<div className="ol-message ol-message-otto">
-						<span><OttoMascot /></span>
+					<div className="ol-message ol-message-otter">
+						<span><OtterMascot /></span>
 						<div>
 							<p>I found your workspace and the Pro plan. The new total will be $79/month.</p>
 							<div className="ol-action-card">
@@ -134,7 +134,7 @@ function InstallGraphic() {
 					<span className="ol-code-purple">import</span>{" "}
 					<span className="ol-code-white">{"{ SupportWidget }"}</span>{" "}
 					<span className="ol-code-purple">from</span>{" "}
-					<span className="ol-code-green">{"\"@otto/next\""}</span>;
+					<span className="ol-code-green">{"\"@otter/next\""}</span>;
 					{"\n\n"}
 					<span className="ol-code-purple">export default</span>{" "}
 					<span className="ol-code-blue">function</span>{" "}
@@ -145,7 +145,7 @@ function InstallGraphic() {
 					<span className="ol-code-blue">{"<SupportWidget"}</span>
 					{"\n      "}
 					<span className="ol-code-white">publicKey</span>=
-					<span className="ol-code-green">{"\"pk_live_otto\""}</span>
+					<span className="ol-code-green">{"\"pk_live_otter\""}</span>
 					{"\n      "}
 					<span className="ol-code-white">user</span>=
 					<span className="ol-code-purple">{"{{ id: user.id }}"}</span>
@@ -155,7 +155,7 @@ function InstallGraphic() {
 					{"\n}"}
 				</code>
 			</pre>
-			<div className="ol-code-command"><span>$</span><code>npm install @otto/next</code><b>Copied</b></div>
+			<div className="ol-code-command"><span>$</span><code>npm install @otter/next</code><b>Copied</b></div>
 		</div>
 	);
 }
@@ -165,7 +165,7 @@ function IntegrationsGraphic() {
 	return (
 		<div className="ol-integrations-graphic">
 			<div className="ol-integration-lines" aria-hidden="true"><i /><i /><i /><i /><i /><i /></div>
-			<span className="ol-integration-core"><OttoMascot /></span>
+			<span className="ol-integration-core"><OtterMascot /></span>
 			{tools.map((tool, index) => (
 				<span className={`ol-tool ol-tool-${index + 1}`} key={tool}>{tool}</span>
 			))}
@@ -177,7 +177,7 @@ function PromptGraphic() {
 	return (
 		<div className="ol-prompt-graphic">
 			<header><span>System prompt</span><b>Live</b></header>
-			<p>You are Otto, a calm and capable support teammate.</p>
+			<p>You are Otter, a calm and capable support teammate.</p>
 			<p><span>01</span> Use approved knowledge before answering.</p>
 			<p><span>02</span> Explain actions before requesting approval.</p>
 			<p><span>03</span> Never invent account or product details.</p>
@@ -190,9 +190,9 @@ function PromptGraphic() {
 function Header() {
 	return (
 		<header className="ol-header">
-			<Link aria-label="Otto home" className="ol-logo" href="/">
-				<OttoMark />
-				<span>Otto</span>
+			<Link aria-label="Otter home" className="ol-logo" href="/">
+				<OtterMark />
+				<span>Otter</span>
 			</Link>
 			<nav aria-label="Main navigation" className="ol-desktop-nav">
 				<a href="#product">Product</a>
@@ -200,7 +200,7 @@ function Header() {
 				<Link href="/changelog">Changelog</Link>
 				<a href="#trust">Trust</a>
 			</nav>
-			<Link className="ol-header-cta" href="/pricing">Meet Otto</Link>
+			<Link className="ol-header-cta" href="/pricing">Meet Otter</Link>
 			<details className="ol-mobile-menu">
 				<summary aria-label="Open navigation"><i /><i /></summary>
 				<nav aria-label="Mobile navigation">
@@ -216,7 +216,7 @@ function Header() {
 
 export function MirageLanding() {
 	return (
-		<main className="otto-mirage">
+		<main className="otter-mirage">
 			<Header />
 
 			<div className="ol-frame">
@@ -225,7 +225,7 @@ export function MirageLanding() {
 					<div className="ol-hero-copy">
 						<a className="ol-release-pill" href="#updates">
 							<span>NEW</span>
-							Meet Otto: action-ready support
+							Meet Otter: action-ready support
 						</a>
 						<h1>Get agentic AI to work on your workflows</h1>
 						<p>Automate routine support and focus on what matters most. Less friction, more flow.</p>
@@ -247,7 +247,7 @@ export function MirageLanding() {
 						<div className="ol-card-copy">
 							<p className="ol-eyebrow"><span className="ol-feature-icon">K</span>Adaptive knowledge</p>
 							<h2>Answers that improve with every conversation.</h2>
-							<p>Otto keeps product knowledge current and cites the source behind every answer.</p>
+							<p>Otter keeps product knowledge current and cites the source behind every answer.</p>
 						</div>
 						<KnowledgeGraphic />
 					</article>
@@ -255,7 +255,7 @@ export function MirageLanding() {
 						<div className="ol-card-copy">
 							<p className="ol-eyebrow"><span className="ol-feature-icon">+</span>One-line install</p>
 							<h2>Embed an action-ready agent.</h2>
-							<p>Ship Otto in one shadow root and make it feel native to the product you already have.</p>
+							<p>Ship Otter in one shadow root and make it feel native to the product you already have.</p>
 						</div>
 						<InstallGraphic />
 					</article>
@@ -270,7 +270,7 @@ export function MirageLanding() {
 					<div className="ol-section-heading">
 						<p>01 / IN-PRODUCT SUPPORT</p>
 						<h2 id="product-demo-title">One conversation.<br />The whole workflow.</h2>
-						<span>Otto works inside your interface, with the context and controls customers need to finish safely.</span>
+						<span>Otter works inside your interface, with the context and controls customers need to finish safely.</span>
 					</div>
 					<ProductWindow />
 				</section>
@@ -288,7 +288,7 @@ export function MirageLanding() {
 						<div className="ol-card-copy">
 							<p className="ol-eyebrow">Your rules</p>
 							<h3>Control the agent, completely.</h3>
-							<p>Set the model, voice, limits, and skills. Otto follows the system you define.</p>
+							<p>Set the model, voice, limits, and skills. Otter follows the system you define.</p>
 						</div>
 						<PromptGraphic />
 					</article>
@@ -305,7 +305,7 @@ export function MirageLanding() {
 						<article className="ol-trust-visual">
 							<div className="ol-trust-orbit" aria-hidden="true">
 								<i className="orbit-one" /><i className="orbit-two" /><i className="orbit-three" />
-								<span><OttoMascot /></span>
+								<span><OtterMascot /></span>
 							</div>
 							<div className="ol-trust-checks">
 								<span><i /> Request understood</span>
@@ -318,11 +318,11 @@ export function MirageLanding() {
 							<article>
 								<strong>1 click</strong>
 								<h3>Approval before sensitive actions</h3>
-								<p>Customers always know what Otto wants to change and why.</p>
+								<p>Customers always know what Otter wants to change and why.</p>
 							</article>
 							<article>
 								<strong>Always</strong>
-								<h3>Stoppable while Otto is acting</h3>
+								<h3>Stoppable while Otter is acting</h3>
 								<p>A visible stop control keeps the customer in charge of the workflow.</p>
 							</article>
 						</div>
@@ -331,7 +331,7 @@ export function MirageLanding() {
 
 				<section className="ol-workflow-section">
 					<div className="ol-section-heading">
-						<p>03 / HOW OTTO GETS WORK DONE</p>
+						<p>03 / HOW OTTER GETS WORK DONE</p>
 						<h2>From question to done.</h2>
 						<span>No black box. Every step stays visible to the customer and your team.</span>
 					</div>
@@ -354,7 +354,7 @@ export function MirageLanding() {
 					<div className="ol-section-heading">
 						<p>04 / SUPPORT OUTCOMES</p>
 						<h2>Wake up to zero<br />support tickets.</h2>
-						<span>Otto keeps customers moving while your team focuses on the work that actually needs people.</span>
+						<span>Otter keeps customers moving while your team focuses on the work that actually needs people.</span>
 					</div>
 					<div className="ol-outcome-grid">
 						<article><strong>24/7</strong><p>In-product support coverage</p></article>
@@ -383,27 +383,27 @@ export function MirageLanding() {
 				<section className="ol-final-cta">
 					<PixelField />
 					<div>
-						<span><OttoMascot /></span>
+						<span><OtterMascot /></span>
 						<p>[ START IN MINUTES ]</p>
-						<h2>Put Otto to work<br />inside your product.</h2>
-						<Link className="ol-primary-button" href="/pricing">Meet Otto</Link>
+						<h2>Put Otter to work<br />inside your product.</h2>
+						<Link className="ol-primary-button" href="/pricing">Meet Otter</Link>
 					</div>
 				</section>
 
 				<footer className="ol-footer">
 					<div className="ol-footer-brand">
-						<OttoMark />
-						<strong>Otto</strong>
+						<OtterMark />
+						<strong>Otter</strong>
 					</div>
 					<nav aria-label="Footer navigation">
 						<Link href="/pricing">Pricing</Link>
 						<Link href="/changelog">Changelog</Link>
 						<a href="#product">Product</a>
-						<a href="mailto:hello@otto.ai">Contact</a>
+						<a href="mailto:hello@otter.ai">Contact</a>
 					</nav>
 					<div className="ol-footer-meta">
-						<a href="mailto:hello@otto.ai">hello@otto.ai</a>
-						<span>(c) 2026 Otto</span>
+						<a href="mailto:hello@otter.ai">hello@otter.ai</a>
+						<span>(c) 2026 Otter</span>
 					</div>
 				</footer>
 			</div>

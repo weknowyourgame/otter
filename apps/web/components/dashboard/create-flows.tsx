@@ -17,7 +17,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { FormEvent, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 import {
 	Button,
 	CopyButton,
@@ -46,11 +46,11 @@ function FlowShell({
 	return (
 		<div className="od-flow">
 			<header className="od-flow__topbar">
-				<Link aria-label="Otto dashboard" href="/dashboard">
+				<Link aria-label="Otter dashboard" href="/dashboard">
 					<span>
-						<OttoGlyph className="h-4 w-4" />
+						<OtterGlyph className="h-4 w-4" />
 					</span>
-					<strong>Otto</strong>
+					<strong>Otter</strong>
 				</Link>
 				<Link href="/dashboard">
 					<ArrowLeft size={15} /> Back to dashboard
@@ -154,11 +154,11 @@ export function OrganizationCreateFlow() {
 }
 
 function buildInstallPrompt(publicKey: string): string {
-	return `Add Otto support to this Next.js application.
+	return `Add Otter support to this Next.js application.
 
-1. Install otto-sdk with your existing package manager.
-2. Wrap the root layout with OttoProvider.
-3. Mount <OttoWidget /> once, near the end of the body.
+1. Install otter-sdk with your existing package manager.
+2. Wrap the root layout with OtterProvider.
+3. Mount <OtterWidget /> once, near the end of the body.
 4. Use this public key: ${publicKey}
 5. Allow the domain configured for this website.
 
@@ -239,14 +239,14 @@ export function WebsiteCreateFlow() {
 
 	return (
 		<FlowShell
-			description="Create the site, choose a framework, then connect Otto with a generated key."
+			description="Create the site, choose a framework, then connect Otter with a generated key."
 			eyebrow="Website setup"
 			step={step}
 			title={
 				step === 1
-					? "Where will Otto live?"
+					? "Where will Otter live?"
 					: step === 2
-						? "Install Otto locally."
+						? "Install Otter locally."
 						: "Your website is ready."
 			}
 			total={3}
@@ -311,7 +311,7 @@ export function WebsiteCreateFlow() {
 							<TerminalSquare size={19} />
 						</span>
 						<div>
-							<h2>Install Otto for {framework}</h2>
+							<h2>Install Otter for {framework}</h2>
 							<p>
 								Use an AI coding assistant or follow the manual integration
 								steps.
@@ -357,7 +357,7 @@ export function WebsiteCreateFlow() {
 									<span>1</span>
 									<div>
 										<strong>Install the SDK</strong>
-										<code>npm install otto-sdk</code>
+										<code>npm install otter-sdk</code>
 									</div>
 								</div>
 								<div>
@@ -372,7 +372,7 @@ export function WebsiteCreateFlow() {
 									<span>3</span>
 									<div>
 										<strong>Mount the widget</strong>
-										<code>{"<OttoWidget />"}</code>
+										<code>{"<OtterWidget />"}</code>
 									</div>
 								</div>
 							</div>
@@ -385,7 +385,7 @@ export function WebsiteCreateFlow() {
 							onClick={() => void finishInstall()}
 							variant="primary"
 						>
-							{finishing ? "Finishing…" : "I installed Otto"}{" "}
+							{finishing ? "Finishing…" : "I installed Otter"}{" "}
 							<Check size={15} />
 						</Button>
 					</div>
@@ -444,14 +444,14 @@ const goals = [
 	"Route to a human",
 ];
 const generatedPrompt =
-	"You are Otto Support, the thoughtful support teammate for Otto Labs. Answer clearly and directly using the knowledge base. Ask at most one focused clarification when necessary. Be warm without adding filler. Escalate account security, billing disputes, and requests where confidence is low.";
+	"You are Otter Support, the thoughtful support teammate for Otter Labs. Answer clearly and directly using the knowledge base. Ask at most one focused clarification when necessary. Be warm without adding filler. Escalate account security, billing disputes, and requests where confidence is low.";
 
 export function AgentCreateFlow() {
 	const router = useRouter();
 	const [step, setStep] = useState(1);
-	const [name, setName] = useState("Otto Support");
+	const [name, setName] = useState("Otter Support");
 	const [crawl, setCrawl] = useState(true);
-	const [url, setUrl] = useState("https://otto.so");
+	const [url, setUrl] = useState("https://otter.so");
 	const [selectedGoals, setSelectedGoals] = useState([goals[0], goals[1]]);
 	const [analysis, setAnalysis] = useState(0);
 	const [tone, setTone] = useState("Warm & concise");
@@ -474,7 +474,7 @@ export function AgentCreateFlow() {
 
 	return (
 		<FlowShell
-			description="Give Otto a name, a goal, and enough context to feel like a member of your team."
+			description="Give Otter a name, a goal, and enough context to feel like a member of your team."
 			eyebrow="New AI teammate"
 			step={step}
 			title={
@@ -584,7 +584,7 @@ export function AgentCreateFlow() {
 						<div>
 							<h2>Preparing {name}</h2>
 							<p>
-								Otto is gathering enough signal to draft a useful starting
+								Otter is gathering enough signal to draft a useful starting
 								point.
 							</p>
 						</div>

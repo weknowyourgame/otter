@@ -16,7 +16,7 @@ const esm = {
 	...common,
 	entryPoints: ["src/index.ts"],
 	format: "esm",
-	outfile: "dist/otto-sdk.esm.js",
+	outfile: "dist/otter-sdk.esm.js",
 };
 // The tiny bootstrap a customer's <script src> actually points at — kept
 // separate so it can be cached forever while the runtime below is
@@ -25,14 +25,14 @@ const loader = {
 	...common,
 	entryPoints: ["src/loader.ts"],
 	format: "iife",
-	outfile: "dist/otto-loader.global.js",
+	outfile: "dist/otter-loader.global.js",
 };
 // The real runtime, lazy-loaded by the loader next to it.
 const widget = {
 	...common,
 	entryPoints: ["src/widget-runtime.ts"],
 	format: "iife",
-	outfile: "dist/otto-widget.global.js",
+	outfile: "dist/otter-widget.global.js",
 };
 
 const builds = [esm, loader, widget];

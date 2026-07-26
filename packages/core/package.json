@@ -1,8 +1,8 @@
 {
-	"name": "otto-core",
+	"name": "otter-core",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Otto's agent engine — turns a page snapshot + conversation into the next browser action. Consumed by apps/web API routes; holds the only LLM-provider code in the repo.",
+	"description": "Otter's agent engine — turns a page snapshot + conversation into the next browser action. Consumed by apps/web API routes; holds the only LLM-provider code in the repo.",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -18,7 +18,7 @@
 		"test": "bun test"
 	},
 	"dependencies": {
-		"otto-db": "workspace:*"
+		"otter-db": "workspace:*"
 	},
 	"devDependencies": {
 		"esbuild": "^0.28.1",

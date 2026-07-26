@@ -1,4 +1,4 @@
-.otto-mirage {
+.otter-mirage {
 	--ol-bg: #000;
 	--ol-surface: #070808;
 	--ol-surface-raised: #0c0e0e;
@@ -21,19 +21,19 @@
 	font-family: var(--ol-font);
 }
 
-.otto-mirage *,
-.otto-mirage *::before,
-.otto-mirage *::after {
+.otter-mirage *,
+.otter-mirage *::before,
+.otter-mirage *::after {
 	box-sizing: border-box;
 }
 
-.otto-mirage a {
+.otter-mirage a {
 	color: inherit;
 	text-decoration: none;
 }
 
-.otto-mirage button,
-.otto-mirage textarea {
+.otter-mirage button,
+.otter-mirage textarea {
 	font: inherit;
 }
 
@@ -835,12 +835,12 @@
 	background: #111414;
 }
 
-.ol-message-otto {
+.ol-message-otter {
 	align-items: flex-start;
 	gap: 10px;
 }
 
-.ol-message-otto > span {
+.ol-message-otter > span {
 	display: grid;
 	width: 28px;
 	height: 28px;
@@ -851,16 +851,16 @@
 	background: #0b1514;
 }
 
-.ol-message-otto > span .mk-mascot {
+.ol-message-otter > span .mk-mascot {
 	width: 25px;
 	height: 25px;
 }
 
-.ol-message-otto > div {
+.ol-message-otter > div {
 	max-width: 290px;
 }
 
-.ol-message-otto p {
+.ol-message-otter p {
 	background: #0b0e0e;
 }
 
@@ -1668,7 +1668,7 @@
 	color: #626664;
 }
 
-.otto-mirage .mk-widget-root:not([data-embedded="true"]) {
+.otter-mirage .mk-widget-root:not([data-embedded="true"]) {
 	position: fixed !important;
 	right: 22px !important;
 	bottom: 18px !important;
@@ -1678,7 +1678,7 @@
 	pointer-events: none;
 }
 
-.otto-mirage .mk-widget-panel {
+.otter-mirage .mk-widget-panel {
 	position: fixed !important;
 	right: 22px !important;
 	bottom: 18px !important;
@@ -1697,20 +1697,20 @@
 	transition: opacity 180ms ease, transform 240ms ease !important;
 }
 
-.otto-mirage .mk-widget-panel[data-open="true"] {
+.otter-mirage .mk-widget-panel[data-open="true"] {
 	opacity: 1 !important;
 	pointer-events: auto !important;
 	transform: translateY(0) scale(1) !important;
 }
 
-.otto-mirage .mk-widget-conversation {
+.otter-mirage .mk-widget-conversation {
 	display: grid !important;
 	height: 100% !important;
 	grid-template-rows: 92px minmax(0, 1fr) auto !important;
 	background: #050707 !important;
 }
 
-.otto-mirage .mk-widget-header {
+.otter-mirage .mk-widget-header {
 	display: grid !important;
 	height: auto !important;
 	grid-template-columns: auto 1fr auto !important;
@@ -1721,7 +1721,7 @@
 	background: #0b0e0e !important;
 }
 
-.otto-mirage .mk-widget-header-mascot {
+.otter-mirage .mk-widget-header-mascot {
 	display: grid !important;
 	width: 46px !important;
 	height: 46px !important;
@@ -1731,24 +1731,24 @@
 	background: #0a1514 !important;
 }
 
-.otto-mirage .mk-widget-header-mascot .mk-mascot {
+.otter-mirage .mk-widget-header-mascot .mk-mascot {
 	width: 43px !important;
 	height: 43px !important;
 }
 
-.otto-mirage .mk-widget-conversation-header > div {
+.otter-mirage .mk-widget-conversation-header > div {
 	display: grid !important;
 	gap: 5px !important;
 }
 
-.otto-mirage .mk-widget-conversation-header strong {
+.otter-mirage .mk-widget-conversation-header strong {
 	color: #f1f3f1 !important;
 	font-size: 15px !important;
 	font-weight: 600 !important;
 	line-height: 1 !important;
 }
 
-.otto-mirage .mk-widget-conversation-header span:not(.mk-widget-header-mascot) {
+.otter-mirage .mk-widget-conversation-header span:not(.mk-widget-header-mascot) {
 	display: flex !important;
 	align-items: center !important;
 	gap: 7px !important;
@@ -1756,14 +1756,14 @@
 	font-size: 11px !important;
 }
 
-.otto-mirage .mk-widget-conversation-header span i {
+.otter-mirage .mk-widget-conversation-header span i {
 	width: 7px !important;
 	height: 7px !important;
 	border-radius: 50% !important;
 	background: var(--ol-green) !important;
 }
 
-.otto-mirage .mk-icon-button {
+.otter-mirage .mk-icon-button {
 	display: grid !important;
 	width: 34px !important;
 	height: 34px !important;
@@ -1777,7 +1777,7 @@
 	cursor: pointer !important;
 }
 
-.otto-mirage .mk-widget-messages {
+.otter-mirage .mk-widget-messages {
 	display: flex !important;
 	min-height: 0 !important;
 	flex-direction: column !important;
@@ -1791,13 +1791,13 @@
 	background-size: 40px 40px !important;
 }
 
-.otto-mirage .mk-chat-message {
+.otter-mirage .mk-chat-message {
 	display: flex !important;
 	align-items: flex-start !important;
 	gap: 11px !important;
 }
 
-.otto-mirage .mk-chat-message p {
+.otter-mirage .mk-chat-message p {
 	width: auto !important;
 	max-width: 310px !important;
 	margin: 0 !important;
@@ -1810,16 +1810,16 @@
 	line-height: 1.48 !important;
 }
 
-.otto-mirage .mk-chat-visitor {
+.otter-mirage .mk-chat-visitor {
 	justify-content: flex-end !important;
 }
 
-.otto-mirage .mk-chat-visitor p {
+.otter-mirage .mk-chat-visitor p {
 	border-color: rgba(255, 255, 255, 0.11) !important;
 	background: #121515 !important;
 }
 
-.otto-mirage .mk-message-avatar {
+.otter-mirage .mk-message-avatar {
 	display: grid !important;
 	width: 34px !important;
 	height: 34px !important;
@@ -1830,12 +1830,12 @@
 	background: #0a1514 !important;
 }
 
-.otto-mirage .mk-message-avatar .mk-mascot {
+.otter-mirage .mk-message-avatar .mk-mascot {
 	width: 31px !important;
 	height: 31px !important;
 }
 
-.otto-mirage .mk-widget-composer {
+.otter-mirage .mk-widget-composer {
 	display: grid !important;
 	gap: 0 !important;
 	margin: 12px !important;
@@ -1845,7 +1845,7 @@
 	background: #090c0c !important;
 }
 
-.otto-mirage .mk-widget-composer textarea {
+.otter-mirage .mk-widget-composer textarea {
 	width: 100% !important;
 	min-height: 78px !important;
 	resize: none !important;
@@ -1858,18 +1858,18 @@
 	line-height: 1.5 !important;
 }
 
-.otto-mirage .mk-widget-composer textarea::placeholder {
+.otter-mirage .mk-widget-composer textarea::placeholder {
 	color: #666c69 !important;
 }
 
-.otto-mirage .mk-widget-composer > div {
+.otter-mirage .mk-widget-composer > div {
 	display: flex !important;
 	align-items: center !important;
 	justify-content: space-between !important;
 	padding: 0 10px 10px 14px !important;
 }
 
-.otto-mirage .mk-widget-powered {
+.otter-mirage .mk-widget-powered {
 	display: flex !important;
 	align-items: center !important;
 	gap: 8px !important;
@@ -1877,13 +1877,13 @@
 	font-size: 9px !important;
 }
 
-.otto-mirage .mk-widget-powered .mk-mark {
+.otter-mirage .mk-widget-powered .mk-mark {
 	width: 17px !important;
 	height: 17px !important;
 	color: var(--ol-cyan) !important;
 }
 
-.otto-mirage .mk-widget-composer button {
+.otter-mirage .mk-widget-composer button {
 	width: 34px !important;
 	height: 34px !important;
 	padding: 0 !important;
@@ -1895,12 +1895,12 @@
 	cursor: pointer !important;
 }
 
-.otto-mirage .mk-widget-composer button:disabled {
+.otter-mirage .mk-widget-composer button:disabled {
 	opacity: 0.38 !important;
 	cursor: default !important;
 }
 
-.otto-mirage .mk-widget-bubble {
+.otter-mirage .mk-widget-bubble {
 	position: fixed !important;
 	right: 22px !important;
 	bottom: 18px !important;
@@ -1919,12 +1919,12 @@
 	transition: border-color 180ms ease, transform 180ms ease !important;
 }
 
-.otto-mirage .mk-widget-bubble:hover {
+.otter-mirage .mk-widget-bubble:hover {
 	border-color: rgba(101, 217, 202, 0.6) !important;
 	transform: translateY(-2px) !important;
 }
 
-.otto-mirage .mk-widget-bubble-face {
+.otter-mirage .mk-widget-bubble-face {
 	display: grid !important;
 	width: 50px !important;
 	height: 50px !important;
@@ -1933,12 +1933,12 @@
 	border-radius: 6px !important;
 }
 
-.otto-mirage .mk-widget-bubble-face .mk-mascot {
+.otter-mirage .mk-widget-bubble-face .mk-mascot {
 	width: 51px !important;
 	height: 51px !important;
 }
 
-.otto-mirage .mk-widget-ping {
+.otter-mirage .mk-widget-ping {
 	position: absolute !important;
 	top: 5px !important;
 	right: 5px !important;
@@ -1971,7 +1971,7 @@
 	.ol-scan-line,
 	.mk-mark-animated .mk-mark-eyes,
 	.mk-mark-animated .mk-mascot-eyes,
-	.otto-mirage .mk-widget-ping {
+	.otter-mirage .mk-widget-ping {
 		animation: none !important;
 	}
 }
@@ -2282,7 +2282,7 @@
 		padding: 0 16px 16px;
 	}
 
-	.ol-message-otto > div {
+	.ol-message-otter > div {
 		max-width: calc(100% - 38px);
 	}
 
@@ -2400,18 +2400,18 @@
 		justify-items: start;
 	}
 
-	.otto-mirage .mk-widget-root:not([data-embedded="true"]) {
+	.otter-mirage .mk-widget-root:not([data-embedded="true"]) {
 		right: 10px !important;
 		bottom: 10px !important;
 	}
 
-	.otto-mirage .mk-widget-panel {
+	.otter-mirage .mk-widget-panel {
 		inset: 8px !important;
 		width: auto !important;
 		height: auto !important;
 	}
 
-	.otto-mirage .mk-widget-bubble {
+	.otter-mirage .mk-widget-bubble {
 		right: 10px !important;
 		bottom: 10px !important;
 	}

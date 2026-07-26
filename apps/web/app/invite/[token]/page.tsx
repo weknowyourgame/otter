@@ -4,7 +4,7 @@ import { ArrowRight, LoaderCircle } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 import { Button, Field } from "@/components/dashboard/ui";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 
 type InvitePreview = { email: string; role: string; tenantName: string };
@@ -15,10 +15,10 @@ function Shell({ children }: { children: React.ReactNode }) {
 			<section className="od-auth-panel">
 				<header className="od-auth-brand">
 					<span>
-						<OttoGlyph className="h-5 w-5" />
+						<OtterGlyph className="h-5 w-5" />
 					</span>
 					<div>
-						<strong>Otto</strong>
+						<strong>Otter</strong>
 						<small>Agent workspace</small>
 					</div>
 				</header>
@@ -156,7 +156,7 @@ export default function InviteAcceptPage() {
 			<Shell>
 				<div className="od-auth-copy">
 					<p>You're signed in as {session.user.email}</p>
-					<h1>Join {invite.tenantName} on Otto?</h1>
+					<h1>Join {invite.tenantName} on Otter?</h1>
 				</div>
 				{formError ? <p className="od-auth-error">{formError}</p> : null}
 				<Button

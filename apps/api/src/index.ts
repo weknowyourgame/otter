@@ -7,7 +7,7 @@ import {
 	listSessions,
 	requestEmbedding,
 	runStep,
-} from "otto-core";
+} from "otter-core";
 import {
 	acceptTenantInvite,
 	countTenantOwners,
@@ -36,9 +36,9 @@ import {
 	setChunkEmbedding,
 	updateTenantName,
 	upsertAgent,
-} from "otto-db";
-import { createWebCrawlTriggers } from "otto-jobs";
-import { createRedisConnection, getBullConnectionOptions } from "otto-redis";
+} from "otter-db";
+import { createWebCrawlTriggers } from "otter-jobs";
+import { createRedisConnection, getBullConnectionOptions } from "otter-redis";
 import {
 	createApiKey,
 	extractApiKey,
@@ -141,7 +141,7 @@ async function engineConfigFor(
 }
 
 function defaultTenantName(name: string): string {
-	return `${name || "Otto"}'s workspace`;
+	return `${name || "Otter"}'s workspace`;
 }
 
 function defaultTenantSlug(name: string, userId: string): string {
@@ -246,7 +246,7 @@ function agentCorsHeaders(origin: string): Record<string, string> {
 	return {
 		"access-control-allow-origin": origin,
 		"access-control-allow-methods": "POST, OPTIONS",
-		"access-control-allow-headers": "content-type, x-otto-key",
+		"access-control-allow-headers": "content-type, x-otter-key",
 		"access-control-max-age": "600",
 		vary: "Origin, Access-Control-Request-Headers",
 	};
@@ -337,8 +337,8 @@ app.post("/api/account/team/invite", requireDashboard, async (c) => {
 	const inviteUrl = `${dashboardOrigins()[0]}/invite/${invite.token}`;
 	await sendEmail({
 		to: invite.email,
-		subject: `You've been invited to join ${dashboard.tenantName} on Otto`,
-		html: `<p>${dashboard.session.user.name} invited you to join <strong>${dashboard.tenantName}</strong> on Otto.</p><p><a href="${inviteUrl}">Accept invitation</a></p><p>This invitation expires in 7 days.</p>`,
+		subject: `You've been invited to join ${dashboard.tenantName} on Otter`,
+		html: `<p>${dashboard.session.user.name} invited you to join <strong>${dashboard.tenantName}</strong> on Otter.</p><p><a href="${inviteUrl}">Accept invitation</a></p><p>This invitation expires in 7 days.</p>`,
 	});
 	return c.json({ invite }, 201);
 });
@@ -382,7 +382,7 @@ app.get("/api/invites/:token", async (c) => {
 	return c.json({
 		email: invite.email,
 		role: invite.role,
-		tenantName: tenant?.name ?? "Otto",
+		tenantName: tenant?.name ?? "Otter",
 	});
 });
 
@@ -478,7 +478,7 @@ app.put("/api/account/origins", requireDashboard, async (c) => {
 });
 
 const DEFAULT_AGENT_CONFIG = {
-	name: "Otto Support",
+	name: "Otter Support",
 	model: "anthropic/claude-sonnet-4.5",
 	systemPrompt: null as string | null,
 	maxToolCalls: 6,
@@ -849,7 +849,7 @@ app.get(
 );
 
 const port = Number(process.env.PORT ?? 8787);
-logger.info({ port }, "otto-api listening");
+logger.info({ port }, "otter-api listening");
 
 export default {
 	port,

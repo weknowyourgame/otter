@@ -1,6 +1,6 @@
 import { defineConfig } from "drizzle-kit";
 
-const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otto";
+const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
 
 export default defineConfig({
 	dialect: "postgresql",

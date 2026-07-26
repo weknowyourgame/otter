@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { MarketingShell } from "@/components/marketing/marketing-shell";
 
 export const metadata: Metadata = {
-	title: "Changelog - Otto",
-	description: "Product updates and improvements from the Otto team.",
+	title: "Changelog - Otter",
+	description: "Product updates and improvements from the Otter team.",
 };
 
 const entries = [
@@ -11,21 +11,21 @@ const entries = [
 		version: "0.3.0",
 		date: "July 14, 2026",
 		title: "Action-ready support sessions",
-		description: "Otto can now explain, request approval, act in the interface, and confirm the result in one visible session.",
+		description: "Otter can now explain, request approval, act in the interface, and confirm the result in one visible session.",
 		items: ["Persistent stop control during tasks", "Clear action trail inside chat", "Safer approval gates for sensitive actions"],
 	},
 	{
 		version: "0.2.0",
 		date: "June 28, 2026",
 		title: "Native embed and theme inheritance",
-		description: "A lighter install path and automatic theme matching make Otto feel native from the first render.",
+		description: "A lighter install path and automatic theme matching make Otter feel native from the first render.",
 		items: ["Single-command Next.js install", "Automatic color and radius inheritance", "Smaller widget runtime"],
 	},
 	{
 		version: "0.1.0",
 		date: "June 02, 2026",
 		title: "The first public preview",
-		description: "The first usable release of Otto support for product teams.",
+		description: "The first usable release of Otter support for product teams.",
 		items: ["AI and human handoff", "Knowledge-backed answers", "Live dashboard sessions"],
 	},
 ];

@@ -34,18 +34,18 @@ describe("api key primitives", () => {
 describe("extractApiKey", () => {
 	it("reads a key from the query string, header, or bearer token", () => {
 		expect(
-			extractApiKey(new Request("https://api.otto.so/step?key=pk_test_a")),
+			extractApiKey(new Request("https://api.otter.so/step?key=pk_test_a")),
 		).toBe("pk_test_a");
 		expect(
 			extractApiKey(
-				new Request("https://api.otto.so/step", {
-					headers: { "x-otto-key": "pk_test_b" },
+				new Request("https://api.otter.so/step", {
+					headers: { "x-otter-key": "pk_test_b" },
 				}),
 			),
 		).toBe("pk_test_b");
 		expect(
 			extractApiKey(
-				new Request("https://api.otto.so/step", {
+				new Request("https://api.otter.so/step", {
 					headers: { authorization: "Bearer pk_test_c" },
 				}),
 			),
@@ -53,19 +53,19 @@ describe("extractApiKey", () => {
 	});
 
 	it("returns undefined when no key is presented", () => {
-		expect(extractApiKey(new Request("https://api.otto.so/step"))).toBeUndefined();
+		expect(extractApiKey(new Request("https://api.otter.so/step"))).toBeUndefined();
 	});
 
 	it("rejects requests presenting conflicting keys across multiple channels", () => {
-		const request = new Request("https://api.otto.so/step?key=pk_test_a", {
-			headers: { "x-otto-key": "pk_test_different" },
+		const request = new Request("https://api.otter.so/step?key=pk_test_a", {
+			headers: { "x-otter-key": "pk_test_different" },
 		});
 		expect(extractApiKey(request)).toBeUndefined();
 	});
 
 	it("allows the same key repeated across channels", () => {
-		const request = new Request("https://api.otto.so/step?key=pk_test_a", {
-			headers: { "x-otto-key": "pk_test_a" },
+		const request = new Request("https://api.otter.so/step?key=pk_test_a", {
+			headers: { "x-otter-key": "pk_test_a" },
 		});
 		expect(extractApiKey(request)).toBe("pk_test_a");
 	});

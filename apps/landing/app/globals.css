@@ -82,34 +82,34 @@ video {
 	opacity: 1 !important;
 }
 
-[data-otto-hero-field] canvas {
+[data-otter-hero-field] canvas {
 	filter: saturate(1.08) contrast(1.08);
 }
 
-.otto-hero-heading {
-	translate: var(--otto-pointer-x, 0) var(--otto-pointer-y, 0);
+.otter-hero-heading {
+	translate: var(--otter-pointer-x, 0) var(--otter-pointer-y, 0);
 	transition: translate 700ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.otto-letter {
+.otter-letter {
 	display: inline-block;
 	opacity: 0;
 	transform: translate3d(0, 18px, 0) scale(0.985);
 	filter: blur(8px);
-	animation: otto-letter-in 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	animation-delay: calc(90ms + var(--otto-letter-index, 0) * 15ms);
+	animation: otter-letter-in 860ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(90ms + var(--otter-letter-index, 0) * 15ms);
 }
 
-.otto-hero-copy {
+.otter-hero-copy {
 	opacity: 0;
 	transform: translate3d(0, 18px, 0);
 	filter: blur(5px);
-	animation: otto-hero-copy-in 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	animation-delay: calc(380ms + var(--otto-hero-copy-index, 0) * 75ms);
+	animation: otter-hero-copy-in 850ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(380ms + var(--otter-hero-copy-index, 0) * 75ms);
 }
 
-.otto-nav-shell {
-	animation: otto-nav-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.otter-nav-shell {
+	animation: otter-nav-in 760ms cubic-bezier(0.16, 1, 0.3, 1) both;
 	background: rgba(0, 0, 0, 0);
 	box-shadow: 0 1px 0 rgba(255, 255, 255, 0);
 	transition:
@@ -118,19 +118,19 @@ video {
 		backdrop-filter 400ms ease;
 }
 
-.otto-nav-shell.otto-nav-scrolled {
+.otter-nav-shell.otter-nav-scrolled {
 	background: rgba(0, 0, 0, 0.78);
 	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.1);
 	backdrop-filter: blur(18px) saturate(1.35);
 }
 
-.otto-media-shell {
+.otter-media-shell {
 	position: relative;
 	isolation: isolate;
 	overflow: hidden;
 }
 
-.otto-media-shell::after {
+.otter-media-shell::after {
 	position: absolute;
 	inset: -30%;
 	z-index: 4;
@@ -146,11 +146,11 @@ video {
 	transform: translate3d(-75%, 0, 0) rotate(4deg);
 }
 
-.otto-media-shell.otto-media-live::after {
-	animation: otto-media-glint 1500ms 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.otter-media-shell.otter-media-live::after {
+	animation: otter-media-glint 1500ms 320ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.otto-motion-video {
+.otter-motion-video {
 	opacity: 0.15 !important;
 	scale: 1.055;
 	filter: saturate(0.72) brightness(0.72) blur(3px) !important;
@@ -159,19 +159,19 @@ video {
 		filter 1100ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.otto-media-live .otto-motion-video {
+.otter-media-live .otter-motion-video {
 	opacity: 1 !important;
 	filter: saturate(1) brightness(1) blur(0) !important;
-	animation: otto-video-breathe 10s calc(var(--otto-video-index, 0) * -1.7s)
+	animation: otter-video-breathe 10s calc(var(--otter-video-index, 0) * -1.7s)
 		ease-in-out infinite alternate;
 }
 
-.otto-parallax-target {
-	translate: 0 var(--otto-parallax-y, 0);
+.otter-parallax-target {
+	translate: 0 var(--otter-parallax-y, 0);
 	transition: translate 220ms linear;
 }
 
-.otto-reveal-item {
+.otter-reveal-item {
 	opacity: 0 !important;
 	translate: 0 30px;
 	filter: blur(7px);
@@ -179,59 +179,59 @@ video {
 		opacity 820ms cubic-bezier(0.16, 1, 0.3, 1),
 		translate 900ms cubic-bezier(0.16, 1, 0.3, 1),
 		filter 900ms cubic-bezier(0.16, 1, 0.3, 1);
-	transition-delay: calc(var(--otto-reveal-index, 0) * 65ms);
+	transition-delay: calc(var(--otter-reveal-index, 0) * 65ms);
 }
 
-.otto-reveal-item.otto-reveal-in {
+.otter-reveal-item.otter-reveal-in {
 	opacity: 1 !important;
 	translate: 0 0;
 	filter: blur(0);
 }
 
-.otto-marquee-track {
+.otter-marquee-track {
 	will-change: transform;
-	animation: otto-marquee var(--otto-marquee-duration, 32s) linear infinite;
+	animation: otter-marquee var(--otter-marquee-duration, 32s) linear infinite;
 }
 
-.otto-marquee-reverse {
+.otter-marquee-reverse {
 	animation-direction: reverse;
 }
 
-.otto-marquee-track:hover {
+.otter-marquee-track:hover {
 	animation-play-state: paused;
 }
 
-.otto-rail-card {
+.otter-rail-card {
 	transition:
 		translate 360ms cubic-bezier(0.16, 1, 0.3, 1),
 		scale 360ms cubic-bezier(0.16, 1, 0.3, 1),
 		filter 360ms ease;
 }
 
-.otto-rail-card:hover {
+.otter-rail-card:hover {
 	z-index: 2;
 	translate: 0 -8px;
 	scale: 1.012;
 	filter: brightness(1.06);
 }
 
-.otto-review-track {
+.otter-review-track {
 	will-change: transform;
-	animation: otto-review-up var(--otto-review-duration, 38s) linear infinite;
+	animation: otter-review-up var(--otter-review-duration, 38s) linear infinite;
 }
 
-.otto-review-reverse {
-	animation-name: otto-review-down;
+.otter-review-reverse {
+	animation-name: otter-review-down;
 }
 
-.otto-metric-value {
+.otter-metric-value {
 	position: relative;
 	opacity: 0;
 	filter: blur(10px);
 	transform: translate3d(0, 26px, 0) scale(0.96);
 }
 
-.otto-metric-value::after {
+.otter-metric-value::after {
 	position: absolute;
 	right: 0;
 	bottom: -8px;
@@ -248,25 +248,25 @@ video {
 	transform: scaleX(0);
 }
 
-.otto-metric-value.otto-metric-live {
-	animation: otto-metric-in 1050ms cubic-bezier(0.16, 1, 0.3, 1) both;
-	animation-delay: calc(var(--otto-metric-index, 0) * 120ms);
+.otter-metric-value.otter-metric-live {
+	animation: otter-metric-in 1050ms cubic-bezier(0.16, 1, 0.3, 1) both;
+	animation-delay: calc(var(--otter-metric-index, 0) * 120ms);
 }
 
-.otto-metric-value.otto-metric-live::after {
-	animation: otto-metric-line 1200ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
+.otter-metric-value.otter-metric-live::after {
+	animation: otter-metric-line 1200ms 520ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
-.otto-changelog-card {
-	--otto-card-rx: 0deg;
-	--otto-card-ry: 0deg;
-	--otto-card-x: 50%;
-	--otto-card-y: 50%;
+.otter-changelog-card {
+	--otter-card-rx: 0deg;
+	--otter-card-ry: 0deg;
+	--otter-card-x: 50%;
+	--otter-card-y: 50%;
 	position: relative;
 	z-index: 0;
 	translate: 0 0;
-	transform: perspective(900px) rotateX(var(--otto-card-rx))
-		rotateY(var(--otto-card-ry)) !important;
+	transform: perspective(900px) rotateX(var(--otter-card-rx))
+		rotateY(var(--otter-card-ry)) !important;
 	transform-style: preserve-3d;
 	will-change: transform, translate;
 	transition:
@@ -275,14 +275,14 @@ video {
 		box-shadow 420ms ease;
 }
 
-.otto-changelog-card::after {
+.otter-changelog-card::after {
 	position: absolute;
 	inset: 0;
 	z-index: 4;
 	pointer-events: none;
 	content: "";
 	background: radial-gradient(
-		circle at var(--otto-card-x) var(--otto-card-y),
+		circle at var(--otter-card-x) var(--otter-card-y),
 		rgba(255, 255, 255, 0.15),
 		transparent 34%
 	);
@@ -290,29 +290,29 @@ video {
 	transition: opacity 320ms ease;
 }
 
-.otto-changelog-card:hover {
+.otter-changelog-card:hover {
 	z-index: 3;
 	translate: 0 -9px;
 	box-shadow: 0 24px 70px rgba(0, 0, 0, 0.45);
 }
 
-.otto-changelog-card:hover::after {
+.otter-changelog-card:hover::after {
 	opacity: 1;
 }
 
-.otto-changelog-card [data-framer-name="Image"] {
+.otter-changelog-card [data-framer-name="Image"] {
 	scale: 1;
 	transition:
 		scale 700ms cubic-bezier(0.16, 1, 0.3, 1),
 		filter 700ms ease;
 }
 
-.otto-changelog-card:hover [data-framer-name="Image"] {
+.otter-changelog-card:hover [data-framer-name="Image"] {
 	scale: 1.035;
 	filter: saturate(1.12) brightness(1.04);
 }
 
-.otto-button-motion {
+.otter-button-motion {
 	position: relative;
 	isolation: isolate;
 	overflow: hidden;
@@ -322,7 +322,7 @@ video {
 		filter 300ms ease;
 }
 
-.otto-button-motion::before {
+.otter-button-motion::before {
 	position: absolute;
 	inset: -2px;
 	z-index: -1;
@@ -338,56 +338,56 @@ video {
 	transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.otto-button-motion:hover {
+.otter-button-motion:hover {
 	translate: 0 -2px;
 	filter: brightness(1.08);
 }
 
-.otto-button-motion:hover::before {
+.otter-button-motion:hover::before {
 	transform: translate3d(130%, 0, 0);
 }
 
-.otto-cta-motion [data-framer-name="BG Stripes"] {
-	animation: otto-stripes-pulse 8s ease-in-out infinite alternate;
+.otter-cta-motion [data-framer-name="BG Stripes"] {
+	animation: otter-stripes-pulse 8s ease-in-out infinite alternate;
 }
 
-.otto-meteor {
+.otter-meteor {
 	opacity: 0;
 	will-change: translate, opacity;
-	animation: otto-meteor-flight var(--otto-streak-duration, 4.2s) linear
+	animation: otter-meteor-flight var(--otter-streak-duration, 4.2s) linear
 		infinite;
-	animation-delay: calc(var(--otto-streak-index, 0) * -370ms);
+	animation-delay: calc(var(--otter-streak-index, 0) * -370ms);
 	animation-play-state: paused;
 }
 
-.otto-cta-live .otto-meteor {
+.otter-cta-live .otter-meteor {
 	animation-play-state: running;
 }
 
-.otto-mobile-nav-open {
+.otter-mobile-nav-open {
 	opacity: 1 !important;
 	pointer-events: auto !important;
 }
 
-.otto-mobile-menu-shell {
+.otter-mobile-menu-shell {
 	height: 343px !important;
 	overflow: visible !important;
 	background: #000 !important;
 }
 
-.otto-mobile-menu-host {
+.otter-mobile-menu-host {
 	height: 343px !important;
 }
 
-.otto-mobile-menu-shell [data-framer-name="Top"][class*="talqy1"] {
+.otter-mobile-menu-shell [data-framer-name="Top"][class*="talqy1"] {
 	transform: translateY(3px) rotate(45deg) !important;
 }
 
-.otto-mobile-menu-shell [data-framer-name="Bottom"] {
+.otter-mobile-menu-shell [data-framer-name="Bottom"] {
 	transform: translateY(-3px) rotate(-45deg) !important;
 }
 
-@keyframes otto-letter-in {
+@keyframes otter-letter-in {
 	to {
 		opacity: 1;
 		transform: translate3d(0, 0, 0) scale(1);
@@ -395,7 +395,7 @@ video {
 	}
 }
 
-@keyframes otto-hero-copy-in {
+@keyframes otter-hero-copy-in {
 	to {
 		opacity: 1;
 		transform: translate3d(0, 0, 0);
@@ -403,7 +403,7 @@ video {
 	}
 }
 
-@keyframes otto-nav-in {
+@keyframes otter-nav-in {
 	from {
 		opacity: 0;
 		translate: 0 -16px;
@@ -415,7 +415,7 @@ video {
 	}
 }
 
-@keyframes otto-media-glint {
+@keyframes otter-media-glint {
 	0% {
 		opacity: 0;
 		transform: translate3d(-75%, 0, 0) rotate(4deg);
@@ -431,7 +431,7 @@ video {
 	}
 }
 
-@keyframes otto-video-breathe {
+@keyframes otter-video-breathe {
 	from {
 		scale: 1.018;
 	}
@@ -441,21 +441,21 @@ video {
 	}
 }
 
-@keyframes otto-marquee {
+@keyframes otter-marquee {
 	to {
-		transform: translate3d(calc(var(--otto-marquee-distance, 0px) * -1), 0, 0);
+		transform: translate3d(calc(var(--otter-marquee-distance, 0px) * -1), 0, 0);
 	}
 }
 
-@keyframes otto-review-up {
+@keyframes otter-review-up {
 	to {
-		transform: translate3d(0, calc(var(--otto-review-distance, 0px) * -1), 0);
+		transform: translate3d(0, calc(var(--otter-review-distance, 0px) * -1), 0);
 	}
 }
 
-@keyframes otto-review-down {
+@keyframes otter-review-down {
 	from {
-		transform: translate3d(0, calc(var(--otto-review-distance, 0px) * -1), 0);
+		transform: translate3d(0, calc(var(--otter-review-distance, 0px) * -1), 0);
 	}
 
 	to {
@@ -463,7 +463,7 @@ video {
 	}
 }
 
-@keyframes otto-metric-in {
+@keyframes otter-metric-in {
 	0% {
 		opacity: 0;
 		filter: blur(10px);
@@ -477,7 +477,7 @@ video {
 	}
 }
 
-@keyframes otto-metric-line {
+@keyframes otter-metric-line {
 	0% {
 		opacity: 0;
 		transform: scaleX(0);
@@ -493,7 +493,7 @@ video {
 	}
 }
 
-@keyframes otto-meteor-flight {
+@keyframes otter-meteor-flight {
 	0% {
 		opacity: 0;
 		translate: 340px 142px;
@@ -513,7 +513,7 @@ video {
 	}
 }
 
-@keyframes otto-stripes-pulse {
+@keyframes otter-stripes-pulse {
 	from {
 		opacity: 0.68;
 		filter: contrast(1) brightness(0.9);
@@ -526,17 +526,17 @@ video {
 }
 
 @media (max-width: 809.98px) {
-	.otto-reveal-item {
+	.otter-reveal-item {
 		translate: 0 18px;
 	}
 
-	.otto-changelog-card:hover,
-	.otto-rail-card:hover {
+	.otter-changelog-card:hover,
+	.otter-rail-card:hover {
 		translate: 0 -4px;
 	}
 }
 
-/* Cossistant-inspired support surfaces, fitted into the existing Otto export. */
+/* Cossistant-inspired support surfaces, fitted into the existing Otter export. */
 .mk-landing-insert {
 	width: 100%;
 	padding-top: 0;

@@ -1,36 +1,36 @@
 import type { CSSProperties } from "react";
 
-type OttoMarkProps = {
+type OtterMarkProps = {
 	className?: string;
 	animated?: boolean;
 	style?: CSSProperties;
 };
 
-export function OttoMark({
+export function OtterMark({
 	className = "",
 	animated = true,
 	style,
-}: OttoMarkProps) {
+}: OtterMarkProps) {
 	return (
 		<MascotSvg
 			animated={animated}
 			className={`mk-mark ${className}`}
-			label="Otto otter mark"
+			label="Otter mark"
 			style={style}
 		/>
 	);
 }
 
-export function OttoMascot({
+export function OtterMascot({
 	className = "",
 	animated = true,
 	style,
-}: OttoMarkProps) {
+}: OtterMarkProps) {
 	return (
 		<MascotSvg
 			animated={animated}
 			className={`mk-mark ${className}`}
-			label="Otto otter mascot"
+			label="Otter mascot"
 			style={style}
 		/>
 	);
@@ -41,7 +41,7 @@ function MascotSvg({
 	className = "",
 	label,
 	style,
-}: OttoMarkProps & { label: string }) {
+}: OtterMarkProps & { label: string }) {
 	return (
 		<svg
 			aria-label={label}
@@ -121,11 +121,11 @@ function MascotSvg({
 	);
 }
 
-export function OttoWordmark() {
+export function OtterWordmark() {
 	return (
 		<span className="mk-wordmark">
-			<OttoMark />
-			<span>otto</span>
+			<OtterMark />
+			<span>otter</span>
 		</span>
 	);
 }

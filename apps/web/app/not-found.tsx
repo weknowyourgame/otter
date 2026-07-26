@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 
 export default function NotFound() {
 	return (
@@ -7,10 +7,10 @@ export default function NotFound() {
 			<section className="od-auth-panel">
 				<header className="od-auth-brand">
 					<span>
-						<OttoGlyph className="h-5 w-5" />
+						<OtterGlyph className="h-5 w-5" />
 					</span>
 					<div>
-						<strong>Otto</strong>
+						<strong>Otter</strong>
 						<small>Agent workspace</small>
 					</div>
 				</header>

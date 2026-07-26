@@ -15,7 +15,7 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ slug?: string[] }> }): Promise<Metadata> {
 	const { slug = [] } = await params;
 	const doc = getMarketingDoc(slug);
-	return doc ? { title: `${doc.title} - Otto Docs`, description: doc.description } : {};
+	return doc ? { title: `${doc.title} - Otter Docs`, description: doc.description } : {};
 }
 
 export default async function DocsPage({ params }: { params: Promise<{ slug?: string[] }> }) {
@@ -34,7 +34,7 @@ export default async function DocsPage({ params }: { params: Promise<{ slug?: st
 				<DocsSidebar docs={docs.map(({ title, href, section }) => ({ title, href, section }))} />
 				<article className="mk-docs-article">
 					<header>
-						<p className="mk-kicker">[Otto documentation]</p>
+						<p className="mk-kicker">[Otter documentation]</p>
 						<h1>{doc.title}</h1>
 						<p>{doc.description}</p>
 					</header>

@@ -229,7 +229,7 @@ export type AcceptInviteResult =
 	  };
 
 /**
- * Otto's dashboard assumes one tenant per user (see getTenantForUser) — a
+ * Otter's dashboard assumes one tenant per user (see getTenantForUser) — a
  * user who already belongs to any tenant is rejected rather than silently
  * added to a second one, which requireDashboard's single-tenant lookup
  * couldn't represent correctly anyway.

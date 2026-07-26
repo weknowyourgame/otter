@@ -15,7 +15,7 @@ const ICON_WARN = `<svg viewBox="0 0 24 24"><path d="M12 4L2.8 19.5h18.4L12 4z"/
 const ICON_CHECK = `<svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>`;
 const ICON_CROSS = `<svg viewBox="0 0 24 24"><path d="M7 7l10 10M17 7L7 17"/></svg>`;
 const ICON_CHEVRON = `<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9.5l6 6 6-6"/></svg>`;
-const SPINNER = `<svg class="otto-spinner" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>`;
+const SPINNER = `<svg class="otter-spinner" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6"/></svg>`;
 
 export interface StepHandle {
 	setDone(ok: boolean): void;
@@ -71,43 +71,43 @@ export class WidgetUI {
 		this.shadow.appendChild(style);
 
 		this.root = document.createElement("div");
-		this.root.className = "otto-root";
+		this.root.className = "otter-root";
 		this.root.innerHTML = `
-			<button class="otto-launcher" type="button" aria-label="Open ${esc(config.name)}">${GLYPH}</button>
-			<section class="otto-panel" data-open="false" role="dialog" aria-label="${esc(config.name)}">
-				<header class="otto-header">
-					<div class="otto-brand">
-						<span class="otto-brand-dot">${GLYPH}</span>
+			<button class="otter-launcher" type="button" aria-label="Open ${esc(config.name)}">${GLYPH}</button>
+			<section class="otter-panel" data-open="false" role="dialog" aria-label="${esc(config.name)}">
+				<header class="otter-header">
+					<div class="otter-brand">
+						<span class="otter-brand-dot">${GLYPH}</span>
 						<div><h1>${esc(config.name)}</h1><p>AI support — it does it for you</p></div>
 					</div>
-					<div class="otto-header-actions">
-						<button class="otto-icon-btn" type="button" data-act="new" aria-label="New conversation">${ICON_NEW}</button>
-						<button class="otto-icon-btn" type="button" data-act="close" aria-label="Close">${ICON_CLOSE}</button>
+					<div class="otter-header-actions">
+						<button class="otter-icon-btn" type="button" data-act="new" aria-label="New conversation">${ICON_NEW}</button>
+						<button class="otter-icon-btn" type="button" data-act="close" aria-label="Close">${ICON_CLOSE}</button>
 					</div>
 				</header>
-				<div class="otto-messages"></div>
-				<form class="otto-composer">
-					<div class="otto-composer-box">
-						<textarea class="otto-input" rows="1" placeholder="What do you need done?" aria-label="Message"></textarea>
-						<button class="otto-send" type="submit" aria-label="Send" disabled>${ICON_SEND}</button>
+				<div class="otter-messages"></div>
+				<form class="otter-composer">
+					<div class="otter-composer-box">
+						<textarea class="otter-input" rows="1" placeholder="What do you need done?" aria-label="Message"></textarea>
+						<button class="otter-send" type="submit" aria-label="Send" disabled>${ICON_SEND}</button>
 					</div>
 				</form>
-				${config.hideBranding ? "" : `<footer class="otto-footer">${GLYPH}<span>Powered by ${esc(config.name)}</span></footer>`}
+				${config.hideBranding ? "" : `<footer class="otter-footer">${GLYPH}<span>Powered by ${esc(config.name)}</span></footer>`}
 			</section>
-			<div class="otto-pill" data-visible="false">
-				<span class="otto-pill-dot"></span>
-				<span class="otto-pill-status">${esc(config.name)} is working…</span>
-				<span class="otto-pill-divider"></span>
-				<button class="otto-pill-stop" type="button">Stop</button>
+			<div class="otter-pill" data-visible="false">
+				<span class="otter-pill-dot"></span>
+				<span class="otter-pill-status">${esc(config.name)} is working…</span>
+				<span class="otter-pill-divider"></span>
+				<button class="otter-pill-stop" type="button">Stop</button>
 			</div>`;
 		this.shadow.appendChild(this.root);
 
-		this.panel = this.q(".otto-panel");
-		this.messages = this.q(".otto-messages");
-		this.input = this.q(".otto-input");
-		this.sendBtn = this.q(".otto-send");
-		this.pillEl = this.q(".otto-pill");
-		this.pillStatus = this.q(".otto-pill-status");
+		this.panel = this.q(".otter-panel");
+		this.messages = this.q(".otter-messages");
+		this.input = this.q(".otter-input");
+		this.sendBtn = this.q(".otter-send");
+		this.pillEl = this.q(".otter-pill");
+		this.pillStatus = this.q(".otter-pill-status");
 
 		this.applyTheme();
 		this.wire();
@@ -129,12 +129,12 @@ export class WidgetUI {
 	}
 
 	private wire(): void {
-		this.q(".otto-launcher").addEventListener("click", () => this.toggle());
+		this.q(".otter-launcher").addEventListener("click", () => this.toggle());
 		this.q("[data-act='close']").addEventListener("click", () => this.close());
 		this.q("[data-act='new']").addEventListener("click", () => this.reset());
-		this.q(".otto-pill-stop").addEventListener("click", () => this.callbacks.onStop());
+		this.q(".otter-pill-stop").addEventListener("click", () => this.callbacks.onStop());
 
-		const form = this.q(".otto-composer");
+		const form = this.q(".otter-composer");
 		form.addEventListener("submit", (e) => {
 			e.preventDefault();
 			this.submit();
@@ -208,7 +208,7 @@ export class WidgetUI {
 
 	user(text: string, opts: { record?: boolean } = {}): void {
 		const el = document.createElement("div");
-		el.className = "otto-msg otto-msg-user";
+		el.className = "otter-msg otter-msg-user";
 		el.textContent = text;
 		this.messages.appendChild(el);
 		this.scrollDown();
@@ -217,7 +217,7 @@ export class WidgetUI {
 
 	agent(text: string, opts: { error?: boolean; record?: boolean } = {}): void {
 		const el = document.createElement("div");
-		el.className = `otto-msg otto-msg-agent${opts.error ? " otto-msg-error" : ""}`;
+		el.className = `otter-msg otter-msg-agent${opts.error ? " otter-msg-error" : ""}`;
 		el.textContent = text;
 		this.messages.appendChild(el);
 		this.scrollDown();
@@ -229,7 +229,7 @@ export class WidgetUI {
 	typing(show: boolean): void {
 		if (show && !this.typingEl) {
 			this.typingEl = document.createElement("div");
-			this.typingEl.className = "otto-typing";
+			this.typingEl.className = "otter-typing";
 			this.typingEl.innerHTML = "<span></span><span></span><span></span>";
 			this.messages.appendChild(this.typingEl);
 			this.scrollDown();
@@ -246,17 +246,17 @@ export class WidgetUI {
 		this.transcript.push(entry);
 
 		const box = document.createElement("div");
-		box.className = "otto-trail";
+		box.className = "otter-trail";
 		box.innerHTML = `
-			<button class="otto-trail-head" type="button">
-				<span class="otto-check">${ICON_CHECK.replace("<svg ", '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ')}</span>
-				<span class="otto-trail-count"></span>
-				<span class="otto-trail-chevron">${ICON_CHEVRON}</span>
+			<button class="otter-trail-head" type="button">
+				<span class="otter-check">${ICON_CHECK.replace("<svg ", '<svg width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ')}</span>
+				<span class="otter-trail-count"></span>
+				<span class="otter-trail-chevron">${ICON_CHEVRON}</span>
 			</button>
-			<div class="otto-trail-steps"></div>`;
+			<div class="otter-trail-steps"></div>`;
 		this.messages.appendChild(box);
-		const stepsEl = box.querySelector(".otto-trail-steps") as HTMLDivElement;
-		const head = box.querySelector(".otto-trail-head") as HTMLButtonElement;
+		const stepsEl = box.querySelector(".otter-trail-steps") as HTMLDivElement;
+		const head = box.querySelector(".otter-trail-head") as HTMLButtonElement;
 		head.addEventListener("click", () => {
 			box.setAttribute("data-open", box.getAttribute("data-open") === "true" ? "false" : "true");
 		});
@@ -266,19 +266,19 @@ export class WidgetUI {
 		const addRow = (status: string): { row: HTMLDivElement; icon: HTMLSpanElement } => {
 			count += 1;
 			const row = document.createElement("div");
-			row.className = "otto-step";
+			row.className = "otter-step";
 			row.setAttribute("data-state", "active");
-			row.innerHTML = `<span class="otto-step-icon">${SPINNER}</span><span class="otto-step-text"></span>`;
-			(row.querySelector(".otto-step-text") as HTMLElement).textContent = status;
+			row.innerHTML = `<span class="otter-step-icon">${SPINNER}</span><span class="otter-step-text"></span>`;
+			(row.querySelector(".otter-step-text") as HTMLElement).textContent = status;
 			stepsEl.appendChild(row);
 			this.scrollDown();
-			return { row, icon: row.querySelector(".otto-step-icon") as HTMLSpanElement };
+			return { row, icon: row.querySelector(".otter-step-icon") as HTMLSpanElement };
 		};
 		const setIcon = (icon: HTMLSpanElement, row: HTMLDivElement, ok: boolean) => {
 			row.setAttribute("data-state", ok ? "done" : "error");
 			icon.innerHTML = ok
-				? `<span class="otto-check">${svgStroke(ICON_CHECK)}</span>`
-				: `<span class="otto-cross">${svgStroke(ICON_CROSS)}</span>`;
+				? `<span class="otter-check">${svgStroke(ICON_CHECK)}</span>`
+				: `<span class="otter-cross">${svgStroke(ICON_CROSS)}</span>`;
 		};
 
 		for (const s of entry.steps ?? []) {
@@ -317,9 +317,9 @@ export class WidgetUI {
 						: kind === "stopped"
 							? `Stopped after ${count} step${count === 1 ? "" : "s"}`
 							: `Stopped — ${count} step${count === 1 ? "" : "s"} attempted`;
-				(box.querySelector(".otto-trail-count") as HTMLElement).textContent = label;
+				(box.querySelector(".otter-trail-count") as HTMLElement).textContent = label;
 				if (kind !== "done") {
-					const check = box.querySelector(".otto-trail-head .otto-check") as HTMLElement;
+					const check = box.querySelector(".otter-trail-head .otter-check") as HTMLElement;
 					check.innerHTML = svgStroke(ICON_CROSS);
 				}
 				ui.scrollDown();
@@ -340,26 +340,26 @@ export class WidgetUI {
 	}): Promise<boolean> {
 		return new Promise((resolve) => {
 			const el = document.createElement("div");
-			el.className = "otto-card";
+			el.className = "otter-card";
 			if (opts.danger) el.setAttribute("data-danger", "true");
 			el.innerHTML = `
-				<div class="otto-card-title">${opts.icon}<span></span></div>
-				<div class="otto-card-body"></div>
-				<div class="otto-card-row">
-					<button class="otto-btn otto-btn-ghost" type="button"></button>
-					<button class="otto-btn ${opts.danger ? "otto-btn-danger" : "otto-btn-primary"}" type="button"></button>
+				<div class="otter-card-title">${opts.icon}<span></span></div>
+				<div class="otter-card-body"></div>
+				<div class="otter-card-row">
+					<button class="otter-btn otter-btn-ghost" type="button"></button>
+					<button class="otter-btn ${opts.danger ? "otter-btn-danger" : "otter-btn-primary"}" type="button"></button>
 				</div>`;
-			(el.querySelector(".otto-card-title span") as HTMLElement).textContent = opts.title;
-			(el.querySelector(".otto-card-body") as HTMLElement).textContent = opts.body;
-			const deny = el.querySelector(".otto-btn-ghost") as HTMLButtonElement;
-			const allow = el.querySelectorAll(".otto-btn")[1] as HTMLButtonElement;
+			(el.querySelector(".otter-card-title span") as HTMLElement).textContent = opts.title;
+			(el.querySelector(".otter-card-body") as HTMLElement).textContent = opts.body;
+			const deny = el.querySelector(".otter-btn-ghost") as HTMLButtonElement;
+			const allow = el.querySelectorAll(".otter-btn")[1] as HTMLButtonElement;
 			deny.textContent = opts.denyLabel;
 			allow.textContent = opts.confirmLabel;
 
 			const settle = (val: boolean) => {
 				el.innerHTML = val
-					? `<div class="otto-card-resolved"><span class="otto-check">${svgStroke(ICON_CHECK)}</span>${esc(opts.resolvedText)}</div>`
-					: `<div class="otto-card-resolved">${esc(opts.denyLabel)} — nothing was touched.</div>`;
+					? `<div class="otter-card-resolved"><span class="otter-check">${svgStroke(ICON_CHECK)}</span>${esc(opts.resolvedText)}</div>`
+					: `<div class="otter-card-resolved">${esc(opts.denyLabel)} — nothing was touched.</div>`;
 				resolve(val);
 			};
 			deny.addEventListener("click", () => settle(false));

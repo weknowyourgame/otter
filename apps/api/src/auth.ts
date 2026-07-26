@@ -7,7 +7,7 @@ import {
 	getDb,
 	user,
 	verification,
-} from "otto-db";
+} from "otter-db";
 import {
 	resetPasswordEmailHtml,
 	sendEmail,
@@ -21,7 +21,7 @@ function configuredSecret(): string {
 }
 
 export function dashboardOrigins(): string[] {
-	const configured = process.env.OTTO_DASHBOARD_ORIGINS?.split(",")
+	const configured = process.env.OTTER_DASHBOARD_ORIGINS?.split(",")
 		.map((origin) => origin.trim())
 		.filter(Boolean);
 	return configured?.length
@@ -63,7 +63,7 @@ export const auth = betterAuth({
 				after: async (createdUser) => {
 					await createTenantForUser({
 						userId: createdUser.id,
-						name: `${createdUser.name || "Otto"}'s workspace`,
+						name: `${createdUser.name || "Otter"}'s workspace`,
 						slug: tenantSlug(createdUser.name || "workspace", createdUser.id),
 					});
 				},
@@ -77,7 +77,7 @@ export const auth = betterAuth({
 		sendResetPassword: async ({ user: resetUser, url }) => {
 			await sendEmail({
 				to: resetUser.email,
-				subject: "Reset your Otto password",
+				subject: "Reset your Otter password",
 				html: resetPasswordEmailHtml(url),
 			});
 		},
@@ -88,14 +88,14 @@ export const auth = betterAuth({
 		sendVerificationEmail: async ({ user: verifyUser, url }) => {
 			await sendEmail({
 				to: verifyUser.email,
-				subject: "Verify your Otto email",
+				subject: "Verify your Otter email",
 				html: verificationEmailHtml(url),
 			});
 		},
 	},
 	trustedOrigins: dashboardOrigins(),
 	advanced: {
-		cookiePrefix: "otto-auth",
+		cookiePrefix: "otter-auth",
 		useSecureCookies: process.env.NODE_ENV === "production",
 		defaultCookieAttributes: {
 			httpOnly: true,

@@ -5,9 +5,9 @@
 // of the core agent loop matters more than this backstop when infra is
 // degraded, so any Redis error or timeout lets the request through.
 
-import type { Redis } from "otto-redis";
+import type { Redis } from "otter-redis";
 
-const RATE_LIMIT_KEY_PREFIX = "otto:ratelimit:";
+const RATE_LIMIT_KEY_PREFIX = "otter:ratelimit:";
 const REDIS_TIMEOUT_MS = 300;
 
 export type RateLimitResult =

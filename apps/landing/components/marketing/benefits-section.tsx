@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import { OttoMark } from "./logo";
+import { OtterMark } from "./logo";
 
 const knowledgeCards = [
 	["SSO Configuration", "Configure Single Sign-On with Google and Microsoft", "Updated 2 hours ago"],
@@ -29,7 +29,7 @@ function ToolsGraphic() {
 			<span className="mk-tool-node mk-tool-cal">CAL</span>
 			<span className="mk-tool-node mk-tool-stripe">STRIPE</span>
 			<span className="mk-tool-node mk-tool-webhook">WEB<br />HOOK</span>
-			<span className="mk-tool-core"><OttoMark /></span>
+			<span className="mk-tool-core"><OtterMark /></span>
 			<span className="mk-tool-agent">✦</span>
 			<i className="mk-beam mk-beam-a" /><i className="mk-beam mk-beam-b" /><i className="mk-beam mk-beam-c" /><i className="mk-beam mk-beam-d" />
 		</div>
@@ -55,7 +55,7 @@ function PromptGraphic() {
 const benefits = [
 	{
 		title: "Self-learning knowledge base",
-		description: "Otto crawls your docs, resources and conversations to auto-build FAQs, improving answers as your product and support evolves.",
+		description: "Otter crawls your docs, resources and conversations to auto-build FAQs, improving answers as your product and support evolves.",
 		graphic: <KnowledgeGraphic />,
 	},
 	{

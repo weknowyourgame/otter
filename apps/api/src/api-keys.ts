@@ -8,15 +8,15 @@ import {
 	listApiKeysForTenant,
 	revokeApiKey,
 	touchApiKey,
-} from "otto-db";
+} from "otter-db";
 
 export type ApiKeyType = "public" | "secret";
 export type ApiKeyMode = "test" | "live";
 
-const DEFAULT_DEV_SECRET = "otto-local-api-key-secret-change-before-production";
+const DEFAULT_DEV_SECRET = "otter-local-api-key-secret-change-before-production";
 
 function hashingSecret(): string {
-	const secret = process.env.OTTO_API_KEY_SECRET?.trim();
+	const secret = process.env.OTTER_API_KEY_SECRET?.trim();
   if (!secret) throw Error("Secret not found")
   return secret;
 }
@@ -116,7 +116,7 @@ export async function markApiKeyUsed(id: string): Promise<void> {
 }
 
 /**
- * A widget request may present its key via query param, x-otto-key header,
+ * A widget request may present its key via query param, x-otter-key header,
  * or Authorization: Bearer — but if more than one is present and they
  * disagree about identity, that's a request trying to be ambiguous about
  * who it is, not a client sending redundant proof. Reject rather than
@@ -125,7 +125,7 @@ export async function markApiKeyUsed(id: string): Promise<void> {
 export function extractApiKey(request: Request): string | undefined {
 	const url = new URL(request.url);
 	const queryKey = url.searchParams.get("key")?.trim();
-	const headerKey = request.headers.get("x-otto-key")?.trim();
+	const headerKey = request.headers.get("x-otter-key")?.trim();
 	const bearer = request.headers
 		.get("authorization")
 		?.match(/^Bearer\s+(.+)$/i)?.[1]

@@ -1,4 +1,4 @@
-import { getBullConnectionOptions } from "otto-redis";
+import { getBullConnectionOptions } from "otter-redis";
 import { createWebCrawlWorker } from "./queues/web-crawl/worker.js";
 
 const redisUrl = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
@@ -11,7 +11,7 @@ const webCrawlWorker = createWebCrawlWorker({
 });
 
 await webCrawlWorker.start();
-console.log("[otto-workers] started");
+console.log("[otter-workers] started");
 
 // Bare liveness check — no BullMQ queue introspection, just "is the process
 // up and did the worker start." Same shape as apps/api's GET /health so
@@ -27,10 +27,10 @@ const healthServer = Bun.serve({
 		return new Response("Not found", { status: 404 });
 	},
 });
-console.log(`[otto-workers] health check on :${healthPort}`);
+console.log(`[otter-workers] health check on :${healthPort}`);
 
 async function shutdown() {
-	console.log("[otto-workers] shutting down");
+	console.log("[otter-workers] shutting down");
 	await webCrawlWorker.stop();
 	healthServer.stop();
 	process.exit(0);

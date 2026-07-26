@@ -1,4 +1,4 @@
-import { getSafeRedisUrl, type RedisOptions } from "otto-redis";
+import { getSafeRedisUrl, type RedisOptions } from "otter-redis";
 import { type JobsOptions, Queue } from "bullmq";
 import { QUEUE_NAMES, type WebCrawlJobData } from "../types.js";
 import { addUniqueJob } from "../utils/unique-job.js";

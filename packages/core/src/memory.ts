@@ -1,5 +1,5 @@
 // Cross-session memory. Scoped by userKey (the user's email, the only
-// identity Otto has via StepRequest.user). No semantic recall like
+// identity Otter has via StepRequest.user). No semantic recall like
 // cossistant's optional embedding-based memory search — just the user's
 // most recent facts, injected once when a session starts.
 
@@ -8,7 +8,7 @@ import {
 	insertMemory,
 	listMemoriesForUser,
 	type MemoryRow,
-} from "otto-db";
+} from "otter-db";
 
 function newMemoryId(): string {
 	const bytes = new Uint8Array(8);

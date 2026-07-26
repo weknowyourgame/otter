@@ -1,6 +1,6 @@
-// Fails the build if otto-sdk's script-tag bundles grow past a budget.
+// Fails the build if otter-sdk's script-tag bundles grow past a budget.
 // Adapted from cossistant/scripts/checks/browser-embed-size.ts — same
-// raw/gzip regression check, baselines reset for otto-sdk's actual sizes
+// raw/gzip regression check, baselines reset for otter-sdk's actual sizes
 // (much smaller than cossistant's widget: no component framework, just
 // the vanilla-TS loader/executor/UI in packages/sdk).
 
@@ -9,7 +9,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { gzipSync } from "node:zlib";
 
-type AssetName = "otto-loader.global.js" | "otto-widget.global.js";
+type AssetName = "otter-loader.global.js" | "otter-widget.global.js";
 
 type AssetThreshold = { raw: number; gzip: number };
 
@@ -17,8 +17,8 @@ type AssetThreshold = { raw: number; gzip: number };
 // under) — node's zlib produces slightly different gzip byte counts for the
 // same input, so baselines must be captured with the same tool that checks them.
 const BASELINES: Record<AssetName, AssetThreshold> = {
-	"otto-loader.global.js": { raw: 1458, gzip: 631 },
-	"otto-widget.global.js": { raw: 60_822, gzip: 15_653 },
+	"otter-loader.global.js": { raw: 1458, gzip: 631 },
+	"otter-widget.global.js": { raw: 60_822, gzip: 15_653 },
 };
 
 const repoRoot = join(fileURLToPath(new URL(".", import.meta.url)), "..", "..");
@@ -37,7 +37,7 @@ function formatDelta(bytes: number): string {
 const warnings: string[] = [];
 const errors: string[] = [];
 
-console.log("otto-sdk embed asset sizes");
+console.log("otter-sdk embed asset sizes");
 
 for (const assetName of Object.keys(BASELINES) as AssetName[]) {
 	const assetPath = join(distDir, assetName);

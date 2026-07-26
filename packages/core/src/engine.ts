@@ -5,7 +5,7 @@ import {
 	listSessions as listSessionRows,
 	type SessionRow,
 	upsertSession,
-} from "otto-db";
+} from "otter-db";
 import {
 	formatKnowledgeResultForModel,
 	searchKnowledgeBase,
@@ -49,8 +49,8 @@ interface Session {
 }
 
 /**
- * Sessions live in otto-db (Postgres via Bun's native SQL client) instead
- * of an in-memory Map, so they survive a server restart. otto-db's driver
+ * Sessions live in otter-db (Postgres via Bun's native SQL client) instead
+ * of an in-memory Map, so they survive a server restart. otter-db's driver
  * is async (unlike the bun:sqlite driver this used before migrating off
  * SQLite), so runStep/listSessions are both async now — listSessions
  * becoming async is a real breaking change to callers of this package.

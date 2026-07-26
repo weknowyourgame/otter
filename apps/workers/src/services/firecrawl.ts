@@ -1,6 +1,6 @@
 // Single-page scrape only — deliberately scoped down from cossistant's
 // services/firecrawl.ts, which also does async whole-site crawls (start/poll
-// /crawl, /map, pagination, retry-with-cursor). Otto's ingestion model today
+// /crawl, /map, pagination, retry-with-cursor). Otter's ingestion model today
 // is "add one URL as a knowledge doc," not "crawl an entire site," so only
 // the synchronous /scrape endpoint is needed. The retry/timeout plumbing
 // below is copied as-is since it's genuinely provider-agnostic HTTP hardening.

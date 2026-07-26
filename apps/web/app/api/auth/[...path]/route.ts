@@ -1,4 +1,4 @@
-import { proxyToOttoApi } from "@/lib/otto-api-proxy";
+import { proxyToOtterApi } from "@/lib/otter-api-proxy";
 
 type RouteContext = { params: Promise<{ path: string[] }> };
 
@@ -7,7 +7,7 @@ async function handler(
 	context: RouteContext,
 ): Promise<Response> {
 	const { path } = await context.params;
-	return proxyToOttoApi(request, `/api/auth/${path.join("/")}`);
+	return proxyToOtterApi(request, `/api/auth/${path.join("/")}`);
 }
 
 export const GET = handler;

@@ -3,7 +3,7 @@ import { drizzle } from "drizzle-orm/bun-sql";
 import { migrate } from "drizzle-orm/bun-sql/migrator";
 import * as schema from "./schema.js";
 
-const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otto";
+const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
 
 // Migrations live in packages/db/drizzle (generated via `bunx drizzle-kit
 // generate`, run from packages/db). The existing dev/prod database was

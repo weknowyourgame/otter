@@ -13,7 +13,7 @@ import type {
 } from "./types.js";
 import type { Trail, WidgetUI } from "./ui.js";
 
-const RESUME_KEY = "otto:resume";
+const RESUME_KEY = "otter:resume";
 const SOCKET_OPEN_TIMEOUT_MS = 3000;
 const STEP_TIMEOUT_MS = 30000;
 
@@ -307,7 +307,7 @@ export class AgentLoop {
 			const headers: Record<string, string> = {
 				"content-type": "application/json",
 			};
-			if (this.config.publicKey) headers["x-otto-key"] = this.config.publicKey;
+			if (this.config.publicKey) headers["x-otter-key"] = this.config.publicKey;
 			const res = await fetch(url, {
 				method: "POST",
 				headers,

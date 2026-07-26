@@ -6,11 +6,11 @@
 //
 // Deliberately scoped: no cross-connection fan-out yet (Cossistant's
 // connection-registry/realtime-pubsub split solves "N viewers watch one
-// conversation," which Otto doesn't need until the dashboard grows a live
+// conversation," which Otter doesn't need until the dashboard grows a live
 // per-session viewer). Add that layer when there's an actual second
 // subscriber to fan out to.
 
-import { type EngineConfig, runStep } from "otto-core";
+import { type EngineConfig, runStep } from "otter-core";
 import { wsStepMessageSchema } from "./schemas.js";
 
 export async function handleSocketMessage(raw: string, engineConfig: EngineConfig): Promise<string> {

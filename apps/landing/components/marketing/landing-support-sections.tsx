@@ -45,8 +45,8 @@ export function LandingSupportSections() {
 		}
 
 		const portalHost = document.createElement("div");
-		portalHost.id = "otto-support-sections";
-		portalHost.dataset.ottoSupportSections = "true";
+		portalHost.id = "otter-support-sections";
+		portalHost.dataset.otterSupportSections = "true";
 		portalHost.style.order = getComputedStyle(featureGrid).order;
 		featureGrid.after(portalHost);
 		setHost(portalHost);

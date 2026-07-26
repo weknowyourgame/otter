@@ -1,14 +1,14 @@
 // Deliberately scoped down from cossistant/apps/workers/src/queues/web-crawl
 // worker.ts: no global crawl-slot leasing (that's for bounding concurrent
-// Firecrawl usage across many tenants — Otto has none of that yet), no
+// Firecrawl usage across many tenants — Otter has none of that yet), no
 // per-website realtime event emission (no website/tenant concept since
 // Phase 5 is on hold), no plan-based size limits (no billing). Just:
 // fetch one page, chunk it, store it, mark the doc ready or failed.
 
-import { requestEmbedding } from "otto-core";
-import { updateDocStatus, replaceChunksForDoc, setChunkEmbedding } from "otto-db";
-import type { RedisOptions } from "otto-redis";
-import { QUEUE_NAMES, type WebCrawlJobData } from "otto-jobs";
+import { requestEmbedding } from "otter-core";
+import { updateDocStatus, replaceChunksForDoc, setChunkEmbedding } from "otter-db";
+import type { RedisOptions } from "otter-redis";
+import { QUEUE_NAMES, type WebCrawlJobData } from "otter-jobs";
 import { Job, Worker } from "bullmq";
 import { chunkMarkdown } from "../../text-chunker.js";
 import { FirecrawlService } from "../../services/firecrawl.js";

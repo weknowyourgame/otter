@@ -11,4 +11,4 @@ await build({
 	external: ["ioredis"],
 });
 
-console.log("otto-redis built -> dist/index.js");
+console.log("otter-redis built -> dist/index.js");

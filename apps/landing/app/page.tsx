@@ -1,10 +1,10 @@
-import { ottoCss, ottoMarkup, ottoSvgTemplates } from "./otto-reference";
-import { OttoRuntime } from "./otto-runtime";
+import { otterCss, otterMarkup, otterSvgTemplates } from "./otter-reference";
+import { OtterRuntime } from "./otter-runtime";
 import { LandingSupportSections } from "@/components/marketing/landing-support-sections";
 
-const pageMarkup = ottoMarkup
+const pageMarkup = otterMarkup
 	.replace(
-		/Otto turns customer questions into completed work inside your product[^<]*/,
+		/Otter turns customer questions into completed work inside your product[^<]*/,
 		"Automate routine support and focus on what matters most. Less friction, more flow.",
 	)
 	.replace("Help customers finish work in the moment.", "Finish customer work in moments.")
@@ -19,10 +19,10 @@ const pageMarkup = ottoMarkup
 export default function Home() {
 	return (
 		<>
-			<style data-otto-reference-css dangerouslySetInnerHTML={{ __html: ottoCss }} />
+			<style data-otter-reference-css dangerouslySetInnerHTML={{ __html: otterCss }} />
 			<div dangerouslySetInnerHTML={{ __html: pageMarkup }} />
-			<div dangerouslySetInnerHTML={{ __html: ottoSvgTemplates }} />
-			<OttoRuntime />
+			<div dangerouslySetInnerHTML={{ __html: otterSvgTemplates }} />
+			<OtterRuntime />
 			<LandingSupportSections />
 		</>
 	);

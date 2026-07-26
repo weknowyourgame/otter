@@ -96,15 +96,15 @@ export function GeneralSettingsPage() {
 					}}
 				>
 					<div className="od-form-stack">
-						<Field defaultValue="Otto" label="Website name" />
+						<Field defaultValue="Otter" label="Website name" />
 						<Field
-							defaultValue="support@otto.so"
+							defaultValue="support@otter.so"
 							hint="Visitors can use this address to reach a human directly."
 							label="Contact email (optional)"
 							type="email"
 						/>
 						<Field
-							defaultValue="otto.so"
+							defaultValue="otter.so"
 							hint="The domain visitors use to chat with your team."
 							label="Domain"
 						/>
@@ -165,7 +165,7 @@ export function GeneralSettingsPage() {
 				</PanelFooter>
 			</SettingsSection>
 			<SettingsSection
-				description="Set the defaults Otto uses for reports, translations, and new conversations."
+				description="Set the defaults Otter uses for reports, translations, and new conversations."
 				title="Organization preferences"
 			>
 				<div className="od-form-stack">
@@ -201,7 +201,7 @@ export function NotificationsSettingsPage() {
 	return (
 		<SettingsPageFrame title="Notifications">
 			<SettingsSection
-				description="Choose what Otto emails you about."
+				description="Choose what Otter emails you about."
 				title="Email"
 			>
 				<SettingToggle
@@ -212,13 +212,13 @@ export function NotificationsSettingsPage() {
 				/>
 				<SettingToggle
 					checked={values.escalations}
-					description="Know immediately when Otto hands a conversation to your team."
+					description="Know immediately when Otter hands a conversation to your team."
 					onChange={toggle("escalations")}
 					title="AI escalations"
 				/>
 				<SettingToggle
 					checked={values.marketing}
-					description="Occasional product news and workflow ideas from Otto."
+					description="Occasional product news and workflow ideas from Otter."
 					onChange={toggle("marketing")}
 					title="Product updates"
 				/>
@@ -461,7 +461,7 @@ export function TeamSettingsPage() {
 				)}
 			</SettingsSection>
 			<Modal
-				description="They will be able to access Otto immediately after accepting."
+				description="They will be able to access Otter immediately after accepting."
 				onClose={() => setInviteOpen(false)}
 				open={inviteOpen}
 				title="Invite a teammate"
@@ -530,7 +530,7 @@ export function PlanSettingsPage() {
 	return (
 		<SettingsPageFrame title="Plan & Usage">
 			<SettingsSection
-				description="You are currently using Otto Free."
+				description="You are currently using Otter Free."
 				title="Current plan"
 			>
 				<div className="od-plan-current">
@@ -599,7 +599,7 @@ export function BillingPage() {
 	return (
 		<SettingsPageFrame title="Billing">
 			<SettingsSection
-				description="Manage the card and billing identity for Otto Labs."
+				description="Manage the card and billing identity for Otter Labs."
 				title="Payment method"
 			>
 				<div className="od-payment-method">
@@ -618,9 +618,9 @@ export function BillingPage() {
 				title="Billing details"
 			>
 				<div className="od-form-stack">
-					<Field defaultValue="Otto Labs" label="Legal name" />
+					<Field defaultValue="Otter Labs" label="Legal name" />
 					<Field
-						defaultValue="billing@otto.so"
+						defaultValue="billing@otter.so"
 						label="Billing email"
 						type="email"
 					/>
@@ -649,7 +649,7 @@ export function BillingPage() {
 						<tbody>
 							<tr>
 								<td>Jul 1, 2026</td>
-								<td>Otto Pro</td>
+								<td>Otter Pro</td>
 								<td>$29.00</td>
 								<td>
 									<span className="od-status is-live">Paid</span>
@@ -660,7 +660,7 @@ export function BillingPage() {
 							</tr>
 							<tr>
 								<td>Jun 1, 2026</td>
-								<td>Otto Pro</td>
+								<td>Otter Pro</td>
 								<td>$29.00</td>
 								<td>
 									<span className="od-status is-live">Paid</span>
@@ -993,7 +993,7 @@ export function DevelopersSettingsPage() {
 				</form>
 			</Modal>
 			<Modal
-				description="This is the only time Otto will return the complete key."
+				description="This is the only time Otter will return the complete key."
 				onClose={() => setCreatedKey(null)}
 				open={Boolean(createdKey)}
 				title="Your API key is ready"
@@ -1008,7 +1008,7 @@ export function DevelopersSettingsPage() {
 					<div className="od-callout">
 						<KeyRound size={16} />
 						<p>
-							Add public keys to the Otto embed. Keep secret keys on trusted
+							Add public keys to the Otter embed. Keep secret keys on trusted
 							servers only.
 						</p>
 					</div>

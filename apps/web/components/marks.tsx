@@ -1,7 +1,7 @@
-export function OttoGlyph({ className = "h-4 w-4" }: { className?: string }) {
+export function OtterGlyph({ className = "h-4 w-4" }: { className?: string }) {
 	return (
 		<svg
-			aria-label="Otto otter mark"
+			aria-label="Otter mark"
 			className={className}
 			fill="none"
 			role="img"
@@ -46,7 +46,7 @@ export function OtterMascot({
 }) {
 	return (
 		<svg
-			aria-label="Otto otter mascot"
+			aria-label="Otter mascot"
 			className={className}
 			role="img"
 			viewBox="0 0 96 96"
@@ -81,16 +81,16 @@ export function OtterMascot({
 	);
 }
 
-export function OttoWordmark({ dark = true }: { dark?: boolean }) {
+export function OtterWordmark({ dark = true }: { dark?: boolean }) {
 	return (
 		<span className="inline-flex items-center gap-2.5">
 			<span className="grid h-7 w-7 place-items-center rounded-lg bg-gradient-to-br from-accent to-[#3d47c9] shadow-[0_2px_10px_rgba(91,108,249,0.45)]">
-				<OttoGlyph className="h-3.5 w-3.5 text-white" />
+				<OtterGlyph className="h-3.5 w-3.5 text-white" />
 			</span>
 			<span
 				className={`text-[17px] font-semibold tracking-tight ${dark ? "text-white" : "text-zinc-900"}`}
 			>
-				Otto
+				Otter
 			</span>
 		</span>
 	);

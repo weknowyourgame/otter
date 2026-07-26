@@ -1,9 +1,9 @@
 // Raw fetch, no AI SDK — matches llm.ts's style. Cossistant reaches
 // OpenRouter's embeddings endpoint through the Vercel AI SDK's embed/embedMany
 // (they already depend on it broadly for streaming generation elsewhere);
-// otto-core deliberately has zero AI SDK dependency and does one raw fetch
+// otter-core deliberately has zero AI SDK dependency and does one raw fetch
 // per chat completion, so a second dependency just for this one call would
-// break that "only LLM-provider code, kept minimal" design otto-core's own
+// break that "only LLM-provider code, kept minimal" design otter-core's own
 // package.json describes. Reuses the same OPENROUTER_API_KEY as chat calls —
 // OpenRouter's embeddings endpoint is OpenAI-compatible and needs no
 // separate credential.
@@ -20,7 +20,7 @@ export async function requestEmbedding(
 		headers: {
 			authorization: `Bearer ${apiKey}`,
 			"content-type": "application/json",
-			"x-title": "Otto Agent",
+			"x-title": "Otter Agent",
 		},
 		body: JSON.stringify({ model, input: text }),
 	});

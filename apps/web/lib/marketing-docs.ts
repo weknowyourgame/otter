@@ -59,7 +59,7 @@ function toDoc(filePath: string): MarketingDoc {
 	const { data, body } = parseFrontmatter(raw);
 	const fallbackTitle = segments.length ? humanize(segments.at(-1) ?? "Documentation") : "Documentation";
 	const title = data.title ?? fallbackTitle;
-	const description = data.description ?? `Learn how to use ${title.toLowerCase()} with Otto.`;
+	const description = data.description ?? `Learn how to use ${title.toLowerCase()} with Otter.`;
 	return {
 		title,
 		description,

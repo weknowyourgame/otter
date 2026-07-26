@@ -19,7 +19,7 @@ function baseRedisOptions(): Pick<
 		enableAutoPipelining: true,
 		retryStrategy: (attempt: number) => Math.min(1000 * 2 ** attempt, MAX_RECONNECT_DELAY_MS),
 		reconnectOnError: (error: Error) => {
-			console.error("[otto-redis] reconnect on error", error);
+			console.error("[otter-redis] reconnect on error", error);
 			return true;
 		},
 	};
@@ -80,11 +80,11 @@ export function createRedisConnection(url: string): Redis {
 	const redis = new Redis(getRedisConnectionOptions(url));
 
 	redis.on("error", (error: Error) => {
-		console.error("[otto-redis] error", error);
+		console.error("[otter-redis] error", error);
 	});
 
 	redis.on("ready", () => {
-		console.log("[otto-redis] connected");
+		console.log("[otter-redis] connected");
 	});
 
 	return redis;

@@ -3,7 +3,7 @@
 import { LoaderCircle } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useEffect } from "react";
-import { OttoGlyph } from "@/components/marks";
+import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
 
 const PUBLIC_PATHS = new Set(["/login"]);
@@ -29,10 +29,10 @@ export function AuthBoundary({ children }: { children: ReactNode }) {
 		return (
 			<output className="od-auth-loading">
 				<span className="od-auth-loading__mark">
-					<OttoGlyph className="h-5 w-5" />
+					<OtterGlyph className="h-5 w-5" />
 				</span>
 				<LoaderCircle aria-hidden className="od-auth-spinner" size={18} />
-				<span className="sr-only">Checking your Otto session</span>
+				<span className="sr-only">Checking your Otter session</span>
 			</output>
 		);
 	}

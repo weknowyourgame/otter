@@ -4,14 +4,14 @@ Full pass across backend (`apps/api`, `apps/workers`, `packages/*`) and frontend
 
 ## Done
 
-### ✅ `NEXT_PUBLIC_OTTO_PUBLIC_KEY` was missing
+### ✅ `NEXT_PUBLIC_OTTER_PUBLIC_KEY` was missing
 Created a demo dashboard user (`demo@cordant.io`), issued a public test key, restricted it to `http://localhost:3001`, added the key to `apps/web/.env.local`.
 
 ### ✅ `OPENROUTER_API_KEY` was empty in `apps/api/.env`
 Copied the working key from `apps/web/.env.local` into `apps/api/.env`, matched `AGENT_MODEL` to `claude-opus-4.7-fast`.
 
 ### ✅ No seed/reset script
-Added `packages/db/scripts/reset.ts` — truncates all otto-db tables (`sessions`, `docs`, `chunks`, `memories`, `api_keys`, `allowed_origins`, `tenant_members`, `tenants`, `account`, `session`, `verification`, `user`) via `TRUNCATE ... CASCADE`. Run with `bun run db:reset` (root script wired to `packages/db`'s `reset` script).
+Added `packages/db/scripts/reset.ts` — truncates all otter-db tables (`sessions`, `docs`, `chunks`, `memories`, `api_keys`, `allowed_origins`, `tenant_members`, `tenants`, `account`, `session`, `verification`, `user`) via `TRUNCATE ... CASCADE`. Run with `bun run db:reset` (root script wired to `packages/db`'s `reset` script).
 
 ### ✅ Dashboard was showing entirely fake, hardcoded data
 `core-pages.tsx` and `workspace-shell.tsx` now fetch real `GET /sessions` data: Live visitors, Conversations, Handled by AI, inbox filter counts, and the inbox conversation list are all real (zero for a fresh tenant, not fabricated numbers). Removed the fake Satisfaction Index/response-time tiles and the two fully-fabricated `TrainingSummary` lines (total size, "Last trained 4 minutes ago") since nothing backs them. Contacts/Organizations-page fake data intentionally left as-is — no contacts/multi-website concept exists in the backend, out of scope for a wiring pass.
@@ -29,10 +29,10 @@ Built real `/docs`, `/pricing`, `/changelog` placeholder pages (honest "coming s
 This grew into a full feature build (see `docs/production-readiness.md`'s Onboarding section for the complete list): new `agents` table for agent config (name, model, system prompt, tool budget, extended reasoning, tone/behaviour text, tool toggles) with the system prompt and tool-call budget now genuinely affecting the live `/step` agent loop (verified: a custom system prompt changes real model output). FAQ and Files pages persist into the real knowledge base (`docs`/`chunks`, chunked + embedded on save, immediately searchable). Web Sources page wired to the real single-page crawl backend. Org-creation flow now actually renames the auto-provisioned tenant via a new `PUT /api/account/organization` route, reflected in the sidebar org switcher. Website-create flow's final step now really creates both the test *and* live API keys and adds the domain to allowed origins, matching what its own success copy claims.
 
 ### ✅ Onboarding install instructions fixed
-`npm install @otto/sdk` → `npm install otto-sdk`, and the public key shown is a real one generated live during the flow (not the hardcoded `pk_test_otto_91a2` placeholder).
+`npm install @otter/sdk` → `npm install otter-sdk`, and the public key shown is a real one generated live during the flow (not the hardcoded `pk_test_otter_91a2` placeholder).
 
 ### ✅ Favicon + error/404 pages
-Added `apps/web/app/icon.svg` (Otto glyph on a brand-gradient badge), `error.tsx`, and `not-found.tsx`.
+Added `apps/web/app/icon.svg` (Otter glyph on a brand-gradient badge), `error.tsx`, and `not-found.tsx`.
 
 ### ✅ Root build now covers the deployable apps
 Root `bun run build` now builds the shared packages plus both Next apps (`apps/web` and `apps/landing`), so a successful root build is no longer false confidence before deploy.
@@ -49,11 +49,11 @@ Root `bun run build` now builds the shared packages plus both Next apps (`apps/w
 
 ### 2. No `FIRECRAWL_API_KEY` anywhere, no `apps/workers/.env` at all
 The crawl job fails immediately without this key (paid, external, get one at firecrawl.dev).
-> **Prompt:** Create `apps/workers/.env` with `FIRECRAWL_API_KEY=`, `DATABASE_URL=postgres://localhost:5432/otto`, `REDIS_URL=redis://127.0.0.1:6379`, and `OPENROUTER_API_KEY=` (same key as apps/api, needed to embed chunks).
+> **Prompt:** Create `apps/workers/.env` with `FIRECRAWL_API_KEY=`, `DATABASE_URL=postgres://localhost:5432/otter`, `REDIS_URL=redis://127.0.0.1:6379`, and `OPENROUTER_API_KEY=` (same key as apps/api, needed to embed chunks).
 
-### 3. `BETTER_AUTH_SECRET` / `OTTO_API_KEY_SECRET` are still the literal `.env.example` placeholder text
+### 3. `BETTER_AUTH_SECRET` / `OTTER_API_KEY_SECRET` are still the literal `.env.example` placeholder text
 Works for a local demo (nothing validates randomness), but it means auth/API-key hashing currently runs on a known, non-random secret.
-> **Prompt:** Generate two random 32+ char secrets (`openssl rand -hex 32`) and replace the placeholder values in `apps/api/.env` for `BETTER_AUTH_SECRET` and `OTTO_API_KEY_SECRET`. Note: rotating these invalidates existing sessions/API keys, so do it before creating your real demo key, not after.
+> **Prompt:** Generate two random 32+ char secrets (`openssl rand -hex 32`) and replace the placeholder values in `apps/api/.env` for `BETTER_AUTH_SECRET` and `OTTER_API_KEY_SECRET`. Note: rotating these invalidates existing sessions/API keys, so do it before creating your real demo key, not after.
 
 ### 5. Postgres connection pool may still be exhausted
 Hit "too many clients" during testing earlier.

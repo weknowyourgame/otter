@@ -3,7 +3,7 @@ import Link from "next/link";
 import { MarketingShell } from "@/components/marketing/marketing-shell";
 
 export const metadata: Metadata = {
-	title: "Pricing - Otto",
+	title: "Pricing - Otter",
 	description: "Simple plans for teams adding AI-native support to their product.",
 };
 
@@ -32,12 +32,12 @@ const plans = [
 ];
 
 const faqs = [
-	["Can I self-host Otto?", "Yes. Otto is designed so the support interface and your data can run on your own infrastructure."],
+	["Can I self-host Otter?", "Yes. Otter is designed so the support interface and your data can run on your own infrastructure."],
 	["Do you offer anything for open source projects?", "Yes. Eligible open source projects can use the Pro plan at no cost."],
 	["Do you offer annual billing?", "Monthly billing is available now. Annual billing will be added once the plan catalog is finalized."],
 	["How long does launch pricing apply?", "The promotional rate remains active for the lifetime of an uninterrupted subscription."],
 	["When do usage limits reset?", "Message and conversation limits use a rolling 30-day window."],
-	["What happens if I exceed my limits?", "Otto warns you before the limit and keeps existing conversations available while you upgrade."],
+	["What happens if I exceed my limits?", "Otter warns you before the limit and keeps existing conversations available while you upgrade."],
 ];
 
 export default function PricingPage() {

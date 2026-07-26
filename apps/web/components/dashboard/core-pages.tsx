@@ -337,15 +337,15 @@ export function ContactsPage() {
 
 const websites = [
 	{
-		name: "Otto",
-		domain: "otto.so",
+		name: "Otter",
+		domain: "otter.so",
 		status: "Live",
 		conversations: "124",
-		agent: "Otto Support",
+		agent: "Otter Support",
 	},
 	{
-		name: "Otto Staging",
-		domain: "staging.otto.so",
+		name: "Otter Staging",
+		domain: "staging.otter.so",
 		status: "Test",
 		conversations: "18",
 		agent: "Staging Agent",
@@ -398,7 +398,7 @@ export function OrganizationPage() {
 				<div className="od-list-heading">
 					<div>
 						<h2>Websites</h2>
-						<p>Manage every place your Otto agent is installed.</p>
+						<p>Manage every place your Otter agent is installed.</p>
 					</div>
 					<Link href="/organizations/create">Create another organization</Link>
 				</div>
@@ -438,7 +438,7 @@ export function OrganizationPage() {
 					<div>
 						<strong>Your support agent is ready for more context.</strong>
 						<p>
-							Add a website source or tune its personality before sharing Otto
+							Add a website source or tune its personality before sharing Otter
 							with customers.
 						</p>
 					</div>

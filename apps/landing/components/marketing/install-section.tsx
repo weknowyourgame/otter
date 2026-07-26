@@ -8,10 +8,10 @@ const packageManagers = ["pnpm", "npm", "yarn", "bun"] as const;
 type PackageManager = (typeof packageManagers)[number];
 
 const commands: Record<PackageManager, string> = {
-	pnpm: "pnpm add @otto/next",
-	npm: "npm install @otto/next",
-	yarn: "yarn add @otto/next",
-	bun: "bun add @otto/next",
+	pnpm: "pnpm add @otter/next",
+	npm: "npm install @otter/next",
+	yarn: "yarn add @otter/next",
+	bun: "bun add @otter/next",
 };
 
 const ascii = `,.:l>><<iI:^  .:l<~}()[]--~<++-]}?.<lI:^\n:l<~}()[]--~<++-]}?.<lI:^  .:l>><<iI:^\n:I<~)(tffffttf      l<~)(tffffttf\n^;i_}|fxnuvcXYCL0q  ^;i_}|fxnuvcXYCL0q\n'I<](fxvzXYJL0q      'I<](fxvzXYJL0q\n.l~[ljnczXUC0ww      .l~[ljnczXUC0ww\n:l~[(fxuvcXJ0q       :l~[(fxuvcXJ0q\n^;i_}/fxnuvcZCmh     ^;i_}/fxnuvcZCmh\n I>~[_]\\/ffjxuU0ok    I>~[_]\\/ffjxuU0ok\n<~[1l]tfffjzuv0k     <~[1l]tfffjzuv0k\n<^]\\frnuuuuucCm     <^]\\frnuuuuucCm`;
@@ -22,7 +22,7 @@ export function InstallSection() {
 	const [manager, setManager] = useState<PackageManager>("npm");
 	const [copied, setCopied] = useState(false);
 	const command = useMemo(
-		() => commands[manager].replace("@otto/next", framework === "next" ? "@otto/next" : "@otto/react"),
+		() => commands[manager].replace("@otter/next", framework === "next" ? "@otter/next" : "@otter/react"),
 		[framework, manager],
 	);
 
@@ -43,7 +43,7 @@ export function InstallSection() {
 				{preview ? (
 					<SupportWidget defaultOpen embedded />
 				) : (
-					<pre className="mk-preview-code"><code>{`import { Support } from "@otto/${framework === "next" ? "next" : "react"}";\n\nexport function App() {\n  return <Support publicKey="pk_live_..." />;\n}`}</code></pre>
+					<pre className="mk-preview-code"><code>{`import { Support } from "@otter/${framework === "next" ? "next" : "react"}";\n\nexport function App() {\n  return <Support publicKey="pk_live_..." />;\n}`}</code></pre>
 				)}
 			</div>
 
@@ -70,7 +70,7 @@ export function InstallSection() {
 					<code>{command}</code>
 				</div>
 				<div className="mk-install-actions">
-					<Link className="mk-button mk-button-primary" href="/demo">Install Otto</Link>
+					<Link className="mk-button mk-button-primary" href="/demo">Install Otter</Link>
 					<Link className="mk-button mk-button-ghost" href="/docs">Read the docs</Link>
 				</div>
 			</div>

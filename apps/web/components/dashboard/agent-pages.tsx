@@ -125,7 +125,7 @@ export function AgentGeneralPage() {
 	async function handleSave() {
 		setSaving(true);
 		const ok = await save({
-			name: name.trim() || "Otto Support",
+			name: name.trim() || "Otter Support",
 			model,
 			systemPrompt: systemPrompt.trim() || null,
 			maxToolCalls,
@@ -158,12 +158,12 @@ export function AgentGeneralPage() {
 							<Bot size={22} />
 						</div>
 						<div>
-							<strong>{name || "Otto Support"}</strong>
+							<strong>{name || "Otter Support"}</strong>
 							<p>AI teammate</p>
 						</div>
 						<Toggle
 							checked={enabled}
-							label="Enable Otto agent"
+							label="Enable Otter agent"
 							onChange={setEnabled}
 						/>
 					</div>
@@ -185,7 +185,7 @@ export function AgentGeneralPage() {
 						))}
 					</SelectField>
 					<TextAreaField
-						hint="Appended to Otto's base instructions — describe persona and priorities, not tool syntax."
+						hint="Appended to Otter's base instructions — describe persona and priorities, not tool syntax."
 						label="System prompt"
 						onChange={(event) => setSystemPrompt(event.target.value)}
 						rows={8}
@@ -256,7 +256,7 @@ const behaviorFields = [
 	{
 		key: "voiceTone" as const,
 		title: "Voice & tone",
-		description: "How Otto should sound across every conversation.",
+		description: "How Otter should sound across every conversation.",
 	},
 	{
 		key: "clarificationPolicy" as const,
@@ -392,7 +392,7 @@ const toolGroups = [
 	},
 	{
 		title: "Action tools",
-		description: "Finish actions available after Otto has handled the request.",
+		description: "Finish actions available after Otter has handled the request.",
 		tools: [
 			[
 				"Finish: Escalate",
@@ -445,7 +445,7 @@ export function AgentToolsPage() {
 				<div className="od-section-copy">
 					<h2>Custom tools</h2>
 					<p>
-						Add reusable instructions for workflows outside Otto's default
+						Add reusable instructions for workflows outside Otter's default
 						tools.
 					</p>
 				</div>
@@ -494,7 +494,7 @@ export function AgentToolsPage() {
 						placeholder="Use when a visitor asks where their order is."
 					/>
 					<TextAreaField
-						defaultValue="## Instructions\n\nDescribe when and how Otto should use this tool."
+						defaultValue="## Instructions\n\nDescribe when and how Otter should use this tool."
 						label="Skill instructions"
 						rows={8}
 					/>
@@ -603,7 +603,7 @@ export function WebSourcesPage() {
 					Web Sources
 				</PageTitle>
 				<p className="od-page-intro">
-					Otto ingests one page per source today — submit each URL you want in
+					Otter ingests one page per source today — submit each URL you want in
 					the knowledge base directly.
 				</p>
 				<div className="od-source-list">
@@ -644,7 +644,7 @@ export function WebSourcesPage() {
 				) : null}
 			</div>
 			<Modal
-				description="Otto reads this page and adds it to the agent's knowledge base."
+				description="Otter reads this page and adds it to the agent's knowledge base."
 				onClose={() => setAddOpen(false)}
 				open={addOpen}
 				title="Add a website"
@@ -653,7 +653,7 @@ export function WebSourcesPage() {
 					<div className="od-modal__body">
 						<Field
 							autoFocus
-							hint="A single page URL — Otto doesn't yet crawl a whole site automatically."
+							hint="A single page URL — Otter doesn't yet crawl a whole site automatically."
 							label="Website URL"
 							onChange={(event) => setNewUrl(event.target.value)}
 							placeholder="https://docs.example.com"

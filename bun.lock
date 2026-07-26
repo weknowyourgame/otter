@@ -11,15 +11,15 @@
       },
     },
     "apps/api": {
-      "name": "otto-api",
+      "name": "otter-api",
       "version": "0.1.0",
       "dependencies": {
         "better-auth": "1.6.15",
         "hono": "^4.6.14",
-        "otto-core": "workspace:*",
-        "otto-db": "workspace:*",
-        "otto-jobs": "workspace:*",
-        "otto-redis": "workspace:*",
+        "otter-core": "workspace:*",
+        "otter-db": "workspace:*",
+        "otter-jobs": "workspace:*",
+        "otter-redis": "workspace:*",
         "pino": "^10.3.1",
         "zod": "^4.4.3",
       },
@@ -30,7 +30,7 @@
       },
     },
     "apps/landing": {
-      "name": "otto-landing",
+      "name": "otter-landing",
       "version": "0.1.0",
       "dependencies": {
         "next": "^15.0.0",
@@ -48,14 +48,14 @@
       },
     },
     "apps/web": {
-      "name": "otto-web",
+      "name": "otter-web",
       "version": "0.1.0",
       "dependencies": {
         "better-auth": "1.6.15",
         "lucide-react": "^0.460.0",
         "next": "^15.0.0",
-        "otto-core": "*",
-        "otto-sdk": "*",
+        "otter-core": "*",
+        "otter-sdk": "*",
         "react": "^18.3.1",
         "react-dom": "^18.3.1",
       },
@@ -70,14 +70,14 @@
       },
     },
     "apps/workers": {
-      "name": "otto-workers",
+      "name": "otter-workers",
       "version": "0.1.0",
       "dependencies": {
         "bullmq": "^5.34.4",
-        "otto-core": "workspace:*",
-        "otto-db": "workspace:*",
-        "otto-jobs": "workspace:*",
-        "otto-redis": "workspace:*",
+        "otter-core": "workspace:*",
+        "otter-db": "workspace:*",
+        "otter-jobs": "workspace:*",
+        "otter-redis": "workspace:*",
       },
       "devDependencies": {
         "@types/bun": "^1.2.11",
@@ -85,10 +85,10 @@
       },
     },
     "packages/core": {
-      "name": "otto-core",
+      "name": "otter-core",
       "version": "0.1.0",
       "dependencies": {
-        "otto-db": "workspace:*",
+        "otter-db": "workspace:*",
       },
       "devDependencies": {
         "esbuild": "^0.28.1",
@@ -96,7 +96,7 @@
       },
     },
     "packages/db": {
-      "name": "otto-db",
+      "name": "otter-db",
       "version": "0.1.0",
       "dependencies": {
         "drizzle-orm": "0.45.2",
@@ -108,18 +108,18 @@
       },
     },
     "packages/jobs": {
-      "name": "otto-jobs",
+      "name": "otter-jobs",
       "version": "0.1.0",
       "dependencies": {
         "bullmq": "^5.34.4",
-        "otto-redis": "workspace:*",
+        "otter-redis": "workspace:*",
       },
       "devDependencies": {
         "typescript": "^5.6.3",
       },
     },
     "packages/redis": {
-      "name": "otto-redis",
+      "name": "otter-redis",
       "version": "0.1.0",
       "dependencies": {
         "ioredis": "^5.4.1",
@@ -130,7 +130,7 @@
       },
     },
     "packages/sdk": {
-      "name": "otto-sdk",
+      "name": "otter-sdk",
       "version": "0.1.0",
       "devDependencies": {
         "esbuild": "^0.28.1",
@@ -138,7 +138,7 @@
       },
     },
     "packages/typescript-config": {
-      "name": "otto-typescript-config",
+      "name": "otter-typescript-config",
       "version": "0.0.0",
     },
   },
@@ -765,25 +765,25 @@
 
     "once": ["once@1.4.0", "", { "dependencies": { "wrappy": "1" } }, "sha512-lNaJgI+2Q5URQBkccEKHTQOPaXdUxnZZElQTZY0MFUAuaEqe1E+Nyvgdz/aIyNi6Z9MzO5dv1H8n58/GELp3+w=="],
 
-    "otto-api": ["otto-api@workspace:apps/api"],
+    "otter-api": ["otter-api@workspace:apps/api"],
 
-    "otto-core": ["otto-core@workspace:packages/core"],
+    "otter-core": ["otter-core@workspace:packages/core"],
 
-    "otto-db": ["otto-db@workspace:packages/db"],
+    "otter-db": ["otter-db@workspace:packages/db"],
 
-    "otto-jobs": ["otto-jobs@workspace:packages/jobs"],
+    "otter-jobs": ["otter-jobs@workspace:packages/jobs"],
 
-    "otto-landing": ["otto-landing@workspace:apps/landing"],
+    "otter-landing": ["otter-landing@workspace:apps/landing"],
 
-    "otto-redis": ["otto-redis@workspace:packages/redis"],
+    "otter-redis": ["otter-redis@workspace:packages/redis"],
 
-    "otto-sdk": ["otto-sdk@workspace:packages/sdk"],
+    "otter-sdk": ["otter-sdk@workspace:packages/sdk"],
 
-    "otto-typescript-config": ["otto-typescript-config@workspace:packages/typescript-config"],
+    "otter-typescript-config": ["otter-typescript-config@workspace:packages/typescript-config"],
 
-    "otto-web": ["otto-web@workspace:apps/web"],
+    "otter-web": ["otter-web@workspace:apps/web"],
 
-    "otto-workers": ["otto-workers@workspace:apps/workers"],
+    "otter-workers": ["otter-workers@workspace:apps/workers"],
 
     "outdent": ["outdent@0.5.0", "", {}, "sha512-/jHxFIzoMXdqPzTaCpFzAAWhpkSjZPF4Vsn6jAfNpmbH/ymsmd7Qc6VE9BGn0L6YMj6uwpQLxCECpus4ukKS9Q=="],
 

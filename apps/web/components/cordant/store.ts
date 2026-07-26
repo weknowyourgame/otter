@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 
-// Tiny persistent store so Otto's actions have real, observable consequences
+// Tiny persistent store so Otter's actions have real, observable consequences
 // that survive navigation. localStorage + a custom event so every
 // subscribed component re-renders on change.
 

@@ -146,7 +146,7 @@
           "type": "text",
           "primaryKey": false,
           "notNull": true,
-          "default": "'Otto Support'"
+          "default": "'Otter Support'"
         },
         "model": {
           "name": "model",

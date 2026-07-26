@@ -21,9 +21,9 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 **Real bug found and fixed during testing:** Better Auth's `databaseHooks.user.create.after` auto-creates a solo tenant for *every* signup unconditionally — including someone signing up specifically to accept an invite — which made every new-user invite acceptance fail with `user_already_in_tenant`. Fixed by having `acceptTenantInvite` detect a still-solo auto-created tenant (the user is its only member) and absorb it into the invited tenant instead of blocking; a tenant with other real members is still correctly protected. Verified live end to end, including the last-owner guard and member removal.
 
 ### API keys (`api-keys.ts`)
-**Works** — generation, HMAC hashing, masking, revocation, all verified live. `OTTO_API_KEY_SECRET` has the same placeholder-secret gap as `BETTER_AUTH_SECRET`.
+**Works** — generation, HMAC hashing, masking, revocation, all verified live. `OTTER_API_KEY_SECRET` has the same placeholder-secret gap as `BETTER_AUTH_SECRET`.
 **Gap:** no per-key usage limits or rate limiting (see below) — a leaked public key has no request cap.
-> **Prompt:** Generate a real `OTTO_API_KEY_SECRET`. Separately, decide on and implement a per-key request budget (see rate limiting item).
+> **Prompt:** Generate a real `OTTER_API_KEY_SECRET`. Separately, decide on and implement a per-key request budget (see rate limiting item).
 
 ### Allowed origins
 **Works**, exact-match only (no wildcards/subdomains), verified live. This is a deliberate, reasonable design — flagging only because a customer with `*.vercel.app` preview deploys will find it tedious, not because it's broken.
@@ -41,7 +41,7 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 ### Knowledge base (`/docs`)
 **Works** for single-page ingestion, verified live (create → crawl → chunk → embed → search).
 **Gaps for prod:**
-- Single-page scrape only — no whole-site crawl (cossistant's reference implementation supports this; Otto's was deliberately scoped down). A client with a 50-page docs site has to submit 50 URLs one at a time.
+- Single-page scrape only — no whole-site crawl (cossistant's reference implementation supports this; Otter's was deliberately scoped down). A client with a 50-page docs site has to submit 50 URLs one at a time.
 - No re-crawl/refresh — a doc ingested once never updates even if the source page changes.
 - No per-tenant storage limits — nothing stops a tenant from ingesting unlimited docs.
 > **Prompt:** Decide whether whole-site crawling is in scope for launch. If yes, extend `apps/workers/src/services/firecrawl.ts` to use Firecrawl's `/crawl` + `/map` endpoints (reference: `cossistant/apps/api/src/services/firecrawl.ts`) instead of single-page `/scrape`. Add a "re-crawl" action to `POST /docs/:id/refresh`. Add a doc-count or size cap per tenant in `apps/api/src/index.ts`'s `POST /docs`.
@@ -49,7 +49,7 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 ### Request validation (zod)
 **Done** — every route body validated, verified with real invalid/valid inputs.
 
-### Database (Postgres via `otto-db`)
+### Database (Postgres via `otter-db`)
 **Works**, migrated from SQLite, verified live.
 **✅ Real migration tooling added.** `drizzle-kit` generates migrations into `packages/db/drizzle/`, `connection.ts` now runs `drizzle-orm`'s `migrate()` against that folder instead of hand-rolled `CREATE TABLE`/`ALTER TABLE` blocks. The existing dev database was baselined via a one-time `packages/db/scripts/baseline-migrations.ts` (marks the initial migration as already applied without re-running its DDL against tables that already exist — safe only to run once, never against a genuinely fresh database). To make a schema change going forward: edit `schema.ts`, run `bun run --cwd packages/db db:generate`, commit the generated migration — it applies automatically on next connect.
 **Remaining gaps:**
@@ -104,14 +104,14 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 - The system prompt and tool-call budget genuinely affect the live `/step` agent loop now (`packages/core`'s `EngineConfig` gained `systemPromptAddendum`/`maxToolCallsPerTurn`/`agentDisabled`; verified live — a custom prompt changed real model output, a disabled agent short-circuits before calling OpenRouter).
 - FAQ and Files pages create real `docs`/`chunks` rows (added a `sourceType` column: `web`/`faq`/`file`) — chunked and embedded synchronously on save (no crawl queue needed), immediately searchable. Files only extract text content for `.txt`/`.md` today; other formats are stored as metadata only, honestly labeled as not yet indexed.
 - Web Sources page wired to the real single-page crawl backend (new `/api/docs` proxy routes in apps/web).
-- Org-creation flow now calls a new `PUT /api/account/organization` route that renames the auto-provisioned tenant (no separate "organization" concept exists — this was the right scope, not a new multi-org feature). Reflected live in the sidebar org switcher and Organization page (both previously hardcoded "Otto Labs").
+- Org-creation flow now calls a new `PUT /api/account/organization` route that renames the auto-provisioned tenant (no separate "organization" concept exists — this was the right scope, not a new multi-org feature). Reflected live in the sidebar org switcher and Organization page (both previously hardcoded "Otter Labs").
 - Website-create flow's final step now actually creates the live API key (not just test) and adds the domain to allowed origins — previously the success screen claimed this without doing it.
-**Known gap:** custom tool toggles (Tools & Skills page) persist correctly but don't gate anything at runtime yet — the mock UI's tool set ("Update sentiment", "Finish: Escalate", etc.) doesn't match otto-core's actual implemented tools (click/fill/navigate/say/search_knowledge_base/done/fail/remember/forget). Reconciling the two tool vocabularies is a separate, follow-on investigation.
+**Known gap:** custom tool toggles (Tools & Skills page) persist correctly but don't gate anything at runtime yet — the mock UI's tool set ("Update sentiment", "Finish: Escalate", etc.) doesn't match otter-core's actual implemented tools (click/fill/navigate/say/search_knowledge_base/done/fail/remember/forget). Reconciling the two tool vocabularies is a separate, follow-on investigation.
 
 ### `/demo` (Cordant fake SaaS)
 **Solid**, verified — this is the one thing in `apps/web` that's genuinely finished. No action needed unless new demo scenarios are wanted.
 
-### Widget embed (`otto-mount.tsx`)
+### Widget embed (`otter-mount.tsx`)
 **Works**, verified live end to end (key auth, origin check, tool-calling loop, memory). No gaps beyond what's already fixed.
 
 ### Missing pages / dead links
@@ -121,8 +121,8 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 ✅ Fixed — added `apps/web/app/icon.svg`, `error.tsx`, and `not-found.tsx`.
 
 ### Deployment configuration
-`OTTO_API_URL` defaults to `http://localhost:8787` both in `.env` and as a hardcoded fallback in `otto-api-proxy.ts`. Deploying `apps/web` anywhere other than co-located with `apps/api` requires this to be set explicitly, or every proxied feature breaks with the `api_unavailable` error.
-> **Prompt:** Document the required production env vars for `apps/web` (`OTTO_API_URL` pointing at the real deployed API) in a `README`/`.env.production.example`, and confirm `apps/api`'s CORS (`dashboardOrigins()`, `OTTO_DASHBOARD_ORIGINS`) is set to the real production dashboard domain, not just localhost.
+`OTTER_API_URL` defaults to `http://localhost:8787` both in `.env` and as a hardcoded fallback in `otter-api-proxy.ts`. Deploying `apps/web` anywhere other than co-located with `apps/api` requires this to be set explicitly, or every proxied feature breaks with the `api_unavailable` error.
+> **Prompt:** Document the required production env vars for `apps/web` (`OTTER_API_URL` pointing at the real deployed API) in a `README`/`.env.production.example`, and confirm `apps/api`'s CORS (`dashboardOrigins()`, `OTTER_DASHBOARD_ORIGINS`) is set to the real production dashboard domain, not just localhost.
 
 ---
 
@@ -136,11 +136,11 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 ✅ Added root `docker-compose.yml` with Postgres 16 + Redis 7, matching the local `DATABASE_URL`/`REDIS_URL` defaults. `docker compose up -d` now gives a fresh contributor the local backing services without Homebrew setup.
 
 ### High-risk test coverage
-✅ Added focused tests for the highest-risk launch paths: API key/rate-limit/chunking coverage in `apps/api`, `otto-core`'s `runStep()` tool-resolution loop and runtime guards in `packages/core`, and web-crawl worker failure/no-embedding paths in `apps/workers`.
-**Remaining gap:** `otto-db` query/mutation tests and apps/web component tests are still future coverage work.
+✅ Added focused tests for the highest-risk launch paths: API key/rate-limit/chunking coverage in `apps/api`, `otter-core`'s `runStep()` tool-resolution loop and runtime guards in `packages/core`, and web-crawl worker failure/no-embedding paths in `apps/workers`.
+**Remaining gap:** `otter-db` query/mutation tests and apps/web component tests are still future coverage work.
 
 ### Secrets are placeholder values
-`BETTER_AUTH_SECRET`, `OTTO_API_KEY_SECRET` in `apps/api/.env` are still literal `.env.example` text. Already listed under Auth/API keys above — repeating here because it blocks *everything* auth-related in production, not just one feature.
+`BETTER_AUTH_SECRET`, `OTTER_API_KEY_SECRET` in `apps/api/.env` are still literal `.env.example` text. Already listed under Auth/API keys above — repeating here because it blocks *everything* auth-related in production, not just one feature.
 > **Prompt:** Generate real secrets (`openssl rand -hex 32` each) before any production deploy — this is a one-line-per-secret fix but a hard launch blocker.
 
 ---
@@ -156,7 +156,7 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 - The agent tool-calling loop itself: act, search knowledge, remember/forget, pause/resume — all verified live
 - Per-tenant agent configuration (system prompt, model, tool-call budget, enabled flag) — genuinely affects the live agent loop, verified live
 - FAQ/file/web-source knowledge ingestion — real chunking + embedding, immediately searchable
-- Real secrets generated (`BETTER_AUTH_SECRET`, `OTTO_API_KEY_SECRET`)
+- Real secrets generated (`BETTER_AUTH_SECRET`, `OTTER_API_KEY_SECRET`)
 - Dashboard real data (sessions/metrics) + identity leak fix
 - Onboarding wizard (org rename, agent config, knowledge sources, website API-key/origin provisioning)
 - `/demo` Cordant surface
@@ -176,6 +176,6 @@ This is a bigger bar than `docs/demo-readiness-checklist.md` (which only covers 
 1. ~~**Secrets**~~ — done.
 2. ~~**Dashboard real data + identity leak**~~ — done.
 3. ~~**Rate limiting**~~ — done. Redis-backed fixed-window counter on `requireAgentKey` (60/60s per API key) and `requireDashboard` (300/60s per user), fails open if Redis is unreachable, verified live with a real flood test (429 + `Retry-After`, per-user scoping confirmed).
-4. ~~**Email (verification + reset)**~~ — done. Resend wired via raw fetch (no SDK dep, matching `otto-core`'s style), `requireEmailVerification: true` so login is actually blocked pre-verification, gracefully logs to console instead of sending when `RESEND_API_KEY` isn't set yet. **Add a real `RESEND_API_KEY` before testing new signups locally, or they'll be stuck unable to log in.**
+4. ~~**Email (verification + reset)**~~ — done. Resend wired via raw fetch (no SDK dep, matching `otter-core`'s style), `requireEmailVerification: true` so login is actually blocked pre-verification, gracefully logs to console instead of sending when `RESEND_API_KEY` isn't set yet. **Add a real `RESEND_API_KEY` before testing new signups locally, or they'll be stuck unable to log in.**
 5. ~~**Migrations tooling**~~ — done. `drizzle-kit` + `drizzle-orm`'s `migrate()` replace the hand-rolled DDL; existing DB baselined.
-6. Remaining larger gaps: billing provider integration, whole-site crawl/refresh, database backup/pool documentation, broader observability/Sentry, and deeper `otto-db`/apps-web test coverage.
+6. Remaining larger gaps: billing provider integration, whole-site crawl/refresh, database backup/pool documentation, broader observability/Sentry, and deeper `otter-db`/apps-web test coverage.
