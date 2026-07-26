@@ -11,8 +11,6 @@ import {
 	Files,
 	Globe2,
 	HelpCircle,
-	Home,
-	Inbox,
 	LogOut,
 	Menu,
 	MessageSquareText,
@@ -25,16 +23,15 @@ import {
 	WandSparkles,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 import { useEffect, useState } from "react";
 import { OtterGlyph } from "@/components/marks";
 import { authClient } from "@/lib/auth-client";
-import { demoDashboardSessions, demoFixturesEnabled } from "./demo-fixtures";
 import { Button, cx, SegmentedMeter } from "./ui";
 
 export type WorkspaceMode =
-	| "inbox"
+	| "conversations"
 	| "settings"
 	| "agent"
 	| "org"
@@ -57,27 +54,15 @@ type NavItem = {
 	aliases?: string[];
 	group?: boolean;
 	sub?: boolean;
-	match?:
-		| "dashboard"
-		| "inbox"
-		| "agent"
-		| "contacts"
-		| "websites"
-		| "settings";
+	match?: "dashboard" | "agent" | "contacts" | "websites" | "settings";
 };
 
 const primaryItems: NavItem[] = [
 	{
-		label: "Dashboard",
+		label: "Conversations",
 		href: "/dashboard",
-		icon: <Home size={16} />,
+		icon: <MessageSquareText size={16} />,
 		match: "dashboard",
-	},
-	{
-		label: "Inbox",
-		href: "/dashboard?filter=inbox",
-		icon: <Inbox size={16} />,
-		match: "inbox",
 	},
 	{ label: "Agent", href: "/agent", icon: <Bot size={16} />, match: "agent" },
 	{
@@ -203,7 +188,7 @@ function useTenantUsage(): { requests: number; conversations: number } | null {
 	return usage;
 }
 
-function UsageCard() {
+function _UsageCard() {
 	const usage = useTenantUsage();
 	const requests = usage?.requests ?? 0;
 	const conversations = usage?.conversations ?? 0;
@@ -241,52 +226,8 @@ async function signOut(): Promise<void> {
 	window.location.assign("/login");
 }
 
-function useInboxCount(): number {
-	const [count, setCount] = useState(0);
-	useEffect(() => {
-		let active = true;
-		fetch("/api/sessions")
-			.then((response) => (response.ok ? response.json() : null))
-			.then((body: { sessions?: { state: string }[] } | null) => {
-				if (active && body?.sessions) {
-					const sessions =
-						demoFixturesEnabled() && body.sessions.length === 0
-							? demoDashboardSessions()
-							: body.sessions;
-					setCount(
-						sessions.filter((session) => session.state === "active").length,
-					);
-				}
-			})
-			.catch(() => {
-				if (active && demoFixturesEnabled()) {
-					setCount(
-						demoDashboardSessions().filter(
-							(session) => session.state === "active",
-						).length,
-					);
-				}
-			});
-		return () => {
-			active = false;
-		};
-	}, []);
-	return count;
-}
-
 function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	const pathname = usePathname();
-	const searchParams = useSearchParams();
-	const inboxCount = useInboxCount();
-	const primaryItemsWithCounts = primaryItems.map((item) =>
-		item.match === "inbox" ? { ...item, count: String(inboxCount) } : item,
-	);
-	const filterParam = searchParams.get("filter")?.toLowerCase();
-	const hasInboxFilter =
-		filterParam === "inbox" ||
-		filterParam === "resolved" ||
-		filterParam === "archived" ||
-		filterParam === "spam";
 	const secondaryItems =
 		mode === "settings"
 			? settingsItems
@@ -307,9 +248,7 @@ function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	function isPrimaryActive(item: NavItem) {
 		switch (item.match) {
 			case "dashboard":
-				return pathname === "/dashboard" && !hasInboxFilter;
-			case "inbox":
-				return pathname === "/dashboard" && hasInboxFilter;
+				return pathname === "/dashboard";
 			case "agent":
 				return pathname.startsWith("/agent");
 			case "contacts":
@@ -369,7 +308,7 @@ function SidebarNav({ mode }: { mode: WorkspaceMode }) {
 	return (
 		<div className="od-sidebar__nav">
 			<nav className="od-nav-section" aria-label="App navigation">
-				{renderItems(primaryItemsWithCounts, isPrimaryActive)}
+				{renderItems(primaryItems, isPrimaryActive)}
 			</nav>
 			{secondaryItems.length > 0 ? (
 				<div className="od-nav-section od-nav-section--secondary">
@@ -404,7 +343,7 @@ function SidebarFooter() {
 	const tenantName = useTenantName();
 	return (
 		<div className="od-sidebar__footer">
-			<UsageCard />
+			{/* <UsageCard /> */}
 			<a
 				href={gmailComposeHref("Otter Help Request")}
 				rel="noreferrer"

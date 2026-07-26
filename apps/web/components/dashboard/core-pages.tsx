@@ -16,16 +16,22 @@ type DashboardSession = {
 	steps: number;
 	createdAt: number;
 	updatedAt: number;
+	events: Array<{
+		at: number;
+		kind: "user" | "agent" | "step" | "result";
+		text: string;
+	}>;
 };
 
 function useSessions(): DashboardSession[] | null {
 	const [sessions, setSessions] = useState<DashboardSession[] | null>(null);
 	useEffect(() => {
 		let active = true;
-		fetch("/api/sessions")
+		fetch("/api/sessions?limit=500")
 			.then((response) => (response.ok ? response.json() : null))
 			.then((body: { sessions?: DashboardSession[] } | null) => {
-				if (active) setSessions(withDemoDashboardSessions(body?.sessions ?? []));
+				if (active)
+					setSessions(withDemoDashboardSessions(body?.sessions ?? []));
 			})
 			.catch(() => {
 				if (active) setSessions(withDemoDashboardSessions([]));
@@ -47,94 +53,96 @@ function relativeTime(timestamp: number): string {
 	return `${Math.round(hours / 24)}d ago`;
 }
 
-const inboxFilterMeta = [
-	{
-		id: "inbox",
-		label: "Inbox",
-		title: "Welcome to your inbox",
-		description: "New conversations will arrive here in real time.",
-	},
-	{
-		id: "resolved",
-		label: "Resolved",
-		title: "No resolved conversations",
-		description: "Closed conversations will stay here for quick review.",
-	},
-	{
-		id: "archived",
-		label: "Archived",
-		title: "Nothing archived",
-		description: "Conversations you archive will stay out of the active queue.",
-	},
-	{
-		id: "spam",
-		label: "Spam",
-		title: "No spam conversations",
-		description: "Filtered or reported conversations will appear here.",
-	},
-] as const;
+const rangeDays = {
+	"7d": 7,
+	"14d": 14,
+	"30d": 30,
+} as const;
 
-export function InboxPage({ filter = "inbox" }: { filter?: string }) {
-	const [range, setRange] = useState("7d");
+type ConversationRange = keyof typeof rangeDays;
+
+function stateLabel(state: DashboardSession["state"]): string {
+	if (state === "done") return "Done";
+	if (state === "failed") return "Failed";
+	return "Active";
+}
+
+function eventLabel(kind: DashboardSession["events"][number]["kind"]): string {
+	if (kind === "user") return "Visitor";
+	if (kind === "agent") return "Agent";
+	if (kind === "step") return "Action";
+	return "Result";
+}
+
+function latestEvent(session: DashboardSession) {
+	return session.events.at(-1);
+}
+
+export function ConversationsPage() {
+	const [range, setRange] = useState<ConversationRange>("7d");
 	const [query, setQuery] = useState("");
+	const [selectedId, setSelectedId] = useState<string | null>(null);
 	const sessions = useSessions();
 
-	const counts = {
-		inbox: sessions?.filter((s) => s.state === "active").length ?? 0,
-		resolved: sessions?.filter((s) => s.state === "done").length ?? 0,
-		archived: 0,
-		spam: 0,
-	};
-
-	const inboxFilters = inboxFilterMeta.map((item) => ({
-		...item,
-		count: counts[item.id as keyof typeof counts],
-	}));
-
-	const activeFilter =
-		inboxFilters.find((item) => item.id === filter.toLowerCase()) ??
-		inboxFilters[0];
-
-	const filteredSessions = useMemo(() => {
+	const rangeSessions = useMemo(() => {
 		if (!sessions) return [];
-		if (activeFilter.id === "inbox")
-			return sessions.filter((s) => s.state === "active");
-		if (activeFilter.id === "resolved")
-			return sessions.filter((s) => s.state === "done");
-		return [];
-	}, [sessions, activeFilter.id]);
+		const since = Date.now() - rangeDays[range] * 24 * 60 * 60 * 1000;
+		return sessions.filter((session) => session.createdAt >= since);
+	}, [sessions, range]);
 
 	const searchedSessions = useMemo(
 		() =>
-			filteredSessions.filter((s) =>
-				s.title.toLowerCase().includes(query.toLowerCase()),
-			),
-		[filteredSessions, query],
+			rangeSessions.filter((session) => {
+				const haystack = [
+					session.title,
+					...session.events.map((event) => event.text),
+				]
+					.join(" ")
+					.toLowerCase();
+				return haystack.includes(query.toLowerCase());
+			}),
+		[rangeSessions, query],
 	);
 
-	const liveCount = counts.inbox;
-	const aiHandledPct =
-		sessions && sessions.length > 0
-			? Math.round(
-					(sessions.filter((s) => s.source === "ai").length / sessions.length) *
-						100,
-				)
-			: 0;
+	useEffect(() => {
+		if (searchedSessions.length === 0) {
+			setSelectedId(null);
+			return;
+		}
+		if (
+			!selectedId ||
+			!searchedSessions.some((session) => session.id === selectedId)
+		) {
+			setSelectedId(searchedSessions[0]?.id ?? null);
+		}
+	}, [searchedSessions, selectedId]);
+
+	const activeCount = rangeSessions.filter(
+		(session) => session.state === "active",
+	).length;
+	const totalSteps = rangeSessions.reduce(
+		(sum, session) => sum + session.steps,
+		0,
+	);
+	const selectedSession =
+		searchedSessions.find((session) => session.id === selectedId) ??
+		searchedSessions[0] ??
+		null;
 
 	const metrics = [
-		["Live visitors", String(liveCount), liveCount > 0 ? "live" : ""],
-		["Conversations", String(sessions?.length ?? 0), ""],
-		["Handled by AI", `${aiHandledPct}%`, ""],
+		["Active sessions", String(activeCount), activeCount > 0 ? "live" : ""],
+		["Conversations", String(rangeSessions.length), ""],
+		["Agent steps", String(totalSteps), ""],
 	] as const;
 
 	return (
-		<WorkspaceShell mode="inbox">
+		<WorkspaceShell mode="conversations">
 			<div className="od-inbox-page">
 				<div className="od-inbox-head">
-					<PageTitle>Inbox</PageTitle>
+					<PageTitle>Conversations</PageTitle>
 					<fieldset className="od-range-control" aria-label="Date range">
 						<Globe2 size={15} />
-						{["7d", "14d", "30d"].map((item) => (
+						{(["7d", "14d", "30d"] as const).map((item) => (
 							<button
 								className={range === item ? "is-active" : ""}
 								key={item}
@@ -157,62 +165,105 @@ export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 						</div>
 					))}
 				</div>
-				<section className="od-inbox-panel" aria-label="Conversation inbox">
-					<div className="od-inbox-tabs" role="tablist">
-						{inboxFilters.map((item) => (
-							<Link
-								aria-selected={activeFilter.id === item.id}
-								className={cx(
-									"od-inbox-tab",
-									activeFilter.id === item.id && "is-active",
-								)}
-								href={`/dashboard?filter=${item.id}`}
-								key={item.id}
-								role="tab"
-							>
-								<span>{item.label}</span>
-								<strong>{item.count}</strong>
-							</Link>
-						))}
-					</div>
+				<section className="od-inbox-panel" aria-label="Agent conversations">
 					<div className="od-inbox-toolbar">
 						<Search size={15} />
 						<input
-							aria-label={`Search ${activeFilter.label.toLowerCase()} conversations`}
+							aria-label="Search conversations"
 							onChange={(event) => setQuery(event.target.value)}
-							placeholder={`Search ${activeFilter.label.toLowerCase()} conversations`}
+							placeholder="Search conversations or agent activity"
 							value={query}
 						/>
-						<span>{activeFilter.count} conversations</span>
+						<span>{searchedSessions.length} conversations</span>
 					</div>
 					{searchedSessions.length > 0 ? (
-						<div className="od-table-wrap od-table-wrap--flush">
-							<table className="od-table">
-								<thead>
-									<tr>
-										<th>Conversation</th>
-										<th>Handled by</th>
-										<th>Steps</th>
-										<th>Updated</th>
-									</tr>
-								</thead>
-								<tbody>
-									{searchedSessions.map((session) => (
-										<tr key={session.id}>
-											<td>
+						<div className="od-conversation-browser">
+							<div className="od-conversation-list" role="list">
+								{searchedSessions.map((session) => {
+									const event = latestEvent(session);
+									return (
+										<button
+											className={cx(
+												"od-conversation-item",
+												selectedSession?.id === session.id && "is-active",
+											)}
+											key={session.id}
+											onClick={() => setSelectedId(session.id)}
+											type="button"
+										>
+											<span className="od-conversation-item__head">
 												<strong>{session.title}</strong>
-											</td>
-											<td>
-												<span className="od-badge">
-													{session.source === "ai" ? "AI" : "Local"}
+												<span
+													className={cx("od-state-pill", `is-${session.state}`)}
+												>
+													{stateLabel(session.state)}
 												</span>
-											</td>
-											<td>{session.steps}</td>
-											<td>{relativeTime(session.updatedAt)}</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
+											</span>
+											<span className="od-conversation-item__preview">
+												{event?.text ?? "No recorded activity yet."}
+											</span>
+											<span className="od-conversation-item__meta">
+												<span>{session.steps} steps</span>
+												<span>{relativeTime(session.updatedAt)}</span>
+											</span>
+										</button>
+									);
+								})}
+							</div>
+							{selectedSession ? (
+								<article className="od-conversation-detail">
+									<div className="od-conversation-detail__head">
+										<div>
+											<span>Conversation</span>
+											<h2>{selectedSession.title}</h2>
+										</div>
+										<span
+											className={cx(
+												"od-state-pill",
+												`is-${selectedSession.state}`,
+											)}
+										>
+											{stateLabel(selectedSession.state)}
+										</span>
+									</div>
+									<div className="od-conversation-detail__stats">
+										<div>
+											<span>Steps</span>
+											<strong>{selectedSession.steps}</strong>
+										</div>
+										<div>
+											<span>Started</span>
+											<strong>{relativeTime(selectedSession.createdAt)}</strong>
+										</div>
+										<div>
+											<span>Updated</span>
+											<strong>{relativeTime(selectedSession.updatedAt)}</strong>
+										</div>
+									</div>
+									<div className="od-conversation-events">
+										{selectedSession.events.length > 0 ? (
+											selectedSession.events.slice(-40).map((event) => (
+												<div
+													className={cx(
+														"od-conversation-event",
+														`is-${event.kind}`,
+													)}
+													key={`${event.at}-${event.kind}-${event.text}`}
+												>
+													<span>{eventLabel(event.kind)}</span>
+													<p>{event.text}</p>
+													<small>{relativeTime(event.at)}</small>
+												</div>
+											))
+										) : (
+											<div className="od-empty-row">
+												<strong>No activity recorded yet.</strong>
+												<p>The next agent run will write its steps here.</p>
+											</div>
+										)}
+									</div>
+								</article>
+							) : null}
 						</div>
 					) : (
 						<EmptyState
@@ -223,9 +274,9 @@ export function InboxPage({ filter = "inbox" }: { filter?: string }) {
 									<Link href="/docs">Learn about conversations</Link>
 								</div>
 							}
-							description={activeFilter.description}
+							description="Agent conversations will appear here with the exact user request, steps, and result."
 							icon={<OtterMascot className="od-otter-mascot" />}
-							title={activeFilter.title}
+							title="No conversations yet"
 						/>
 					)}
 				</section>
@@ -336,23 +387,6 @@ export function ContactsPage() {
 	);
 }
 
-const websites = [
-	{
-		name: "Otter",
-		domain: "otter.so",
-		status: "Live",
-		conversations: "124",
-		agent: "Otter Support",
-	},
-	{
-		name: "Otter Staging",
-		domain: "staging.otter.so",
-		status: "Test",
-		conversations: "18",
-		agent: "Staging Agent",
-	},
-];
-
 function useTenantName(): string | null {
 	const [tenantName, setTenantName] = useState<string | null>(null);
 	useEffect(() => {
@@ -370,8 +404,53 @@ function useTenantName(): string | null {
 	return tenantName;
 }
 
+type WebsiteOverview = {
+	origins: string[];
+	sourceCount: number;
+	readySourceCount: number;
+};
+
+function useWebsiteOverview(): WebsiteOverview | null {
+	const [overview, setOverview] = useState<WebsiteOverview | null>(null);
+	useEffect(() => {
+		let active = true;
+		Promise.all([
+			fetch("/api/account/origins").then((response) =>
+				response.ok ? response.json() : null,
+			),
+			fetch("/api/docs").then((response) =>
+				response.ok ? response.json() : null,
+			),
+		])
+			.then(
+				([originBody, docsBody]: [
+					{ origins?: string[] } | null,
+					{ docs?: Array<{ status: string }> } | null,
+				]) => {
+					if (!active) return;
+					const docs = docsBody?.docs ?? [];
+					setOverview({
+						origins: originBody?.origins ?? [],
+						sourceCount: docs.length,
+						readySourceCount: docs.filter((doc) => doc.status === "ready")
+							.length,
+					});
+				},
+			)
+			.catch(() => {
+				if (active)
+					setOverview({ origins: [], sourceCount: 0, readySourceCount: 0 });
+			});
+		return () => {
+			active = false;
+		};
+	}, []);
+	return overview;
+}
+
 export function OrganizationPage() {
 	const tenantName = useTenantName();
+	const overview = useWebsiteOverview();
 	return (
 		<WorkspaceShell mode="org">
 			<div className="od-content-page od-content-page--wide">
@@ -398,41 +477,43 @@ export function OrganizationPage() {
 				</div>
 				<div className="od-list-heading">
 					<div>
-						<h2>Websites</h2>
-						<p>Manage every place your Otter agent is installed.</p>
+						<h2>Website</h2>
+						<p>Manage the site where this Otter agent is installed.</p>
 					</div>
-					<Link href="/organizations/create">Create another organization</Link>
+					<Link href="/settings/developers">Open install settings</Link>
 				</div>
-				<div className="od-website-grid">
-					{websites.map((site) => (
-						<Link
-							className="od-website-row"
-							href="/dashboard"
-							key={site.domain}
-						>
-							<div className="od-website-row__icon">
-								<Globe2 size={18} />
+				<div className="od-current-website">
+					<div className="od-current-website__mark">
+						<Globe2 size={20} />
+					</div>
+					<div className="od-current-website__body">
+						<div>
+							<span>Current website</span>
+							<strong>{tenantName ?? "Loading…"}</strong>
+							<small>
+								{overview?.origins[0] ?? "No allowed domain configured yet."}
+							</small>
+						</div>
+						<div className="od-current-website__stats">
+							<div>
+								<span>Allowed domains</span>
+								<strong>{overview?.origins.length ?? 0}</strong>
 							</div>
 							<div>
-								<strong>{site.name}</strong>
-								<small>{site.domain}</small>
-							</div>
-							<span
-								className={cx("od-status", site.status === "Live" && "is-live")}
-							>
-								{site.status}
-							</span>
-							<div>
-								<small>AI agent</small>
-								<span>{site.agent}</span>
+								<span>Knowledge sources</span>
+								<strong>{overview?.sourceCount ?? 0}</strong>
 							</div>
 							<div>
-								<small>Conversations</small>
-								<span>{site.conversations}</span>
+								<span>Ready sources</span>
+								<strong>{overview?.readySourceCount ?? 0}</strong>
 							</div>
-							<ArrowRight size={16} />
-						</Link>
-					))}
+						</div>
+						<div className="od-current-website__actions">
+							<Link href="/agent/knowledge/web-sources">Manage sources</Link>
+							<Link href="/settings/developers">Embed settings</Link>
+							<Link href="/agent">Agent settings</Link>
+						</div>
+					</div>
 				</div>
 				<div className="od-next-step">
 					<Bot size={19} />
