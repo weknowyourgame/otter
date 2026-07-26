@@ -1,0 +1,15 @@
+{
+	"$schema": "https://railway.com/railway.schema.json",
+	"build": {
+		"builder": "RAILPACK",
+		"buildCommand": "bun run build:packages && bun run next:dist apps/web .next-main && bun run --cwd apps/web build",
+		"watchPatterns": ["apps/web/**", "packages/**", "package.json", "bun.lock"]
+	},
+	"deploy": {
+		"startCommand": "bun run next:dist apps/web .next-main && bun run --cwd apps/web start",
+		"healthcheckPath": "/health",
+		"healthcheckTimeout": 300,
+		"restartPolicyType": "ON_FAILURE",
+		"restartPolicyMaxRetries": 3
+	}
+}

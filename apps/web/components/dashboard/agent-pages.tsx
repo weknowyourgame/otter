@@ -392,15 +392,13 @@ const toolGroups = [
 	},
 	{
 		title: "Action tools",
-		description: "Finish actions available after Otter has handled the request.",
+		description: "Follow-up actions available after Otter completes a request.",
 		tools: [
 			[
 				"Finish: Escalate",
 				"Hand the conversation to a person with a concise summary.",
 				true,
 			],
-			["Finish: Resolve", "Mark a fully handled conversation resolved.", true],
-			["Finish: Mark spam", "Close obvious abuse and spam quickly.", true],
 		],
 	},
 ] as const;

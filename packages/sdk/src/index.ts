@@ -36,7 +36,7 @@ export function init(userConfig: OtterConfig = {}): OtterInstance {
 		wsEndpoint: userConfig.wsEndpoint,
 		publicKey: userConfig.publicKey?.trim() || undefined,
 		name: userConfig.name ?? "Otter",
-		accent: userConfig.accent ?? "#5B6CF9",
+		accent: userConfig.accent ?? "#69D8C8",
 		theme: userConfig.theme ?? "dark",
 		position: userConfig.position ?? "bottom-right",
 		maxSteps: userConfig.maxSteps ?? 20,

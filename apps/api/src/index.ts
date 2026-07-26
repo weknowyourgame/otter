@@ -598,8 +598,13 @@ app.post("/step", async (c) => {
 });
 
 app.get("/sessions", requireDashboard, async (c) => {
+	const requestedLimit = Number(c.req.query("limit") ?? 200);
+	const limit = Math.max(
+		1,
+		Math.min(Number.isFinite(requestedLimit) ? requestedLimit : 200, 500),
+	);
 	return c.json({
-		sessions: await listSessions(50, c.get("dashboard").tenantId),
+		sessions: await listSessions(limit, c.get("dashboard").tenantId),
 	});
 });
 

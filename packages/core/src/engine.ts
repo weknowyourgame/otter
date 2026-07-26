@@ -28,7 +28,7 @@ import type {
 	StepResponse,
 } from "./types.js";
 
-const SESSION_TTL_MS = 30 * 60 * 1000;
+const SESSION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
 const DEFAULT_MAX_STEPS = 24;
 const DEFAULT_MODEL = "anthropic/claude-sonnet-4.5";
 const MAX_TOOL_RESOLUTION_ITERATIONS = 3;
@@ -94,7 +94,7 @@ function toRow(session: Session): Parameters<typeof upsertSession>[0] {
 }
 
 async function sweep(): Promise<void> {
-	await deleteExpiredSessions(Date.now() - SESSION_TTL_MS);
+	await deleteExpiredSessions(Date.now() - SESSION_RETENTION_MS);
 }
 
 function newId(): string {
@@ -255,11 +255,10 @@ async function aiStep(
 	// Only the newest snapshot is worth tokens — blank out earlier ones.
 	for (const msg of session.history) {
 		if (msg.role === "tool" && msg.content.includes("PAGE ")) {
-			msg.content = msg.content.split("\n")[0] + "\n(page state superseded)";
+			msg.content = `${msg.content.split("\n")[0]}\n(page state superseded)`;
 		}
 		if (msg.role === "user" && msg.content.includes("ELEMENTS:")) {
-			msg.content =
-				msg.content.split("CURRENT PAGE STATE:")[0] + "(page state superseded)";
+			msg.content = `${msg.content.split("CURRENT PAGE STATE:")[0]}(page state superseded)`;
 		}
 	}
 
@@ -400,7 +399,10 @@ function localStep(session: Session, req: StepRequest): StepResponse {
 }
 
 /** Recent sessions, newest first — powers the dashboard. Async now (was sync under bun:sqlite) — every caller needs an await added. */
-export async function listSessions(limit = 50, tenantId?: string): Promise<SessionSummary[]> {
+export async function listSessions(
+	limit = 50,
+	tenantId?: string,
+): Promise<SessionSummary[]> {
 	await sweep();
 	const rows = await listSessionRows(limit, tenantId);
 	return rows.map(

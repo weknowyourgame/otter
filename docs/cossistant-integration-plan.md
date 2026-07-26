@@ -89,7 +89,7 @@ What we're copying from `cossistant/` into Otter, and what we're skipping. Cossi
 
 - **This repo has other agents working in it.** A separate agent owns `apps/web/app/(marketing)/**` (landing page: `page.tsx`, its own `layout.tsx`, `globals.css`, `otter-runtime.tsx`, `public/mirage*`). Never edit, `git add`, or commit those paths. See `[[otter-monorepo-parallel-agents]]` / `[[otter-shared-globals-css-risk]]` in project memory.
 - **Never `git add -A` or `git add .` inside `apps/web`.** Stage files explicitly by path so you can't sweep up another agent's uncommitted work.
-- **Never run a dev server with the default `.next` dir.** Set `NEXT_DIST_DIR=.next-<yourname>` (the user's own `bun run dev` already uses `.next-main`). Pick a distinct dir per phase/session so builds don't collide.
+- **Never run a dev server against the production Next output.** Use `bun run next:dist <app> .next-<yourname>` before custom Next commands; the root dev scripts already point `.next` at `.next-dev`.
 - **Don't add custom `@theme` tokens to any `globals.css` outside `app/(app)/globals.css`.** It broke `/demo` twice before the layout split — Cordant's pages intentionally use only Tailwind's stock palette.
 - **If you touch `tsconfig.json`'s `include` array**, only remove `.next-*/types` globs for dist dirs you created yourself — check `lsof +D <dir>` before deleting one you didn't make.
 - **Commit as you go, not in one giant diff.** One commit per phase (or sub-step if a phase is large), with a message that says what was copied/adapted from Cossistant and why. Use `bun` for all scripts per `[[user-prefers-bun]]` (esbuild scripts stay on node).

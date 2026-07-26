@@ -8,6 +8,11 @@ export type DemoDashboardSession = {
 	steps: number;
 	createdAt: number;
 	updatedAt: number;
+	events: Array<{
+		at: number;
+		kind: "user" | "agent" | "step" | "result";
+		text: string;
+	}>;
 };
 
 export type DemoTenantUsage = {
@@ -36,6 +41,23 @@ export function demoDashboardSessions(
 			steps: 8,
 			createdAt: now - 23 * MINUTE,
 			updatedAt: now - 4 * MINUTE,
+			events: [
+				{
+					at: now - 23 * MINUTE,
+					kind: "user",
+					text: "Help Sarah reset her password.",
+				},
+				{
+					at: now - 18 * MINUTE,
+					kind: "step",
+					text: "Opened the user profile and verified the account email.",
+				},
+				{
+					at: now - 4 * MINUTE,
+					kind: "agent",
+					text: "Password reset link sent and confirmed.",
+				},
+			],
 		},
 		{
 			id: "demo-notifications",
@@ -45,6 +67,23 @@ export function demoDashboardSessions(
 			steps: 6,
 			createdAt: now - 18 * MINUTE,
 			updatedAt: now - 6 * MINUTE,
+			events: [
+				{
+					at: now - 18 * MINUTE,
+					kind: "user",
+					text: "Switch notifications to email only.",
+				},
+				{
+					at: now - 11 * MINUTE,
+					kind: "step",
+					text: "Opened notification settings and changed delivery channel.",
+				},
+				{
+					at: now - 6 * MINUTE,
+					kind: "result",
+					text: "Notification preference saved.",
+				},
+			],
 		},
 		{
 			id: "demo-apollo",
@@ -54,6 +93,18 @@ export function demoDashboardSessions(
 			steps: 3,
 			createdAt: now - 14 * MINUTE,
 			updatedAt: now - 8 * MINUTE,
+			events: [
+				{
+					at: now - 14 * MINUTE,
+					kind: "user",
+					text: "Open the Apollo Launch workspace.",
+				},
+				{
+					at: now - 8 * MINUTE,
+					kind: "step",
+					text: "Navigated to the requested workspace.",
+				},
+			],
 		},
 		{
 			id: "demo-automation",
@@ -63,6 +114,23 @@ export function demoDashboardSessions(
 			steps: 11,
 			createdAt: now - 11 * MINUTE,
 			updatedAt: now - 2 * MINUTE,
+			events: [
+				{
+					at: now - 11 * MINUTE,
+					kind: "user",
+					text: "Create an automation for urgent billing tickets.",
+				},
+				{
+					at: now - 5 * MINUTE,
+					kind: "step",
+					text: "Configured trigger, priority condition, and billing label.",
+				},
+				{
+					at: now - 2 * MINUTE,
+					kind: "result",
+					text: "Automation created and left enabled.",
+				},
+			],
 		},
 	];
 }

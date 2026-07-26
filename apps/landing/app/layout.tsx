@@ -1,10 +1,17 @@
 import type { Metadata } from "next";
-import { Manrope } from "next/font/google";
+import { IBM_Plex_Sans, Manrope } from "next/font/google";
 import "./globals.css";
 
 const landingBody = Manrope({
 	subsets: ["latin"],
 	variable: "--font-landing-body-face",
+	display: "swap",
+});
+
+const dashboardSans = IBM_Plex_Sans({
+	subsets: ["latin"],
+	weight: ["400", "500", "600"],
+	variable: "--font-dashboard-face",
 	display: "swap",
 });
 
@@ -20,7 +27,10 @@ export default function RootLayout({
 	children: React.ReactNode;
 }) {
 	return (
-		<html lang="en" className={landingBody.variable}>
+		<html
+			lang="en"
+			className={`${landingBody.variable} ${dashboardSans.variable}`}
+		>
 			<body>{children}</body>
 		</html>
 	);
