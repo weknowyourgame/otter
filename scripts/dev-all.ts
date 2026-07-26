@@ -3,14 +3,14 @@ const services = [
 		name: "landing",
 		cwd: "apps/landing",
 		port: process.env.LANDING_PORT ?? "3000",
-		distDir: ".next-main",
+		distDir: ".next-dev",
 		kind: "next",
 	},
 	{
 		name: "web",
 		cwd: "apps/web",
 		port: process.env.WEB_PORT ?? "3001",
-		distDir: ".next-main",
+		distDir: ".next-dev",
 		kind: "next",
 	},
 	{
