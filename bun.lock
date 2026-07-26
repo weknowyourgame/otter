@@ -29,6 +29,24 @@
         "typescript": "^5.6.3",
       },
     },
+    "apps/demo": {
+      "name": "otter-demo",
+      "version": "0.1.0",
+      "dependencies": {
+        "next": "^15.0.0",
+        "react": "^18.3.1",
+        "react-dom": "^18.3.1",
+      },
+      "devDependencies": {
+        "@tailwindcss/postcss": "^4.0.0",
+        "@types/node": "^20.0.0",
+        "@types/react": "^18.3.12",
+        "@types/react-dom": "^18.3.1",
+        "postcss": "^8.4.49",
+        "tailwindcss": "^4.0.0",
+        "typescript": "^5.6.3",
+      },
+    },
     "apps/landing": {
       "name": "otter-landing",
       "version": "0.1.0",
@@ -770,6 +788,8 @@
     "otter-core": ["otter-core@workspace:packages/core"],
 
     "otter-db": ["otter-db@workspace:packages/db"],
+
+    "otter-demo": ["otter-demo@workspace:apps/demo"],
 
     "otter-jobs": ["otter-jobs@workspace:packages/jobs"],
 

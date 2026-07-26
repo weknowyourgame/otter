@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+	--font-dashboard-face: "IBM Plex Sans", system-ui, sans-serif;
+	--font-dashboard-mono-face: "IBM Plex Mono", monospace;
+	--color-ink: #0a0b0e;
+	--color-accent: #69d8c8;
+	--color-accent-soft: #a5eee3;
+}
+
+body {
+	margin: 0;
+	font-family:
+		var(--font-dashboard-face), "IBM Plex Sans", system-ui, sans-serif;
+	-webkit-font-smoothing: antialiased;
+	text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+}

@@ -7,10 +7,11 @@
 		"apps/*"
 	],
 	"scripts": {
-		"build": "bun run build:packages && bun run next:dist apps/web .next-main && bun run --cwd apps/web build && bun run next:dist apps/landing .next-main && bun run --cwd apps/landing build",
+		"build": "bun run build:packages && bun run next:dist apps/web .next-main && bun run --cwd apps/web build && bun run next:dist apps/landing .next-main && bun run --cwd apps/landing build && bun run next:dist apps/demo .next-main && bun run --cwd apps/demo build",
 		"build:packages": "bun run --cwd packages/db build && bun run --cwd packages/redis build && bun run --cwd packages/jobs build && bun run --cwd packages/core build && bun run --cwd packages/sdk build",
 		"dev": "bun run next:dist apps/web .next-dev && bun run --cwd apps/web dev",
 		"dev:all": "bun run scripts/dev-all.ts",
+		"dev:demo": "bun run next:dist apps/demo .next-dev && bun run --cwd apps/demo dev -- -p 3002",
 		"dev:landing": "bun run next:dist apps/landing .next-dev && bun run --cwd apps/landing dev -- -p 3000",
 		"dev:web": "bun run next:dist apps/web .next-dev && bun run --cwd apps/web dev -- -p 3001",
 		"landing": "bun run next:dist apps/landing .next-dev && bun run --cwd apps/landing dev",
@@ -18,7 +19,7 @@
 		"api": "bun run --cwd apps/api dev",
 		"db:reset": "bun run --cwd packages/db reset",
 		"workers": "bun run --cwd apps/workers dev",
-		"typecheck": "bun run build:packages && bun run tsc -p apps/api/tsconfig.json --noEmit && bun run tsc -p apps/workers/tsconfig.json --noEmit && bun run tsc -p apps/web/tsconfig.json --noEmit && bun run tsc -p apps/landing/tsconfig.json --noEmit && bun run tsc -p packages/core/tsconfig.json --noEmit && bun run tsc -p packages/db/tsconfig.json --noEmit && bun run tsc -p packages/jobs/tsconfig.json --noEmit && bun run tsc -p packages/redis/tsconfig.json --noEmit && bun run tsc -p packages/sdk/tsconfig.json --noEmit",
+		"typecheck": "bun run build:packages && bun run tsc -p apps/api/tsconfig.json --noEmit && bun run tsc -p apps/workers/tsconfig.json --noEmit && bun run tsc -p apps/web/tsconfig.json --noEmit && bun run tsc -p apps/landing/tsconfig.json --noEmit && bun run tsc -p apps/demo/tsconfig.json --noEmit && bun run tsc -p packages/core/tsconfig.json --noEmit && bun run tsc -p packages/db/tsconfig.json --noEmit && bun run tsc -p packages/jobs/tsconfig.json --noEmit && bun run tsc -p packages/redis/tsconfig.json --noEmit && bun run tsc -p packages/sdk/tsconfig.json --noEmit",
 		"test": "bun run --cwd apps/api test && bun run --cwd packages/core test && bun run --cwd apps/workers test",
 		"lint": "biome check .",
 		"changeset": "changeset",
