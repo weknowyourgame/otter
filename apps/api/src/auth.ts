@@ -43,7 +43,6 @@ function tenantSlug(name: string, userId: string): string {
 function shouldAutoVerifyLocalEmail(): boolean {
 	return (
 		process.env.NODE_ENV !== "production" &&
-		!process.env.RESEND_API_KEY?.trim() &&
 		process.env.OTTER_DISABLE_LOCAL_AUTO_VERIFY !== "1"
 	);
 }
@@ -108,7 +107,7 @@ export const auth = betterAuth({
 					.where(eq(user.id, verifyUser.id));
 				logger.warn(
 					{ email: verifyUser.email },
-					"RESEND_API_KEY not set — auto-verified local development signup",
+					"auto-verified local development signup",
 				);
 			}
 		},
