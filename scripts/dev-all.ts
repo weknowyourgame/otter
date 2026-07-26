@@ -27,6 +27,23 @@ const services = [
 	},
 ] as const;
 
+for (const service of services) {
+	if (service.kind !== "next") continue;
+
+	const setup = Bun.spawnSync([
+		"bun",
+		"run",
+		"scripts/use-next-dist.ts",
+		service.cwd,
+		service.distDir,
+	]);
+
+	if (!setup.success) {
+		console.error(new TextDecoder().decode(setup.stderr));
+		process.exit(setup.exitCode);
+	}
+}
+
 console.log("Starting Otter development servers:\n");
 console.log(`  Landing:   http://localhost:${services[0].port}`);
 console.log(`  Dashboard: http://localhost:${services[1].port}/dashboard\n`);
@@ -42,7 +59,6 @@ const children = services.map((service) =>
 			env: {
 				...process.env,
 				PORT: service.port,
-				...(service.kind === "next" ? { NEXT_DIST_DIR: service.distDir } : {}),
 			},
 			stdin: "inherit",
 			stdout: "inherit",

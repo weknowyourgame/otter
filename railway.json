@@ -2,11 +2,11 @@
 	"$schema": "https://railway.com/railway.schema.json",
 	"build": {
 		"builder": "RAILPACK",
-		"buildCommand": "bun run --cwd packages/db build && bun run --cwd packages/redis build && bun run --cwd packages/jobs build && bun run --cwd packages/core build && bun run --cwd packages/sdk build && NEXT_DIST_DIR=.next-main bun run --cwd apps/web build",
+		"buildCommand": "bun run build:packages && bun run next:dist apps/web .next-main && bun run --cwd apps/web build",
 		"watchPatterns": ["apps/web/**", "packages/**", "package.json", "bun.lock"]
 	},
 	"deploy": {
-		"startCommand": "NEXT_DIST_DIR=.next-main bun run --cwd apps/web start",
+		"startCommand": "bun run next:dist apps/web .next-main && bun run --cwd apps/web start",
 		"healthcheckPath": "/health",
 		"healthcheckTimeout": 300,
 		"restartPolicyType": "ON_FAILURE",
