@@ -16,7 +16,10 @@ export function chunkMarkdown(markdown: string): string[] {
 
 	for (const paragraph of paragraphs) {
 		const candidate = current ? `${current}\n\n${paragraph}` : paragraph;
-		if (candidate.length > TARGET_CHUNK_SIZE && current.length >= MIN_CHUNK_SIZE) {
+		if (
+			candidate.length > TARGET_CHUNK_SIZE &&
+			current.length >= MIN_CHUNK_SIZE
+		) {
 			chunks.push(current);
 			current = paragraph;
 		} else {

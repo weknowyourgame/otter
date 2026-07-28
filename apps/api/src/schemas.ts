@@ -31,6 +31,13 @@ export const createDocBodySchema = z
 	})
 	.strict();
 
+export const webCrawlJobBodySchema = z
+	.object({
+		docId: z.string().trim().min(1),
+		url: z.string().trim().min(1).url(),
+	})
+	.strict();
+
 export const teamInviteBodySchema = z
 	.object({
 		email: z.string().trim().min(1).email(),

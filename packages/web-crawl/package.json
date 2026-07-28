@@ -1,8 +1,8 @@
 {
-	"name": "otter-jobs",
+	"name": "otter-web-crawl",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Job triggers that enqueue web-crawl work to local BullMQ or Cloudflare Queues.",
+	"description": "Shared website crawl ingestion processor for local BullMQ workers and Cloudflare-triggered API jobs.",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
@@ -19,8 +19,8 @@
 		"build": "tsc -p tsconfig.json --outDir dist"
 	},
 	"dependencies": {
-		"bullmq": "^5.34.4",
-		"otter-redis": "workspace:*"
+		"otter-core": "workspace:*",
+		"otter-db": "workspace:*"
 	},
 	"devDependencies": {
 		"typescript": "^5.6.3"

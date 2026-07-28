@@ -39,6 +39,7 @@ import {
 } from "otter-db";
 import { createWebCrawlTriggers } from "otter-jobs";
 import { createRedisConnection, getBullConnectionOptions } from "otter-redis";
+import { processWebCrawlJob } from "otter-web-crawl";
 import {
 	createApiKey,
 	extractApiKey,
@@ -66,6 +67,7 @@ import {
 	replaceOriginsBodySchema,
 	stepRequestBodySchema,
 	teamInviteBodySchema,
+	webCrawlJobBodySchema,
 } from "./schemas.js";
 import { handleSocketMessage } from "./ws.js";
 
@@ -97,10 +99,7 @@ app.onError((error, c) => {
 });
 
 const redisUrl = process.env.REDIS_URL ?? "redis://127.0.0.1:6379";
-const webCrawlTriggers = createWebCrawlTriggers({
-	connection: getBullConnectionOptions(redisUrl),
-	redisUrl,
-});
+const webCrawlTriggers = createWebCrawlTriggers(webCrawlTriggerConfig());
 const pauseRedis = createRedisConnection(redisUrl);
 const pauseStore = createRedisPauseStore(pauseRedis);
 const checkRateLimit = createRateLimiter(pauseRedis);
@@ -112,6 +111,36 @@ const checkRateLimit = createRateLimiter(pauseRedis);
 const AGENT_KEY_RATE_LIMIT = { limit: 60, windowSeconds: 60 };
 const DASHBOARD_RATE_LIMIT = { limit: 300, windowSeconds: 60 };
 const REQUIRED_AGENT_MODEL = "openai/gpt-5.3-codex";
+
+function webCrawlTriggerConfig() {
+	if (process.env.WEB_CRAWL_BACKEND === "cloudflare") {
+		const enqueueUrl = process.env.CLOUDFLARE_WEB_CRAWL_ENQUEUE_URL?.trim();
+		const secret = process.env.OTTER_WORKER_SECRET?.trim();
+		if (!enqueueUrl || !secret) {
+			throw new Error(
+				"WEB_CRAWL_BACKEND=cloudflare requires CLOUDFLARE_WEB_CRAWL_ENQUEUE_URL and OTTER_WORKER_SECRET",
+			);
+		}
+		return {
+			backend: "cloudflare" as const,
+			enqueueUrl,
+			secret,
+		};
+	}
+
+	return {
+		backend: "bullmq" as const,
+		connection: getBullConnectionOptions(redisUrl),
+		redisUrl,
+	};
+}
+
+function workerSecretFromRequest(c: {
+	req: { header(name: string): string | undefined };
+}): string | undefined {
+	const bearer = c.req.header("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
+	return c.req.header("x-otter-worker-secret") ?? bearer;
+}
 
 function rateLimitedResponse(retryAfterSeconds: number): Response {
 	return Response.json(
@@ -663,6 +692,43 @@ app.post("/sessions/:id/resume", requireDashboard, async (c) => {
 		return c.json({ error: "resume_failed" }, 503);
 	}
 	return c.json({ sessionId: sessionRow.id, paused: false });
+});
+
+app.post("/internal/web-crawl/process", async (c) => {
+	const configuredSecret = process.env.OTTER_WORKER_SECRET?.trim();
+	if (!configuredSecret) {
+		return c.json({ error: "worker_secret_not_configured" }, 503);
+	}
+	if (workerSecretFromRequest(c) !== configuredSecret) {
+		return c.json({ error: "unauthorized" }, 401);
+	}
+
+	let rawBody: unknown;
+	try {
+		rawBody = await c.req.json();
+	} catch {
+		return c.json({ error: "invalid_json" }, 400);
+	}
+	const parsed = webCrawlJobBodySchema.safeParse(rawBody);
+	if (!parsed.success) {
+		return c.json(
+			{ error: "invalid_web_crawl_job", detail: parsed.error.issues },
+			400,
+		);
+	}
+
+	const doc = await getDoc(parsed.data.docId);
+	if (!doc) return c.json({ error: "not_found" }, 404);
+	if (doc.url !== parsed.data.url) {
+		return c.json({ error: "url_mismatch" }, 409);
+	}
+
+	const result = await processWebCrawlJob(parsed.data, {
+		firecrawlApiKey: process.env.FIRECRAWL_API_KEY,
+		openRouterApiKey: process.env.OPENROUTER_API_KEY,
+		logPrefix: "[api:web-crawl]",
+	});
+	return c.json({ ok: true, result });
 });
 
 app.get("/docs", requireDashboard, async (c) => {

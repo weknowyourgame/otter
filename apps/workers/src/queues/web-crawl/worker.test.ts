@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import type { CrawlResult } from "../../services/firecrawl.js";
-import { FirecrawlService } from "../../services/firecrawl.js";
+import { FirecrawlService, type CrawlResult } from "otter-web-crawl";
 
 type DocStatusUpdate = {
 	docId: string;

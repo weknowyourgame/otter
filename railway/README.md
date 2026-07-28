@@ -9,12 +9,11 @@ workspaces and `packages/*` are available during each build.
 | --- | --- | --- |
 | Dashboard (`apps/web`) | `railway.json` | `/health` |
 | API (`apps/api`) | `railway/api.json` | `/health` |
-| Workers (`apps/workers`) | `railway/workers.json` | `/health` |
 | Landing (`apps/landing`) | `railway/landing.json` | `/health` |
 
-For the API, workers, and landing services, set Railway's config-as-code path to
-the matching file above. The root `railway.json` is the default dashboard
-service config.
+For the API and landing services, set Railway's config-as-code path to the
+matching file above. The root `railway.json` is the default dashboard service
+config. Web-crawl workers run through Cloudflare Workers + Queues, not Railway.
 
 ## Required variables
 
@@ -35,18 +34,21 @@ BETTER_AUTH_SECRET=...
 OTTER_API_KEY_SECRET=...
 OTTER_DASHBOARD_ORIGINS=https://your-dashboard.up.railway.app
 OPENROUTER_API_KEY=...
+WEB_CRAWL_BACKEND=cloudflare
+CLOUDFLARE_WEB_CRAWL_ENQUEUE_URL=https://otter-web-crawl-worker.<account>.workers.dev/enqueue
+OTTER_WORKER_SECRET=...
+FIRECRAWL_API_KEY=...
 RESEND_API_KEY=...
 EMAIL_FROM=Otter <support@your-domain.com>
 ```
 
-Workers:
+Cloudflare web-crawl worker (`apps/workers`):
 
 ```bash
-DATABASE_URL=${{Postgres.DATABASE_URL}}
-REDIS_URL=${{Redis.REDIS_URL}}
-OPENROUTER_API_KEY=...
-FIRECRAWL_API_KEY=...
-FIRECRAWL_CRAWL_LIMIT=50
-FIRECRAWL_MAX_CONCURRENCY=2
-FIRECRAWL_ALLOW_SUBDOMAINS=0
+OTTER_API_URL=https://your-api.up.railway.app
+OTTER_WORKER_SECRET=...
 ```
+
+For local Cloudflare testing, copy `apps/workers/.dev.vars.example` to
+`apps/workers/.dev.vars`, use the same `OTTER_WORKER_SECRET` in `apps/api/.env`,
+then run `bun run workers:cloudflare`.

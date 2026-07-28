@@ -1,7 +1,9 @@
 node_modules/
 dist/
 .next/
+.wrangler/
 .env
+.dev.vars
 .DS_Store
 *.tsbuildinfo
 otter.db*

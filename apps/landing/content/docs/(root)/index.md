@@ -11,7 +11,7 @@ The running product has four main pieces:
 
 - `apps/api` handles auth, API keys, origin checks, dashboard APIs, and the agent `/step` loop.
 - `apps/web` is the dashboard and the in-app Cordant demo surface.
-- `apps/workers` crawls websites with Firecrawl, chunks pages, embeds them, and stores searchable knowledge.
+- `apps/workers` provides the local BullMQ worker and Cloudflare Worker/Queue entrypoint for website crawl jobs.
 - `packages/sdk` is the widget that serializes the current page and executes approved actions.
 
 ## Core Flow
@@ -25,4 +25,8 @@ The running product has four main pieces:
 
 ## Demo Notes
 
-For local demos, run the dashboard, API, worker, Postgres, and Redis. The Cordant demo mounts the SDK like a customer app: set `NEXT_PUBLIC_OTTER_API_URL` to the main API, set `NEXT_PUBLIC_OTTER_PUBLIC_KEY`, and add the exact demo origin in Settings -> Developers.
+For local demos, run the dashboard, API, Postgres, and Redis. Use either the
+local BullMQ worker or Cloudflare Worker dev server for web-crawl jobs. The
+Cordant demo mounts the SDK like a customer app: set `NEXT_PUBLIC_OTTER_API_URL`
+to the main API, set `NEXT_PUBLIC_OTTER_PUBLIC_KEY`, and add the exact demo
+origin in Settings -> Developers.

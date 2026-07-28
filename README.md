@@ -28,7 +28,8 @@ apps/
   demo/   Standalone Cordant demo SaaS. It mounts the SDK like a customer
           app, calling the configured Otter API directly with a public key.
   workers/
-          BullMQ workers for website crawl ingestion and embeddings.
+          Local BullMQ worker plus Cloudflare Worker/Queue entrypoint for
+          website crawl ingestion.
   landing/
           Marketing and docs site.
 ```
@@ -79,6 +80,30 @@ FIRECRAWL_ALLOW_SUBDOMAINS=0
 
 Website imports use Firecrawl's crawl API, stay on the submitted domain by
 default, and store each discovered page as source-labeled knowledge chunks.
+
+### Cloudflare worker mode
+
+Local BullMQ remains the default. To exercise the Cloudflare path locally:
+
+```bash
+cp apps/workers/.dev.vars.example apps/workers/.dev.vars
+bun run workers:cloudflare
+```
+
+Set these API values in `apps/api/.env`:
+
+```bash
+WEB_CRAWL_BACKEND=cloudflare
+CLOUDFLARE_WEB_CRAWL_ENQUEUE_URL=http://localhost:8790/enqueue
+OTTER_WORKER_SECRET=replace-with-a-local-secret
+FIRECRAWL_API_KEY=fc_...
+```
+
+Set the same `OTTER_WORKER_SECRET` in `apps/workers/.dev.vars`.
+
+For production, `CLOUDFLARE_WEB_CRAWL_ENQUEUE_URL` should point to the deployed
+Cloudflare Worker `/enqueue` URL. The Cloudflare queue consumer calls
+`apps/api`'s protected `/internal/web-crawl/process` endpoint.
 
 ## The loop
 

@@ -1,0 +1,2 @@
+OTTER_API_URL=http://localhost:8787
+OTTER_WORKER_SECRET=replace-with-the-same-local-secret-as-apps-api

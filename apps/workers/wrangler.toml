@@ -1,0 +1,13 @@
+name = "otter-web-crawl-worker"
+main = "src/cloudflare/index.ts"
+compatibility_date = "2026-07-28"
+
+[[queues.producers]]
+binding = "WEB_CRAWL_QUEUE"
+queue = "otter-web-crawl"
+
+[[queues.consumers]]
+queue = "otter-web-crawl"
+max_batch_size = 1
+max_batch_timeout = 5
+max_retries = 3

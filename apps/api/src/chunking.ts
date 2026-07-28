@@ -1,4 +1,4 @@
-// Naive paragraph-aware chunker, same approach as apps/workers/src/text-chunker.ts
+// Naive paragraph-aware chunker, same approach as packages/web-crawl/src/text-chunker.ts
 // (kept as a separate small copy rather than a shared package import — apps/api
 // and apps/workers are independently deployable, and this is a few lines of
 // pure logic, not worth a build-order dependency between them).
@@ -17,7 +17,10 @@ export function chunkText(text: string): string[] {
 
 	for (const paragraph of paragraphs) {
 		const candidate = current ? `${current}\n\n${paragraph}` : paragraph;
-		if (candidate.length > TARGET_CHUNK_SIZE && current.length >= MIN_CHUNK_SIZE) {
+		if (
+			candidate.length > TARGET_CHUNK_SIZE &&
+			current.length >= MIN_CHUNK_SIZE
+		) {
 			chunks.push(current);
 			current = paragraph;
 		} else {
