@@ -25,5 +25,4 @@ The running product has four main pieces:
 
 ## Demo Notes
 
-For local demos, run the dashboard, API, worker, Postgres, and Redis. The standalone Cordant demo app should point its agent proxy at the main API with `OTTER_API_URL`.
-
+For local demos, run the dashboard, API, worker, Postgres, and Redis. The Cordant demo mounts the SDK like a customer app: set `NEXT_PUBLIC_OTTER_API_URL` to the main API, set `NEXT_PUBLIC_OTTER_PUBLIC_KEY`, and add the exact demo origin in Settings -> Developers.

@@ -25,8 +25,8 @@ apps/
           agent HTTP/WebSocket endpoints, sessions, and knowledge APIs.
   web/    Next.js dashboard, auth UI, developer settings, the Cordant demo
           SaaS (/demo), and same-origin proxies to apps/api.
-  demo/   Standalone Cordant demo SaaS. Its agent route is only a
-          same-origin proxy to apps/api; there is no separate local planner.
+  demo/   Standalone Cordant demo SaaS. It mounts the SDK like a customer
+          app, calling the configured Otter API directly with a public key.
   workers/
           BullMQ workers for website crawl ingestion and embeddings.
   landing/
@@ -84,7 +84,7 @@ default, and store each discovered page as source-labeled knowledge chunks.
 
 ```
 user message ──► SDK serializes the page (interactive elements, refs,
-                 headings, state) ──► POST /api/agent/step
+                 headings, state) ──► POST ${endpoint}/step
                  ◄── one action: click / fill / navigate / scroll /
                      say / done / fail  (+ a live status line)
 SDK executes it: scrolls target into view, walks the cursor over,
@@ -123,7 +123,7 @@ or programmatically:
 import { init } from "otter-sdk";
 
 init({
-  endpoint: "/api/agent",
+  endpoint: "https://api.your-app.com",
   publicKey: "pk_live_...",
   name: "Otter",
   accent: "#5B6CF9",
