@@ -578,13 +578,13 @@ export function AgentCreateFlow() {
 						<div className="od-crawl-choice">
 							<SettingToggle
 								checked={crawl}
-								description="Analyze your website to draft a personality and knowledge source."
+								description="Add your website as the first knowledge source."
 								onChange={setCrawl}
 								title="Crawl my website"
 							/>
 							{crawl ? (
 								<Field
-									hint="Free plan includes up to 25 discovered pages."
+									hint="Otter crawls internal pages after you save the agent."
 									label="Website URL"
 									onChange={(event) => setUrl(event.target.value)}
 									type="url"
@@ -663,18 +663,18 @@ export function AgentCreateFlow() {
 							{[
 								[
 									1,
-									"Crawling your website",
-									"Reading linked pages and page structure",
+									"Preparing website crawl",
+									"Saving the start URL as an initial knowledge source",
 								],
 								[
 									2,
-									"Understanding your product",
-									"Finding the audience, offer, and recurring terminology",
+									"Building starter behavior",
+									"Combining your selected goals into a support-ready prompt",
 								],
 								[
 									3,
-									"Crafting agent personality",
-									"Turning those signals into a support-ready prompt",
+									"Ready to save",
+									"The real crawl starts when this agent is created",
 								],
 							].map(([index, title, description]) => (
 								<div
@@ -723,7 +723,7 @@ export function AgentCreateFlow() {
 								<strong>{name}</strong>
 								<p>
 									{selectedGoals.length} goals ·{" "}
-									{crawl ? "3 pages discovered" : "Manual context"}
+									{crawl ? "Website crawl after save" : "Manual context"}
 								</p>
 							</div>
 							<span>Draft ready</span>

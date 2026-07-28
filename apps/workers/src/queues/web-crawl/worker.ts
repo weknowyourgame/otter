@@ -1,17 +1,18 @@
-// Deliberately scoped down from cossistant/apps/workers/src/queues/web-crawl
-// worker.ts: no global crawl-slot leasing (that's for bounding concurrent
-// Firecrawl usage across many tenants — Otter has none of that yet), no
-// per-website realtime event emission (no website/tenant concept since
-// Phase 5 is on hold), no plan-based size limits (no billing). Just:
-// fetch one page, chunk it, store it, mark the doc ready or failed.
+// Deliberately scoped: no global crawl-slot leasing, no per-website realtime
+// event emission, no plan-based size limits. Just crawl a bounded website,
+// chunk it, store it, and mark the doc ready or failed.
 
+import { type Job, Worker } from "bullmq";
 import { requestEmbedding } from "otter-core";
-import { updateDocStatus, replaceChunksForDoc, setChunkEmbedding } from "otter-db";
-import type { RedisOptions } from "otter-redis";
+import {
+	replaceChunksForDoc,
+	setChunkEmbedding,
+	updateDocStatus,
+} from "otter-db";
 import { QUEUE_NAMES, type WebCrawlJobData } from "otter-jobs";
-import { Job, Worker } from "bullmq";
+import type { RedisOptions } from "otter-redis";
+import { type CrawlPage, FirecrawlService } from "../../services/firecrawl.js";
 import { chunkMarkdown } from "../../text-chunker.js";
-import { FirecrawlService } from "../../services/firecrawl.js";
 
 type WorkerConfig = {
 	connection: RedisOptions;
@@ -19,7 +20,35 @@ type WorkerConfig = {
 	openRouterApiKey: string | undefined;
 };
 
-export function createWebCrawlWorker({ connection, firecrawlApiKey, openRouterApiKey }: WorkerConfig) {
+function hostnameFor(url: string): string {
+	try {
+		return new URL(url).hostname;
+	} catch {
+		return url;
+	}
+}
+
+function documentTitle(
+	url: string,
+	title: string | null,
+	pageCount: number,
+): string {
+	const baseTitle = title ?? hostnameFor(url);
+	return pageCount === 1 ? baseTitle : `${baseTitle} (${pageCount} pages)`;
+}
+
+function chunksForPage(page: CrawlPage): string[] {
+	const title = page.title ?? page.url;
+	return chunkMarkdown(page.markdown).map(
+		(content) => `# ${title}\nSource: ${page.url}\n\n${content}`,
+	);
+}
+
+export function createWebCrawlWorker({
+	connection,
+	firecrawlApiKey,
+	openRouterApiKey,
+}: WorkerConfig) {
 	const firecrawl = new FirecrawlService(firecrawlApiKey);
 	let worker: Worker<WebCrawlJobData> | null = null;
 
@@ -29,7 +58,8 @@ export function createWebCrawlWorker({ connection, firecrawlApiKey, openRouterAp
 
 			worker = new Worker<WebCrawlJobData>(
 				QUEUE_NAMES.WEB_CRAWL,
-				async (job: Job<WebCrawlJobData>) => processWebCrawlJob(firecrawl, openRouterApiKey, job.data),
+				async (job: Job<WebCrawlJobData>) =>
+					processWebCrawlJob(firecrawl, openRouterApiKey, job.data),
 				{ connection, concurrency: 2 },
 			);
 
@@ -57,19 +87,27 @@ export async function processWebCrawlJob(
 	const { docId, url } = data;
 
 	if (!firecrawl.isConfigured()) {
-		await updateDocStatus(docId, { status: "failed", errorMessage: "Firecrawl API is not configured", updatedAt: Date.now() });
+		await updateDocStatus(docId, {
+			status: "failed",
+			errorMessage: "Firecrawl API is not configured",
+			updatedAt: Date.now(),
+		});
 		throw new Error("Firecrawl API is not configured");
 	}
 
 	await updateDocStatus(docId, { status: "crawling", updatedAt: Date.now() });
 
-	const result = await firecrawl.scrapeSinglePage(url);
+	const result = await firecrawl.crawlWebsite(url);
 	if (!result.success) {
-		await updateDocStatus(docId, { status: "failed", errorMessage: result.error, updatedAt: Date.now() });
+		await updateDocStatus(docId, {
+			status: "failed",
+			errorMessage: result.error,
+			updatedAt: Date.now(),
+		});
 		throw new Error(result.error);
 	}
 
-	const chunkTexts = chunkMarkdown(result.markdown);
+	const chunkTexts = result.pages.flatMap(chunksForPage);
 	const now = Date.now();
 	const insertedChunks = await replaceChunksForDoc(
 		docId,
@@ -90,18 +128,35 @@ export async function processWebCrawlJob(
 		let embedded = 0;
 		for (const chunk of insertedChunks) {
 			try {
-				const embedding = await requestEmbedding(chunk.content, openRouterApiKey);
+				const embedding = await requestEmbedding(
+					chunk.content,
+					openRouterApiKey,
+				);
 				await setChunkEmbedding(chunk.id, JSON.stringify(embedding));
 				embedded++;
 			} catch (error) {
-				console.error(`[worker:web-crawl] Failed to embed chunk ${chunk.id}`, error);
+				console.error(
+					`[worker:web-crawl] Failed to embed chunk ${chunk.id}`,
+					error,
+				);
 			}
 		}
-		console.log(`[worker:web-crawl] Embedded ${embedded}/${insertedChunks.length} chunks for doc ${docId}`);
+		console.log(
+			`[worker:web-crawl] Embedded ${embedded}/${insertedChunks.length} chunks for doc ${docId}`,
+		);
 	} else {
-		console.warn(`[worker:web-crawl] OPENROUTER_API_KEY not set — doc ${docId} stored but not searchable yet`);
+		console.warn(
+			`[worker:web-crawl] OPENROUTER_API_KEY not set — doc ${docId} stored but not searchable yet`,
+		);
 	}
 
-	await updateDocStatus(docId, { status: "ready", title: result.title, errorMessage: null, updatedAt: Date.now() });
-	console.log(`[worker:web-crawl] Ingested ${url} -> ${chunkTexts.length} chunks (doc ${docId})`);
+	await updateDocStatus(docId, {
+		status: "ready",
+		title: documentTitle(url, result.title, result.pages.length),
+		errorMessage: null,
+		updatedAt: Date.now(),
+	});
+	console.log(
+		`[worker:web-crawl] Ingested ${url} -> ${result.pages.length} pages, ${chunkTexts.length} chunks (doc ${docId})`,
+	);
 }

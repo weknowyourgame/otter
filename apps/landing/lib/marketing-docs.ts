@@ -50,14 +50,6 @@ function walk(directory: string): string[] {
 	});
 }
 
-function brandCopy(value: string) {
-	return value
-		.replaceAll("cossistantcom/cossistant", "otter-ai/otter")
-		.replaceAll("@cossistant", "@otter")
-		.replaceAll("Cossistant", "Otter")
-		.replaceAll("cossistant", "otter");
-}
-
 function toDoc(filePath: string): MarketingDoc {
 	const relative = path.relative(DOCS_ROOT, filePath);
 	const segments = relative.replace(/\.md$/, "").split(path.sep);
@@ -66,12 +58,12 @@ function toDoc(filePath: string): MarketingDoc {
 	const raw = fs.readFileSync(filePath, "utf8");
 	const { data, body } = parseFrontmatter(raw);
 	const fallbackTitle = segments.length ? humanize(segments.at(-1) ?? "Documentation") : "Documentation";
-	const title = brandCopy(data.title ?? fallbackTitle);
-	const description = brandCopy(data.description ?? `Learn how to use ${title.toLowerCase()} with Otter.`);
+	const title = data.title ?? fallbackTitle;
+	const description = data.description ?? `Learn how to use ${title.toLowerCase()} with Otter.`;
 	return {
 		title,
 		description,
-		body: brandCopy(body),
+		body,
 		slug: segments,
 		href: `/docs${segments.length ? `/${segments.join("/")}` : ""}`,
 		section: segments.length > 1 ? humanize(segments[0]) : segments.length === 1 ? "Overview" : "Start here",

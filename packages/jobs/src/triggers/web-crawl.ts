@@ -50,8 +50,8 @@ export function createWebCrawlTriggers({ connection, redisUrl }: TriggerConfig) 
 		const q = await ensureQueueReady();
 		// BullMQ rejects jobIds containing exactly one ":" (that syntax is
 		// reserved for repeatable jobs) — found by actually running this and
-		// hitting "Custom Id cannot contain :". Hyphen instead, matching the
-		// separator cossistant itself uses for its job IDs.
+		// hitting "Custom Id cannot contain :". Hyphen keeps IDs readable
+		// without triggering BullMQ's repeatable-job parser.
 		const jobId = `web-crawl-${data.docId}`;
 
 		const jobOptions: JobsOptions = {

@@ -2,7 +2,7 @@
 	"name": "otter-redis",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Shared ioredis connection helper — used for BullMQ job connections and, later, realtime pub/sub. Adapted from cossistant/packages/redis.",
+	"description": "Shared ioredis connection helper for BullMQ job connections and Redis-backed runtime services.",
 	"type": "module",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",

@@ -2,7 +2,7 @@
 	"name": "otter-workers",
 	"private": true,
 	"version": "0.1.0",
-	"description": "Background job processor. Currently: web-crawl (fetch a URL via Firecrawl, chunk it, embed each chunk, store it in otter-db as a searchable knowledge doc).",
+	"description": "Background job processor. Currently: web-crawl (crawl a website via Firecrawl, chunk discovered pages, embed each chunk, store searchable knowledge in otter-db).",
 	"type": "module",
 	"scripts": {
 		"dev": "bun run --hot src/index.ts",

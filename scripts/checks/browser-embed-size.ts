@@ -1,8 +1,6 @@
 // Fails the build if otter-sdk's script-tag bundles grow past a budget.
-// Adapted from cossistant/scripts/checks/browser-embed-size.ts — same
-// raw/gzip regression check, baselines reset for otter-sdk's actual sizes
-// (much smaller than cossistant's widget: no component framework, just
-// the vanilla-TS loader/executor/UI in packages/sdk).
+// Raw/gzip regression check for otter-sdk's script-tag bundles. Baselines are
+// set to the vanilla TypeScript loader/executor/UI in packages/sdk.
 
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";

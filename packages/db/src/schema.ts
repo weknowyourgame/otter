@@ -212,9 +212,8 @@ export type NewAllowedOriginRow = typeof allowedOrigins.$inferInsert;
 /**
  * One row per agent session. history/local/events are stored as JSON text
  * rather than normalized tables — otter-core already treats them as opaque
- * blobs it serializes wholesale each step, and Otter's session count/lifetime
- * doesn't justify the join complexity Cossistant's conversation/message split
- * solves for. Revisit if step history needs to be queried independently.
+ * blobs it serializes wholesale each step. Revisit if step history needs to be
+ * queried independently.
  */
 export const sessions = pgTable("sessions", {
 	id: text("id").primaryKey(),
@@ -242,8 +241,8 @@ export type SessionRow = typeof sessions.$inferSelect;
 export type NewSessionRow = typeof sessions.$inferInsert;
 
 /**
- * A knowledge-base source document (today: one scraped URL). Chunked and
- * embedded (embedding populated by Phase 8, null until then) so the answer
+ * A knowledge-base source document. Web docs can represent a bounded website
+ * crawl; FAQ/file docs are entered directly. Chunks are embedded so the answer
  * path can retrieve grounded context instead of the agent guessing.
  */
 export const docs = pgTable("docs", {
@@ -285,9 +284,8 @@ export type NewChunkRow = typeof chunks.$inferInsert;
 /**
  * A durable fact about a user, scoped by userKey (their email — the only
  * identity Otter has today, via OtterConfig.user forwarded on each step).
- * No semantic/embedding-based recall like cossistant's optional
- * models.embed — just the most recent facts for that user, injected once
- * at session start. Revisit if the fact count per user grows enough that
+ * No semantic/embedding-based recall yet — just the most recent facts for
+ * that user, injected once at session start. Revisit if the fact count per user grows enough that
  * "most recent N" stops being a good enough recall strategy.
  */
 export const memories = pgTable("memories", {

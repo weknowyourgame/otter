@@ -25,6 +25,12 @@ apps/
           agent HTTP/WebSocket endpoints, sessions, and knowledge APIs.
   web/    Next.js dashboard, auth UI, developer settings, the Cordant demo
           SaaS (/demo), and same-origin proxies to apps/api.
+  demo/   Standalone Cordant demo SaaS. Its agent route is only a
+          same-origin proxy to apps/api; there is no separate local planner.
+  workers/
+          BullMQ workers for website crawl ingestion and embeddings.
+  landing/
+          Marketing and docs site.
 ```
 
 ## Quick start
@@ -58,6 +64,21 @@ local setup. Without an OpenRouter key the loop uses the deterministic local
 planner; agent requests still require an Otter tenant key.
 
 Agent turns always use `openai/gpt-5.3-codex`.
+
+### Worker environment (`apps/workers/.env`)
+
+```bash
+DATABASE_URL=postgres://localhost:5432/otter
+REDIS_URL=redis://127.0.0.1:6379
+OPENROUTER_API_KEY=
+FIRECRAWL_API_KEY=
+FIRECRAWL_CRAWL_LIMIT=50
+FIRECRAWL_MAX_CONCURRENCY=2
+FIRECRAWL_ALLOW_SUBDOMAINS=0
+```
+
+Website imports use Firecrawl's crawl API, stay on the submitted domain by
+default, and store each discovered page as source-labeled knowledge chunks.
 
 ## The loop
 

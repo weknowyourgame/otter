@@ -4,11 +4,10 @@
 // inside it), and strips scripts/devDependencies/files which don't belong
 // in a published package.
 //
-// Adapted from cossistant/scripts/prepare-package.ts, but Otter's packages
-// hand-author `exports` pointing straight at built files (e.g.
-// "./dist/otter-sdk.esm.js"), not at TypeScript source under src/ the way
-// cossistant's do — so there's no .ts -> .js/.d.ts extension remapping to
-// do here, just stripping the now-redundant "dist/" segment.
+// Otter's packages hand-author `exports` pointing straight at built files
+// (e.g. "./dist/otter-sdk.esm.js"), not at TypeScript source under src/.
+// There is no .ts -> .js/.d.ts extension remapping to do here, just stripping
+// the now-redundant "dist/" segment.
 //
 //   bun run scripts/prepare-package.ts packages/sdk
 

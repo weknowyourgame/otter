@@ -1,7 +1,6 @@
 // Ensures a single job per logical ID while allowing replacements for
 // completed/failed jobs. Active/waiting/delayed jobs are skipped to avoid
-// concurrent duplicates. Adapted from cossistant/packages/jobs — fully
-// generic, no changes needed.
+// concurrent duplicates.
 
 import type { Job, JobsOptions, Queue } from "bullmq";
 

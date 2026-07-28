@@ -599,8 +599,8 @@ export function WebSourcesPage() {
 					Web Sources
 				</PageTitle>
 				<p className="od-page-intro">
-					Otter ingests one page per source today — submit each URL you want in
-					the knowledge base directly.
+					Otter crawls each website from the URL you submit and adds the
+					discovered pages to the agent's knowledge base.
 				</p>
 				<div className="od-source-list">
 					{(docs ?? []).map((doc) => (
@@ -640,7 +640,7 @@ export function WebSourcesPage() {
 				) : null}
 			</div>
 			<Modal
-				description="Otter reads this page and adds it to the agent's knowledge base."
+				description="Otter crawls this website and adds the discovered pages to the agent's knowledge base."
 				onClose={() => setAddOpen(false)}
 				open={addOpen}
 				title="Add a website"
@@ -649,7 +649,7 @@ export function WebSourcesPage() {
 					<div className="od-modal__body">
 						<Field
 							autoFocus
-							hint="A single page URL — Otter doesn't yet crawl a whole site automatically."
+							hint="Start URL; Otter crawls internal pages up to the configured page cap."
 							label="Website URL"
 							onChange={(event) => setNewUrl(event.target.value)}
 							placeholder="https://docs.example.com"

@@ -4,11 +4,10 @@
 // swaps the transport (persistent socket vs. a new HTTP connection every
 // turn) without changing the request/response shape of the loop itself.
 //
-// Deliberately scoped: no cross-connection fan-out yet (Cossistant's
-// connection-registry/realtime-pubsub split solves "N viewers watch one
-// conversation," which Otter doesn't need until the dashboard grows a live
-// per-session viewer). Add that layer when there's an actual second
-// subscriber to fan out to.
+// Deliberately scoped: no cross-connection fan-out yet. Otter doesn't need
+// "N viewers watch one conversation" until the dashboard grows a live
+// per-session viewer. Add that layer when there's an actual second subscriber
+// to fan out to.
 
 import { type EngineConfig, runStep } from "otter-core";
 import { wsStepMessageSchema } from "./schemas.js";
