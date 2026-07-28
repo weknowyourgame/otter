@@ -149,9 +149,19 @@ function rateLimitedResponse(retryAfterSeconds: number): Response {
 	);
 }
 
+function agentMaxStepsFromEnv(): number {
+	const raw = process.env.OTTER_AGENT_MAX_STEPS?.trim();
+	if (!raw) return Number.POSITIVE_INFINITY;
+	const parsed = Number.parseInt(raw, 10);
+	return Number.isFinite(parsed) && parsed > 0
+		? parsed
+		: Number.POSITIVE_INFINITY;
+}
+
 const baseEngineConfig: EngineConfig = {
 	apiKey: process.env.OPENROUTER_API_KEY,
 	model: REQUIRED_AGENT_MODEL,
+	maxSteps: agentMaxStepsFromEnv(),
 	pauseStore,
 };
 

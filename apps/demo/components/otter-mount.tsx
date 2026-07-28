@@ -17,8 +17,7 @@ export function OtterMount() {
 				window.localStorage.getItem("otter-demo-public-key")?.trim() ||
 				publicKey;
 			endpoint =
-				window.localStorage.getItem("otter-demo-api-url")?.trim() ||
-				endpoint;
+				window.localStorage.getItem("otter-demo-api-url")?.trim() || endpoint;
 		} catch {
 			// localStorage can be unavailable in restricted browser modes.
 		}
@@ -28,6 +27,7 @@ export function OtterMount() {
 			name: "Otter",
 			accent: "#69D8C8",
 			theme: "dark",
+			maxSteps: Number.POSITIVE_INFINITY,
 			user: { email: "demo@cordant.io", name: "Demo User" },
 		});
 		return () => otter.destroy();

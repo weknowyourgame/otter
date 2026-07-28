@@ -72,6 +72,10 @@ function fromRow(row: SessionRow): Session {
 	};
 }
 
+function hasStepLimit(maxSteps: number): boolean {
+	return Number.isFinite(maxSteps) && maxSteps > 0;
+}
+
 function maybeFromRow(row: SessionRow | undefined): Session | undefined {
 	return row ? fromRow(row) : undefined;
 }
@@ -211,7 +215,7 @@ export async function runStep(
 		record(session, "user", req.message);
 	}
 
-	if (session.steps > maxSteps) {
+	if (hasStepLimit(maxSteps) && session.steps > maxSteps) {
 		session.state = "failed";
 		const action: AgentAction = {
 			type: "fail",

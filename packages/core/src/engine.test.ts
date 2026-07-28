@@ -132,6 +132,27 @@ describe("runStep — tool-resolution loop", () => {
 		expect(result.action).toEqual({ type: "say", text: "Hi there!" });
 		globalThis.fetch = originalFetch;
 	});
+
+	it("treats maxSteps 0 as unlimited", async () => {
+		globalThis.fetch = mock(async () => {
+			return new Response(
+				JSON.stringify(
+					completionResponse({
+						toolCall: { name: "say", args: { text: "Still going." } },
+					}),
+				),
+				{ status: 200 },
+			);
+		}) as unknown as typeof fetch;
+
+		const result = await runStep(
+			{ message: "do a long task", snapshot: fakeSnapshot() },
+			{ apiKey: "test-key", tenantId: "tenant-1", maxSteps: 0 },
+		);
+
+		expect(result.action).toEqual({ type: "say", text: "Still going." });
+		globalThis.fetch = originalFetch;
+	});
 });
 
 describe("runStep — agentDisabled guard", () => {
