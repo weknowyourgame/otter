@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from "bun:test";
+import { afterEach, beforeEach, describe, expect, it, mock } from "bun:test";
 import { FirecrawlService, type CrawlResult } from "otter-web-crawl";
 
 type DocStatusUpdate = {
@@ -13,6 +13,7 @@ const storedChunks: Array<{
 	docId: string;
 	rows: Array<{ id: string; content: string }>;
 }> = [];
+const originalFetch = globalThis.fetch;
 
 mock.module("otter-db", () => ({
 	updateDocStatus: async (
@@ -67,6 +68,79 @@ function fakeFirecrawl(result: CrawlResult): FirecrawlService {
 beforeEach(() => {
 	statusUpdates.length = 0;
 	storedChunks.length = 0;
+	globalThis.fetch = originalFetch;
+});
+
+afterEach(() => {
+	globalThis.fetch = originalFetch;
+});
+
+describe("FirecrawlService — crawl options", () => {
+	it("includes subdomains by default while keeping external links disabled", async () => {
+		const originalAllowSubdomains = process.env.FIRECRAWL_ALLOW_SUBDOMAINS;
+		const originalAllowExternalLinks =
+			process.env.FIRECRAWL_ALLOW_EXTERNAL_LINKS;
+		process.env.FIRECRAWL_ALLOW_SUBDOMAINS = "";
+		process.env.FIRECRAWL_ALLOW_EXTERNAL_LINKS = "";
+
+		let crawlBody: Record<string, unknown> | undefined;
+		globalThis.fetch = mock(async (input, init) => {
+			const url = String(input);
+			if (url.endsWith("/crawl")) {
+				crawlBody = JSON.parse(String(init?.body)) as Record<string, unknown>;
+				return new Response(JSON.stringify({ success: true, id: "crawl-1" }));
+			}
+			if (url.endsWith("/crawl/crawl-1")) {
+				return new Response(
+					JSON.stringify({
+						status: "completed",
+						data: [
+							{
+								markdown: "Welcome to Cordant.",
+								metadata: {
+									title: "Cordant",
+									sourceURL: "https://cordant.dev",
+								},
+							},
+						],
+					}),
+				);
+			}
+			return new Response("not found", { status: 404 });
+		}) as unknown as typeof fetch;
+
+		try {
+			const result = await new FirecrawlService("fc-test", {
+				crawlLimit: 3,
+				maxConcurrency: 1,
+				statusIntervalMs: 1,
+				statusTimeoutMs: 50,
+			}).crawlWebsite("https://cordant.dev");
+
+			expect(result.success).toBe(true);
+			expect(crawlBody).toEqual(
+				expect.objectContaining({
+					url: "https://cordant.dev",
+					limit: 3,
+					crawlEntireDomain: true,
+					allowSubdomains: true,
+					allowExternalLinks: false,
+					sitemap: "include",
+				}),
+			);
+		} finally {
+			if (originalAllowSubdomains === undefined) {
+				delete process.env.FIRECRAWL_ALLOW_SUBDOMAINS;
+			} else {
+				process.env.FIRECRAWL_ALLOW_SUBDOMAINS = originalAllowSubdomains;
+			}
+			if (originalAllowExternalLinks === undefined) {
+				delete process.env.FIRECRAWL_ALLOW_EXTERNAL_LINKS;
+			} else {
+				process.env.FIRECRAWL_ALLOW_EXTERNAL_LINKS = originalAllowExternalLinks;
+			}
+		}
+	});
 });
 
 describe("processWebCrawlJob — failure paths", () => {

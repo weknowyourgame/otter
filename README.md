@@ -75,11 +75,14 @@ OPENROUTER_API_KEY=
 FIRECRAWL_API_KEY=
 FIRECRAWL_CRAWL_LIMIT=50
 FIRECRAWL_MAX_CONCURRENCY=2
-FIRECRAWL_ALLOW_SUBDOMAINS=0
+FIRECRAWL_ALLOW_SUBDOMAINS=1
+FIRECRAWL_ALLOW_EXTERNAL_LINKS=0
 ```
 
-Website imports use Firecrawl's crawl API, stay on the submitted domain by
-default, and store each discovered page as source-labeled knowledge chunks.
+Website imports use Firecrawl's crawl API, follow same-domain pages and
+subdomains by default, and store each discovered page as source-labeled
+knowledge chunks. External links stay off by default so crawls do not wander
+outside the customer site.
 
 ### Cloudflare worker mode
 

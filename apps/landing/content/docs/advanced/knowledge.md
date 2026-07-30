@@ -12,8 +12,12 @@ The useful worker knobs are:
 ```bash
 FIRECRAWL_CRAWL_LIMIT=50
 FIRECRAWL_MAX_CONCURRENCY=2
-FIRECRAWL_ALLOW_SUBDOMAINS=0
+FIRECRAWL_ALLOW_SUBDOMAINS=1
+FIRECRAWL_ALLOW_EXTERNAL_LINKS=0
 ```
+
+Subdomains are included by default. External links are intentionally off by
+default so a crawl does not leave the customer site.
 
 ## FAQs
 
@@ -26,4 +30,3 @@ Text and Markdown files are indexed as searchable content. Other file formats ma
 ## Retrieval
 
 When the agent needs product context, it calls the knowledge search tool. Search is tenant-scoped and retrieves embedded chunks from Postgres.
-

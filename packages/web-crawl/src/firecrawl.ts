@@ -52,6 +52,7 @@ type FirecrawlServiceOptions = {
 	statusTimeoutMs?: number;
 	statusIntervalMs?: number;
 	allowSubdomains?: boolean;
+	allowExternalLinks?: boolean;
 };
 
 function sleep(ms: number): Promise<void> {
@@ -71,6 +72,14 @@ function envNumber(name: string, fallback: number): number {
 	return Number.isFinite(value) && value > 0 ? value : fallback;
 }
 
+function envBoolean(name: string, fallback: boolean): boolean {
+	const value = process.env[name]?.trim().toLowerCase();
+	if (!value) return fallback;
+	if (["1", "true", "yes", "on"].includes(value)) return true;
+	if (["0", "false", "no", "off"].includes(value)) return false;
+	return fallback;
+}
+
 function pageUrl(page: FirecrawlPage): string | undefined {
 	return page.metadata?.sourceURL ?? page.metadata?.url;
 }
@@ -86,6 +95,7 @@ export class FirecrawlService {
 	private readonly statusTimeoutMs: number;
 	private readonly statusIntervalMs: number;
 	private readonly allowSubdomains: boolean;
+	private readonly allowExternalLinks: boolean;
 
 	constructor(apiKey?: string, options: FirecrawlServiceOptions = {}) {
 		this.apiKey = apiKey?.trim() || undefined;
@@ -99,7 +109,10 @@ export class FirecrawlService {
 		this.statusIntervalMs =
 			options.statusIntervalMs ?? CRAWL_STATUS_INTERVAL_MS;
 		this.allowSubdomains =
-			options.allowSubdomains ?? process.env.FIRECRAWL_ALLOW_SUBDOMAINS === "1";
+			options.allowSubdomains ?? envBoolean("FIRECRAWL_ALLOW_SUBDOMAINS", true);
+		this.allowExternalLinks =
+			options.allowExternalLinks ??
+			envBoolean("FIRECRAWL_ALLOW_EXTERNAL_LINKS", false);
 		if (!this.apiKey) {
 			console.warn(
 				"[firecrawl] API key not configured — web-crawl jobs will fail until FIRECRAWL_API_KEY is set.",
@@ -181,7 +194,7 @@ export class FirecrawlService {
 				url,
 				limit: this.crawlLimit,
 				crawlEntireDomain: true,
-				allowExternalLinks: false,
+				allowExternalLinks: this.allowExternalLinks,
 				allowSubdomains: this.allowSubdomains,
 				ignoreQueryParameters: true,
 				maxConcurrency: this.maxConcurrency,
