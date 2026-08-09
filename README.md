@@ -46,6 +46,13 @@ bun run build
 bun run dev:all   # landing :3000, dashboard :3001, API :8787
 ```
 
+Or bring everything but the landing page up in containers, on the same ports, with the
+repo bind-mounted so hot reload still works:
+
+```bash
+docker compose -f docker-compose.dev.yml up -d
+```
+
 Create an account at http://localhost:3001/login, then issue a public key
 under **Settings -> Developers**. Register the exact origin that embeds Otter.
 
@@ -64,7 +71,11 @@ Copy `apps/api/.env.example` and `apps/web/.env.example` for the complete
 local setup. Without an OpenRouter key the loop uses the deterministic local
 planner; agent requests still require an Otter tenant key.
 
-Agent turns always use `openai/gpt-5.3-codex`.
+Agent turns use one operator-pinned model. `LLM_PROVIDER` picks the backend —
+`openrouter` (default, `openai/gpt-5.3-codex`) or `groq` (`openai/gpt-oss-20b`,
+needs `GROQ_API_KEY`) — and `AGENT_MODEL` overrides the model. Embeddings always
+go to OpenRouter, so `OPENROUTER_API_KEY` is still needed for knowledge search
+even on Groq.
 
 ### Worker environment (`apps/workers/.env`)
 

@@ -53,6 +53,7 @@ import {
 import { type AuthSession, auth, dashboardOrigins } from "./auth.js";
 import { chunkText } from "./chunking.js";
 import { sendEmail } from "./email.js";
+import { resolveLlmProvider } from "./llm-provider.js";
 import { logger } from "./logger.js";
 import { createRateLimiter } from "./rate-limit.js";
 import { createRedisPauseStore, DEFAULT_PAUSE_MINUTES } from "./safety.js";
@@ -110,7 +111,10 @@ const checkRateLimit = createRateLimiter(pauseRedis);
 // loop rather than abuse.
 const AGENT_KEY_RATE_LIMIT = { limit: 60, windowSeconds: 60 };
 const DASHBOARD_RATE_LIMIT = { limit: 300, windowSeconds: 60 };
-const REQUIRED_AGENT_MODEL = "openai/gpt-5.3-codex";
+const llmProvider = resolveLlmProvider();
+// Still pinned per deployment, just no longer hardcoded to one provider —
+// tenants cannot pick a model, the operator picks it via LLM_PROVIDER/AGENT_MODEL.
+const REQUIRED_AGENT_MODEL = llmProvider.model;
 
 function webCrawlTriggerConfig() {
 	if (process.env.WEB_CRAWL_BACKEND === "cloudflare") {
@@ -159,7 +163,10 @@ function agentMaxStepsFromEnv(): number {
 }
 
 const baseEngineConfig: EngineConfig = {
-	apiKey: process.env.OPENROUTER_API_KEY,
+	apiKey: llmProvider.apiKey,
+	baseUrl: llmProvider.baseUrl,
+	// Embeddings stay on OpenRouter whatever the chat provider is.
+	embeddingApiKey: process.env.OPENROUTER_API_KEY,
 	model: REQUIRED_AGENT_MODEL,
 	maxSteps: agentMaxStepsFromEnv(),
 	pauseStore,
@@ -931,7 +938,20 @@ app.get(
 );
 
 const port = Number(process.env.PORT ?? 8787);
-logger.info({ port }, "otter-api listening");
+logger.info(
+	{
+		port,
+		llmProvider: llmProvider.name,
+		model: REQUIRED_AGENT_MODEL,
+		// Without a chat key the engine silently falls back to the local
+		// planner, which looks like "the agent got dumb" rather than an error.
+		chatKey: llmProvider.apiKey ? "set" : "missing (local planner fallback)",
+		embeddings: process.env.OPENROUTER_API_KEY
+			? "openrouter"
+			: "disabled (no OPENROUTER_API_KEY)",
+	},
+	"otter-api listening",
+);
 
 export default {
 	port,

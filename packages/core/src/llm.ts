@@ -93,18 +93,24 @@ export type LLMStep = {
 	| { kind: "forget"; memoryId: string; toolCallId: string; assistantMessage: ChatMessage }
 );
 
+// Every supported provider speaks the OpenAI chat-completions shape, so
+// swapping one in is a base-URL change and nothing else. See apps/api's
+// LLM_PROVIDERS for the registry.
+const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
+
 export async function requestNextAction(
 	messages: ChatMessage[],
 	apiKey: string,
 	model: string,
-	options: { includeMemoryTools?: boolean } = {},
+	options: { includeMemoryTools?: boolean; baseUrl?: string } = {},
 ): Promise<LLMStep> {
 	// Memory tools are only offered when there's a userKey to scope them to
 	// (see engine.ts) — no point letting the model call a tool that can't
 	// actually persist anything for an anonymous session.
 	const tools = options.includeMemoryTools ? [...TOOLS, ...MEMORY_TOOLS] : TOOLS;
+	const baseUrl = (options.baseUrl?.trim() || DEFAULT_BASE_URL).replace(/\/$/, "");
 
-	const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+	const res = await fetch(`${baseUrl}/chat/completions`, {
 		method: "POST",
 		headers: {
 			authorization: `Bearer ${apiKey}`,
@@ -123,7 +129,7 @@ export async function requestNextAction(
 
 	if (!res.ok) {
 		const text = await res.text().catch(() => "");
-		throw new Error(`openrouter_${res.status}: ${text.slice(0, 300)}`);
+		throw new Error(`llm_${res.status}: ${text.slice(0, 300)}`);
 	}
 
 	const body = (await res.json()) as {
@@ -141,7 +147,7 @@ export async function requestNextAction(
 	};
 
 	const msg = body.choices?.[0]?.message;
-	if (!msg) throw new Error("openrouter_empty_response");
+	if (!msg) throw new Error("llm_empty_response");
 
 	const usage: LLMUsage | undefined = body.usage
 		? {
@@ -168,7 +174,7 @@ export async function requestNextAction(
 	try {
 		args = JSON.parse(call.function.arguments || "{}");
 	} catch {
-		throw new Error("openrouter_bad_tool_args");
+		throw new Error("llm_bad_tool_args");
 	}
 
 	if (call.function.name === "search_knowledge_base") {

@@ -9,6 +9,8 @@ import {
 	docs,
 	type MemoryRow,
 	memories,
+	type PlaybookRow,
+	playbooks,
 	type SessionRow,
 	sessions,
 	tenantMembers,
@@ -155,6 +157,24 @@ export async function getAgentByTenant(
 		.where(eq(agents.tenantId, tenantId))
 		.limit(1);
 	return rows[0];
+}
+
+/**
+ * Every playbook for a tenant. Scored in JS by otter-core (same linear scan
+ * as listAllChunks) — bounded by `limit` so one workspace with a long tail of
+ * one-off tasks can't turn every new session into an unbounded read.
+ */
+export async function listPlaybooks(
+	tenantId: string,
+	limit = 200,
+): Promise<PlaybookRow[]> {
+	const db = await getDb();
+	return db
+		.select()
+		.from(playbooks)
+		.where(eq(playbooks.tenantId, tenantId))
+		.orderBy(desc(playbooks.updatedAt))
+		.limit(limit);
 }
 
 /** Most recent facts for a user, newest first — injected once at session start. */
