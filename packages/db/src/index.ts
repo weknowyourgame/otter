@@ -36,6 +36,7 @@ export {
 	setChunkEmbedding,
 	updateDocStatus,
 	upsertAgent,
+	upsertPlaybook,
 	upsertSession,
 } from "./mutations.js";
 export {
@@ -48,6 +49,7 @@ export {
 	listDocs,
 	listDocsBySourceType,
 	listMemoriesForUser,
+	listPlaybooks,
 	listSessions,
 	type TenantUsageSummary,
 } from "./queries.js";
@@ -64,9 +66,11 @@ export type {
 	NewChunkRow,
 	NewDocRow,
 	NewMemoryRow,
+	NewPlaybookRow,
 	NewSessionRow,
 	NewTenantInviteRow,
 	NewUsageEventRow,
+	PlaybookRow,
 	SessionRow,
 	TenantInviteRow,
 	TenantRow,
@@ -82,6 +86,7 @@ export {
 	chunks,
 	docs,
 	memories,
+	playbooks,
 	sessions,
 	tenantInvites,
 	tenantMembers,

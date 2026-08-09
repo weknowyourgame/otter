@@ -27,7 +27,8 @@ export interface KnowledgeSearchResult {
 	gap: boolean;
 }
 
-function cosineSimilarity(a: number[], b: number[]): number {
+/** Shared with playbooks.ts — both retrieval paths score in JS over stored JSON embeddings. */
+export function cosineSimilarity(a: number[], b: number[]): number {
 	let dot = 0;
 	let normA = 0;
 	let normB = 0;

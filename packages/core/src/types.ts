@@ -78,6 +78,18 @@ export interface StepResponse {
 
 export interface EngineConfig {
 	apiKey?: string;
+	/**
+	 * OpenAI-compatible chat-completions base, e.g.
+	 * https://api.groq.com/openai/v1. Defaults to OpenRouter.
+	 */
+	baseUrl?: string;
+	/**
+	 * Key for the embeddings call behind search_knowledge_base. Separate from
+	 * `apiKey` because embeddings always go to OpenRouter — Groq has no
+	 * embeddings endpoint — so a Groq chat key would 401 there. Falls back to
+	 * `apiKey` when unset, which is correct for OpenRouter-only setups.
+	 */
+	embeddingApiKey?: string;
 	model?: string;
 	maxSteps?: number;
 	/** Tenant ownership attached by the authenticated API boundary. */
@@ -104,6 +116,28 @@ export interface SessionEvent {
 	at: number;
 	kind: "user" | "agent" | "step" | "result";
 	text: string;
+}
+
+/**
+ * One executed action, recorded with the element already resolved off the
+ * snapshot that produced it. `ref` is a WeakMap index in the SDK that dies
+ * with the page, so it is deliberately not stored — {path, role, name} is
+ * what survives into another session.
+ *
+ * There is no `value` field on purpose: a fill's value is whatever the user
+ * dictated (email, address, anything) and is masked nowhere upstream. We
+ * record *that* a field was filled, never with what.
+ */
+export interface TraceStep {
+	at: number;
+	/** Path the action was taken on. */
+	path: string;
+	type: "click" | "fill" | "navigate" | "scroll";
+	/** Element role/name, resolved from the snapshot. Absent for navigate. */
+	role?: string;
+	name?: string;
+	/** navigate target. */
+	to?: string;
 }
 
 export interface SessionSummary {

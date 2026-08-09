@@ -235,6 +235,14 @@ export const sessions = pgTable("sessions", {
 	local: text("local"),
 	/** JSON-serialized SessionEvent[] — powers the dashboard step trail. */
 	events: text("events").notNull(),
+	/**
+	 * JSON-serialized TraceStep[] — every action taken, with the clicked
+	 * element resolved to {role, name} while the snapshot that produced it is
+	 * still in hand. `history` can't serve this: refs die with the page, and
+	 * engine.ts blanks superseded snapshots to save tokens. Nullable so rows
+	 * written before this column existed still parse.
+	 */
+	trace: text("trace"),
 });
 
 export type SessionRow = typeof sessions.$inferSelect;
@@ -300,6 +308,47 @@ export const memories = pgTable("memories", {
 
 export type MemoryRow = typeof memories.$inferSelect;
 export type NewMemoryRow = typeof memories.$inferInsert;
+
+/**
+ * A route that already worked: the user's original intent plus the ordered
+ * actions a session took before reaching done(). Distilled from sessions.trace
+ * with no LLM call, and retrieved on a new session's first turn as a *hint*.
+ *
+ * Tenant-scoped, not user-scoped (unlike memories) — a route through a
+ * customer's app is the same route for everyone in that workspace, and
+ * per-user playbooks would take N successful runs to learn what one teaches.
+ * Nothing user-authored is stored: fill values are dropped in trace.ts.
+ *
+ * Embeddings are JSON text and scored in JS, matching chunks/knowledge.ts.
+ * Revisit together with that path if either grows past a linear scan.
+ */
+export const playbooks = pgTable(
+	"playbooks",
+	{
+		id: text("id").primaryKey(),
+		tenantId: text("tenant_id")
+			.notNull()
+			.references(() => tenants.id, { onDelete: "cascade" }),
+		/** Provenance only — no FK, since sessions are swept after 30 days. */
+		sessionId: text("session_id").notNull(),
+		/** The user's opening message (sessions.title), what we embed against. */
+		intent: text("intent").notNull(),
+		/** JSON-serialized TraceStep[]. */
+		steps: text("steps").notNull(),
+		/** JSON-serialized number[]; null if the embedding call failed. */
+		embedding: text("embedding"),
+		createdAt: bigint("created_at", { mode: "number" }).notNull(),
+		updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
+	},
+	(table) => [
+		// Re-running the same task overwrites its playbook rather than piling
+		// up near-identical rows for every retrieval to sift through.
+		uniqueIndex("playbook_tenant_intent_idx").on(table.tenantId, table.intent),
+	],
+);
+
+export type PlaybookRow = typeof playbooks.$inferSelect;
+export type NewPlaybookRow = typeof playbooks.$inferInsert;
 
 /**
  * One row per tenant — Otter has no separate multi-website "agent" concept

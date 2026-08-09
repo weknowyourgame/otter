@@ -18,7 +18,13 @@ import {
 	loadKnownFacts,
 	rememberFact,
 } from "./memory.js";
+import {
+	findPlaybook,
+	formatPlaybookForPrompt,
+	recordPlaybook,
+} from "./playbooks.js";
 import { buildSystemPrompt, renderSnapshot } from "./prompt.js";
+import { appendTraceStep, describeAction } from "./trace.js";
 import type {
 	AgentAction,
 	EngineConfig,
@@ -26,6 +32,7 @@ import type {
 	SessionSummary,
 	StepRequest,
 	StepResponse,
+	TraceStep,
 } from "./types.js";
 
 const SESSION_RETENTION_MS = 30 * 24 * 60 * 60 * 1000;
@@ -46,6 +53,8 @@ interface Session {
 	history: ChatMessage[];
 	local?: LocalPlannerState;
 	events: SessionEvent[];
+	/** Durable action record — see trace.ts. Feeds playbook distillation. */
+	trace: TraceStep[];
 }
 
 /**
@@ -69,6 +78,8 @@ function fromRow(row: SessionRow): Session {
 		history: JSON.parse(row.history) as ChatMessage[],
 		local: row.local ? (JSON.parse(row.local) as LocalPlannerState) : undefined,
 		events: JSON.parse(row.events) as SessionEvent[],
+		// Null for sessions written before the column existed.
+		trace: row.trace ? (JSON.parse(row.trace) as TraceStep[]) : [],
 	};
 }
 
@@ -94,6 +105,7 @@ function toRow(session: Session): Parameters<typeof upsertSession>[0] {
 		history: JSON.stringify(session.history),
 		local: session.local ? JSON.stringify(session.local) : null,
 		events: JSON.stringify(session.events),
+		trace: JSON.stringify(session.trace),
 	};
 }
 
@@ -160,6 +172,8 @@ export async function runStep(
 	}
 
 	const apiKey = config.apiKey?.trim() || undefined;
+	// Always an OpenRouter key — see EngineConfig.embeddingApiKey.
+	const embeddingApiKey = config.embeddingApiKey ?? apiKey;
 	const model = config.model?.trim() || DEFAULT_MODEL;
 	const maxSteps = config.maxSteps ?? DEFAULT_MAX_STEPS;
 	const maxToolCallsPerTurn =
@@ -192,6 +206,27 @@ export async function runStep(
 				});
 			}
 		}
+		// A route this workspace has already walked for a similar request.
+		// Injected once, on the first turn only, in the same shape as the
+		// known-facts block above. Best-effort: retrieval costs one embedding
+		// call, and a workspace that can't recall must still be able to work.
+		if (apiKey && embeddingApiKey && config.tenantId && req.message) {
+			try {
+				const playbook = await findPlaybook(
+					req.message,
+					embeddingApiKey,
+					config.tenantId,
+				);
+				if (playbook) {
+					history.push({
+						role: "system",
+						content: formatPlaybookForPrompt(playbook),
+					});
+				}
+			} catch (error) {
+				console.error("[playbooks] retrieval failed", error);
+			}
+		}
 		session = {
 			id: newId(),
 			tenantId: config.tenantId,
@@ -204,6 +239,7 @@ export async function runStep(
 			state: "active",
 			history,
 			events: [],
+			trace: [],
 		};
 	}
 	session.updatedAt = Date.now();
@@ -228,15 +264,34 @@ export async function runStep(
 	}
 
 	const response = apiKey
-		? await aiStep(session, req, apiKey, model, userKey, maxToolCallsPerTurn)
+		? await aiStep(
+				session,
+				req,
+				{
+					apiKey,
+					baseUrl: config.baseUrl,
+					embeddingApiKey: config.embeddingApiKey ?? apiKey,
+					model,
+					maxToolCallsPerTurn,
+				},
+				userKey,
+			)
 		: localStep(session, req);
 
 	if (response.status) record(session, "step", response.status);
+	// Resolve the chosen action against the snapshot that produced it — the
+	// only moment where `ref` still means anything. See trace.ts.
+	const traceStep = describeAction(response.action, req.snapshot);
+	if (traceStep) appendTraceStep(session.trace, traceStep);
+
 	if (response.action.type === "say")
 		record(session, "agent", response.action.text);
 	if (response.action.type === "done") {
 		session.state = "done";
 		record(session, "result", response.action.summary);
+		// Learn the route. Deliberately not awaited: distillation is an
+		// embedding round-trip, and the user's "done" shouldn't wait on it.
+		if (embeddingApiKey) void recordPlaybook(session, embeddingApiKey);
 	}
 	if (response.action.type === "fail") {
 		session.state = "failed";
@@ -246,13 +301,20 @@ export async function runStep(
 	return response;
 }
 
+interface LlmSettings {
+	apiKey: string;
+	baseUrl?: string;
+	/** Always an OpenRouter key — see EngineConfig.embeddingApiKey. */
+	embeddingApiKey: string;
+	model: string;
+	maxToolCallsPerTurn: number;
+}
+
 async function aiStep(
 	session: Session,
 	req: StepRequest,
-	apiKey: string,
-	model: string,
+	llm: LlmSettings,
 	userKey: string | undefined,
-	maxToolCallsPerTurn: number,
 ): Promise<StepResponse> {
 	const snapshotText = renderSnapshot(req.snapshot);
 
@@ -298,10 +360,13 @@ async function aiStep(
 		// the SDK never sees them, only the client-facing actions in
 		// AgentAction. Bounded so a model that keeps calling tools can't loop
 		// forever within one runStep().
-		for (let iteration = 0; iteration < maxToolCallsPerTurn; iteration++) {
-			const step = await requestNextAction(session.history, apiKey, model, {
-				includeMemoryTools: Boolean(userKey),
-			});
+		for (let iteration = 0; iteration < llm.maxToolCallsPerTurn; iteration++) {
+			const step = await requestNextAction(
+				session.history,
+				llm.apiKey,
+				llm.model,
+				{ includeMemoryTools: Boolean(userKey), baseUrl: llm.baseUrl },
+			);
 			session.history.push(step.assistantMessage);
 			if (step.usage && session.tenantId) {
 				void insertUsageEvent({
@@ -327,7 +392,7 @@ async function aiStep(
 			if (step.kind === "search") {
 				const result = await searchKnowledgeBase(
 					step.query,
-					apiKey,
+					llm.embeddingApiKey,
 					session.tenantId,
 				);
 				session.history.push({

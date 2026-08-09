@@ -1,34 +1,41 @@
 {
-	"version": "7",
-	"dialect": "postgresql",
-	"entries": [
-		{
-			"idx": 0,
-			"version": "7",
-			"when": 1784228104232,
-			"tag": "0000_stormy_starhawk",
-			"breakpoints": true
-		},
-		{
-			"idx": 1,
-			"version": "7",
-			"when": 1784228453859,
-			"tag": "0001_early_nemesis",
-			"breakpoints": true
-		},
-		{
-			"idx": 2,
-			"version": "7",
-			"when": 1784228939674,
-			"tag": "0002_yellow_ben_urich",
-			"breakpoints": true
-		},
-		{
-			"idx": 3,
-			"version": "7",
-			"when": 1785088813353,
-			"tag": "0003_chunky_veda",
-			"breakpoints": true
-		}
-	]
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1784228104232,
+      "tag": "0000_stormy_starhawk",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1784228453859,
+      "tag": "0001_early_nemesis",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1784228939674,
+      "tag": "0002_yellow_ben_urich",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1785088813353,
+      "tag": "0003_chunky_veda",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1785663926459,
+      "tag": "0004_supreme_moira_mactaggert",
+      "breakpoints": true
+    }
+  ]
 }

@@ -13,8 +13,10 @@ import {
 	type NewChunkRow,
 	type NewDocRow,
 	type NewMemoryRow,
+	type NewPlaybookRow,
 	type NewSessionRow,
 	type NewUsageEventRow,
+	playbooks,
 	sessions,
 	usageEvents,
 } from "./schema.js";
@@ -37,8 +39,34 @@ export async function upsertSession(row: NewSessionRow): Promise<void> {
 				history: row.history,
 				local: row.local,
 				events: row.events,
+				trace: row.trace,
 			},
 		});
+}
+
+/**
+ * Best-effort by design, like insertUsageEvent — learning from a finished run
+ * must never fail the turn that just succeeded. Re-running the same intent
+ * replaces the stored route, so the newest working path wins.
+ */
+export async function upsertPlaybook(row: NewPlaybookRow): Promise<void> {
+	try {
+		const db = await getDb();
+		await db
+			.insert(playbooks)
+			.values(row)
+			.onConflictDoUpdate({
+				target: [playbooks.tenantId, playbooks.intent],
+				set: {
+					sessionId: row.sessionId,
+					steps: row.steps,
+					embedding: row.embedding,
+					updatedAt: row.updatedAt,
+				},
+			});
+	} catch (error) {
+		console.error("[playbooks] failed to store playbook", error);
+	}
 }
 
 export async function deleteExpiredSessions(olderThanUpdatedAt: number): Promise<void> {
