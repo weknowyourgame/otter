@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { createBunWebSocket } from "hono/bun";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import {
@@ -72,7 +71,12 @@ import {
 } from "./schemas.js";
 import { handleSocketMessage } from "./ws.js";
 
-const { upgradeWebSocket, websocket } = createBunWebSocket();
+// WebSockets are Bun-only; serverless hosts (Vercel) serve /step over HTTP and
+// the SDK falls back to it.
+const isBun = typeof (globalThis as { Bun?: unknown }).Bun !== "undefined";
+const { upgradeWebSocket, websocket } = isBun
+	? (await import("hono/bun")).createBunWebSocket()
+	: { upgradeWebSocket: null, websocket: undefined };
 
 type DashboardContext = {
 	session: AuthSession;
@@ -922,6 +926,7 @@ app.delete("/files/:id", requireDashboard, async (c) => {
 	return c.body(null, 204);
 });
 
+if (upgradeWebSocket)
 app.get(
 	"/ws",
 	upgradeWebSocket(async (c) => {
@@ -952,6 +957,8 @@ logger.info(
 	},
 	"otter-api listening",
 );
+
+export { app };
 
 export default {
 	port,

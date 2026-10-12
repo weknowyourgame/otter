@@ -1,6 +1,7 @@
-import { SQL } from "bun";
-import { drizzle } from "drizzle-orm/bun-sql";
-import { migrate } from "drizzle-orm/bun-sql/migrator";
+import { fileURLToPath } from "node:url";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import pg from "pg";
 import * as schema from "./schema.js";
 
 const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
@@ -11,7 +12,7 @@ const DEFAULT_DATABASE_URL = "postgres://localhost:5432/otter";
 // migration as already applied — see that script's comment for why. New
 // schema changes: edit schema.ts, run `bunx drizzle-kit generate`, commit
 // the generated migration; migrate() below applies it on next connect.
-const MIGRATIONS_FOLDER = `${import.meta.dir}/../drizzle`;
+const MIGRATIONS_FOLDER = fileURLToPath(new URL("../drizzle", import.meta.url));
 
 let db: ReturnType<typeof drizzle<typeof schema>> | undefined;
 let initPromise: Promise<void> | undefined;
@@ -27,13 +28,20 @@ export async function getDb(): Promise<
 	if (db) return db;
 
 	const url = process.env.DATABASE_URL?.trim() || DEFAULT_DATABASE_URL;
-	const sql = new SQL(url);
-	const instance = drizzle(sql, { schema });
+	// Serverless: keep the pool tiny, one connection per function instance.
+	const pool = new pg.Pool({
+		connectionString: url,
+		max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+	});
+	const instance = drizzle(pool, { schema });
 
-	if (!initPromise) {
-		initPromise = migrate(instance, { migrationsFolder: MIGRATIONS_FOLDER });
+	// Serverless deploys run migrations out-of-band (OTTER_SKIP_MIGRATE=1).
+	if (process.env.OTTER_SKIP_MIGRATE !== "1") {
+		if (!initPromise) {
+			initPromise = migrate(instance, { migrationsFolder: MIGRATIONS_FOLDER });
+		}
+		await initPromise;
 	}
-	await initPromise;
 
 	db = instance;
 	return db;
