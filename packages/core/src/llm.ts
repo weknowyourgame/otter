@@ -98,6 +98,32 @@ export type LLMStep = {
 // LLM_PROVIDERS for the registry.
 const DEFAULT_BASE_URL = "https://openrouter.ai/api/v1";
 
+/**
+ * Providers reject history where an assistant tool_call has no tool result (or a
+ * tool result has no matching call). Older sessions can contain such history
+ * from before only one call per turn was kept, so repair it before sending.
+ */
+export function sanitizeToolHistory(messages: ChatMessage[]): ChatMessage[] {
+	const answered = new Set<string>();
+	for (const m of messages) {
+		if (m.role === "tool" && m.tool_call_id) answered.add(m.tool_call_id);
+	}
+	const kept = new Set<string>();
+	const out: ChatMessage[] = [];
+	for (const m of messages) {
+		if (m.role === "assistant" && m.tool_calls?.length) {
+			const calls = m.tool_calls.filter((c) => answered.has(c.id));
+			for (const c of calls) kept.add(c.id);
+			const { tool_calls: _drop, ...rest } = m;
+			out.push(calls.length ? { ...rest, tool_calls: calls } : rest);
+			continue;
+		}
+		if (m.role === "tool" && !kept.has(m.tool_call_id ?? "")) continue;
+		out.push(m);
+	}
+	return out;
+}
+
 export async function requestNextAction(
 	messages: ChatMessage[],
 	apiKey: string,
@@ -119,9 +145,12 @@ export async function requestNextAction(
 		},
 		body: JSON.stringify({
 			model,
-			messages,
+			messages: sanitizeToolHistory(messages),
 			tools,
 			tool_choice: "auto",
+			// One action per turn: a second tool call would have no tool result
+			// in history, and the next request fails with llm_400.
+			parallel_tool_calls: false,
 			temperature: 0.2,
 			max_tokens: 600,
 		}),
@@ -157,13 +186,15 @@ export async function requestNextAction(
 			}
 		: undefined;
 
+	// Only the first tool call is acted on; keep history consistent with that
+	// (every tool_call in history must have a matching tool result).
+	const call = msg.tool_calls?.[0];
 	const assistantMessage: ChatMessage = {
 		role: "assistant",
 		content: msg.content ?? "",
-		...(msg.tool_calls?.length ? { tool_calls: msg.tool_calls } : {}),
+		...(call ? { tool_calls: [call] } : {}),
 	};
 
-	const call = msg.tool_calls?.[0];
 	if (!call) {
 		// Model answered in prose — treat it as say() so the loop still behaves.
 		const text = (msg.content ?? "").trim() || "I'm not sure how to proceed — could you rephrase?";
