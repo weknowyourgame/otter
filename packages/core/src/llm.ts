@@ -128,12 +128,20 @@ export async function requestNextAction(
 	messages: ChatMessage[],
 	apiKey: string,
 	model: string,
-	options: { includeMemoryTools?: boolean; baseUrl?: string } = {},
+	options: {
+		includeMemoryTools?: boolean;
+		/** Jev gates writes; the model keeps only forget(). */
+		forgetOnly?: boolean;
+		baseUrl?: string;
+	} = {},
 ): Promise<LLMStep> {
 	// Memory tools are only offered when there's a userKey to scope them to
 	// (see engine.ts) — no point letting the model call a tool that can't
 	// actually persist anything for an anonymous session.
-	const tools = options.includeMemoryTools ? [...TOOLS, ...MEMORY_TOOLS] : TOOLS;
+	const memoryTools = options.forgetOnly
+		? MEMORY_TOOLS.filter((t) => t.function.name === "forget")
+		: MEMORY_TOOLS;
+	const tools = options.includeMemoryTools ? [...TOOLS, ...memoryTools] : TOOLS;
 	const baseUrl = (options.baseUrl?.trim() || DEFAULT_BASE_URL).replace(/\/$/, "");
 
 	const res = await fetch(`${baseUrl}/chat/completions`, {

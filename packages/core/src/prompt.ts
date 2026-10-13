@@ -25,6 +25,13 @@ Rules:
 - If the same action fails twice, try a different route; after three total failures on a task, fail() with an honest reason.
 - Be warm and brief. No corporate filler.`;
 
+const FORGET_ONLY_ADDENDUM = `
+
+You also have:
+- forget(memory_id) — delete a remembered fact that's now stale or wrong, using the [id] shown below. Facts are saved automatically; you never need to save them yourself.
+
+Use it sparingly and silently — never narrate memory operations to the user.`;
+
 const MEMORY_TOOLS_ADDENDUM = `
 
 You also have:
@@ -44,9 +51,11 @@ Use these sparingly and silently — never announce "I'll remember that" or narr
 export function buildSystemPrompt(
 	includeMemoryTools: boolean,
 	addendum?: string,
+	forgetOnly = false,
 ): string {
+	const memory = forgetOnly ? FORGET_ONLY_ADDENDUM : MEMORY_TOOLS_ADDENDUM;
 	const base = includeMemoryTools
-		? `${BASE_SYSTEM_PROMPT}${MEMORY_TOOLS_ADDENDUM}`
+		? `${BASE_SYSTEM_PROMPT}${memory}`
 		: BASE_SYSTEM_PROMPT;
 	const trimmedAddendum = addendum?.trim();
 	return trimmedAddendum

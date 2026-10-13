@@ -3,6 +3,7 @@
 // the engine answers with exactly one next action, and the SDK executes it
 // and reports back — one POST per step until `done`, `say`, or `fail`.
 
+import type { JevConfig } from "./jev.js";
 import type { PauseStore } from "./safety.js";
 
 export interface ElementState {
@@ -74,6 +75,13 @@ export interface StepResponse {
 	status?: string;
 	/** Which planner produced the action. */
 	source: "ai" | "local";
+	/**
+	 * Guard notices (destructive request, risky action, injected page text).
+	 * Warn-only: the action still runs; the SDK/dashboard may surface these.
+	 */
+	warnings?: string[];
+	/** Which decisions Jev made this turn instead of the LLM, for tuning. */
+	jev?: string[];
 }
 
 export interface EngineConfig {
@@ -108,6 +116,8 @@ export interface EngineConfig {
 	maxToolCallsPerTurn?: number;
 	/** When true, /step refuses new turns with a fixed "agent is off" reply. */
 	agentDisabled?: boolean;
+	/** Optional Jev (System One) decision layer. Off when unset. */
+	jev?: JevConfig;
 }
 
 // ---- session bookkeeping (also powers the dashboard) ----

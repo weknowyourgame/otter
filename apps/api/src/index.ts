@@ -2,7 +2,10 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { createMiddleware } from "hono/factory";
 import {
+	DEFAULT_JEV_JOBS,
 	type EngineConfig,
+	type JevConfig,
+	type JevJob,
 	listSessions,
 	requestEmbedding,
 	runStep,
@@ -176,10 +179,48 @@ const baseEngineConfig: EngineConfig = {
 	pauseStore,
 };
 
+/**
+ * Jev (TypeSafe System One) decision layer. Off unless JEV_ENABLED=1.
+ * Defaults to the OpenRouter route, so OPENROUTER_API_KEY is enough.
+ * JEV_JOBS overrides the job list, e.g. "router,guard,injection,memory,fastpath,done".
+ */
+function jevConfigFromEnv(): JevConfig | undefined {
+	if (process.env.JEV_ENABLED !== "1") return undefined;
+	const apiKey =
+		process.env.JEV_API_KEY?.trim() || process.env.OPENROUTER_API_KEY?.trim();
+	if (!apiKey) return undefined;
+	const jobs = process.env.JEV_JOBS?.split(",")
+		.map((j) => j.trim())
+		.filter(Boolean) as JevJob[] | undefined;
+	return {
+		apiKey,
+		baseUrl: process.env.JEV_BASE_URL?.trim() || undefined,
+		model: process.env.JEV_MODEL?.trim() || undefined,
+		jobs: jobs?.length ? jobs : DEFAULT_JEV_JOBS,
+	};
+}
+
+const jevConfig = jevConfigFromEnv();
+
+// Agent settings change rarely; one DB round trip per step is wasted latency.
+const AGENT_CACHE_TTL_MS = 30_000;
+const agentCache = new Map<
+	string,
+	{ value: Awaited<ReturnType<typeof getAgentByTenant>>; expires: number }
+>();
+
+async function cachedAgent(tenantId: string) {
+	const hit = agentCache.get(tenantId);
+	if (hit && hit.expires > Date.now()) return hit.value;
+	const value = await getAgentByTenant(tenantId);
+	agentCache.set(tenantId, { value, expires: Date.now() + AGENT_CACHE_TTL_MS });
+	return value;
+}
+
 async function engineConfigFor(
 	agentAuth: ValidatedApiKey,
 ): Promise<EngineConfig> {
-	const agent = await getAgentByTenant(agentAuth.key.tenantId);
+	const agent = await cachedAgent(agentAuth.key.tenantId);
 	return {
 		...baseEngineConfig,
 		tenantId: agentAuth.key.tenantId,
@@ -188,6 +229,7 @@ async function engineConfigFor(
 		systemPromptAddendum: agent?.systemPrompt ?? undefined,
 		maxToolCallsPerTurn: agent?.maxToolCalls,
 		agentDisabled: agent ? !agent.enabled : false,
+		jev: jevConfig,
 	};
 }
 
@@ -623,6 +665,7 @@ app.use("/step", requireAgentKey);
 app.use("/ws", requireAgentKey);
 
 app.post("/step", async (c) => {
+	const startedAt = performance.now();
 	let rawBody: unknown;
 	try {
 		rawBody = await c.req.json();
@@ -637,9 +680,15 @@ app.post("/step", async (c) => {
 		return c.json({ error: "invalid_body", detail: parsed.error.issues }, 400);
 	}
 	try {
-		return c.json(
-			await runStep(parsed.data, await engineConfigFor(c.get("agentAuth"))),
+		const config = await engineConfigFor(c.get("agentAuth"));
+		const engineStart = performance.now();
+		const result = await runStep(parsed.data, config);
+		const now = performance.now();
+		c.header(
+			"server-timing",
+			`setup;dur=${Math.round(engineStart - startedAt)}, engine;dur=${Math.round(now - engineStart)}`,
 		);
+		return c.json(result);
 	} catch (error) {
 		if (error instanceof Error && error.message === "session_not_found") {
 			return c.json({ error: "session_not_found" }, 404);

@@ -104,14 +104,35 @@ export type ValidatedApiKey = {
 	origins: string[];
 };
 
+// Serverless round-trips to Postgres dominate step latency, so validated keys
+// are cached per instance briefly. Revocation or an origin change takes effect
+// within KEY_CACHE_TTL_MS.
+const KEY_CACHE_TTL_MS = 30_000;
+const keyCache = new Map<string, { value: ValidatedApiKey; expires: number }>();
+
 export async function validateApiKey(rawKey: string): Promise<ValidatedApiKey | undefined> {
 	if (!isValidApiKeyFormat(rawKey)) return undefined;
-	const key = await getActiveApiKeyByHash(hashApiKey(rawKey));
-	if (!key) return undefined;
-	return { key, origins: await listAllowedOrigins(key.tenantId) };
+	const hash = hashApiKey(rawKey);
+	const cached = keyCache.get(hash);
+	if (cached && cached.expires > Date.now()) return cached.value;
+	const key = await getActiveApiKeyByHash(hash);
+	if (!key) {
+		keyCache.delete(hash);
+		return undefined;
+	}
+	const value = { key, origins: await listAllowedOrigins(key.tenantId) };
+	keyCache.set(hash, { value, expires: Date.now() + KEY_CACHE_TTL_MS });
+	return value;
 }
 
+/** last_used_at only needs minute resolution; skip the write otherwise. */
+const TOUCH_INTERVAL_MS = 60_000;
+const lastTouched = new Map<string, number>();
+
 export async function markApiKeyUsed(id: string): Promise<void> {
+	const now = Date.now();
+	if (now - (lastTouched.get(id) ?? 0) < TOUCH_INTERVAL_MS) return;
+	lastTouched.set(id, now);
 	await touchApiKey(id);
 }
 
